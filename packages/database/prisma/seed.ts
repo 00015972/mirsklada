@@ -3,7 +3,7 @@
  * Populates development database with sample data
  */
 
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -87,87 +87,75 @@ async function main() {
   ]);
   console.log(`✅ Created ${categories.length} categories`);
 
+  // Product data with base prices
+  const productData = [
+    {
+      id: "prod-salmon",
+      categoryId: "cat-fish",
+      name: "Salmon (Fresh)",
+      description: "Fresh Atlantic salmon, perfect for sushi and grilling",
+      basePricePerKg: 180000,
+      currentStockKg: 50.5,
+      minStockKg: 10,
+    },
+    {
+      id: "prod-tilapia",
+      categoryId: "cat-fish",
+      name: "Tilapia (Frozen)",
+      description: "Frozen tilapia fillets",
+      basePricePerKg: 65000,
+      currentStockKg: 120,
+      minStockKg: 20,
+    },
+    {
+      id: "prod-beef",
+      categoryId: "cat-meat",
+      name: "Beef Tenderloin",
+      description: "Premium beef tenderloin",
+      basePricePerKg: 150000,
+      currentStockKg: 35.75,
+      minStockKg: 15,
+    },
+    {
+      id: "prod-chicken",
+      categoryId: "cat-meat",
+      name: "Chicken Breast",
+      description: "Boneless skinless chicken breast",
+      basePricePerKg: 48000,
+      currentStockKg: 200,
+      minStockKg: 50,
+    },
+    {
+      id: "prod-mozzarella",
+      categoryId: "cat-cheese",
+      name: "Mozzarella",
+      description: "Fresh mozzarella for pizza",
+      basePricePerKg: 95000,
+      currentStockKg: 80,
+      minStockKg: 25,
+    },
+  ];
+
   // Create products
-  const products = await Promise.all([
-    // Fish
-    prisma.product.upsert({
-      where: { id: "prod-salmon" },
-      update: {},
-      create: {
-        id: "prod-salmon",
-        tenantId: tenant.id,
-        categoryId: "cat-fish",
-        name: "Salmon (Fresh)",
-        description: "Fresh Atlantic salmon, perfect for sushi and grilling",
-        unit: "kg",
-        basePricePerKg: new Prisma.Decimal(180000),
-        currentStockKg: new Prisma.Decimal(50.5),
-        minStockKg: new Prisma.Decimal(10),
-      },
-    }),
-    prisma.product.upsert({
-      where: { id: "prod-tilapia" },
-      update: {},
-      create: {
-        id: "prod-tilapia",
-        tenantId: tenant.id,
-        categoryId: "cat-fish",
-        name: "Tilapia (Frozen)",
-        description: "Frozen tilapia fillets",
-        unit: "kg",
-        basePricePerKg: new Prisma.Decimal(65000),
-        currentStockKg: new Prisma.Decimal(120),
-        minStockKg: new Prisma.Decimal(20),
-      },
-    }),
-    // Meat
-    prisma.product.upsert({
-      where: { id: "prod-beef" },
-      update: {},
-      create: {
-        id: "prod-beef",
-        tenantId: tenant.id,
-        categoryId: "cat-meat",
-        name: "Beef Tenderloin",
-        description: "Premium beef tenderloin",
-        unit: "kg",
-        basePricePerKg: new Prisma.Decimal(150000),
-        currentStockKg: new Prisma.Decimal(35.75),
-        minStockKg: new Prisma.Decimal(15),
-      },
-    }),
-    prisma.product.upsert({
-      where: { id: "prod-chicken" },
-      update: {},
-      create: {
-        id: "prod-chicken",
-        tenantId: tenant.id,
-        categoryId: "cat-meat",
-        name: "Chicken Breast",
-        description: "Boneless skinless chicken breast",
-        unit: "kg",
-        basePricePerKg: new Prisma.Decimal(48000),
-        currentStockKg: new Prisma.Decimal(200),
-        minStockKg: new Prisma.Decimal(50),
-      },
-    }),
-    // Cheese
-    prisma.product.upsert({
-      where: { id: "prod-mozzarella" },
-      update: {},
-      create: {
-        id: "prod-mozzarella",
-        tenantId: tenant.id,
-        categoryId: "cat-cheese",
-        name: "Mozzarella",
-        description: "Fresh mozzarella for pizza",
-        unit: "kg",
-        basePricePerKg: new Prisma.Decimal(95000),
-        currentStockKg: new Prisma.Decimal(80),
-        minStockKg: new Prisma.Decimal(25),
-      },
-    }),
-  ]);
+  const products = await Promise.all(
+    productData.map((p) =>
+      prisma.product.upsert({
+        where: { id: p.id },
+        update: {},
+        create: {
+          id: p.id,
+          tenantId: tenant.id,
+          categoryId: p.categoryId,
+          name: p.name,
+          description: p.description,
+          unit: "kg",
+          basePricePerKg: p.basePricePerKg,
+          currentStockKg: p.currentStockKg,
+          minStockKg: p.minStockKg,
+        },
+      }),
+    ),
+  );
   console.log(`✅ Created ${products.length} products`);
 
   // Create price matrix for VIP clients
@@ -184,19 +172,19 @@ async function main() {
 
   // Add VIP prices (10% discount)
   await Promise.all(
-    products.map((product) =>
+    productData.map((p) =>
       prisma.priceMatrixItem.upsert({
         where: {
           priceMatrixId_productId: {
             priceMatrixId: vipMatrix.id,
-            productId: product.id,
+            productId: p.id,
           },
         },
         update: {},
         create: {
           priceMatrixId: vipMatrix.id,
-          productId: product.id,
-          customPriceKg: product.basePricePerKg.mul(0.9),
+          productId: p.id,
+          customPriceKg: p.basePricePerKg * 0.9, // 10% discount
         },
       }),
     ),
@@ -256,7 +244,7 @@ async function main() {
       clientId: "client-pizzeria",
       orderNumber: "ORD-2026-0001",
       status: "delivered",
-      totalAmount: new Prisma.Decimal(1215000), // Will be calculated from items
+      totalAmount: 1215000,
       notes: "Please deliver before 10 AM",
       deliveryDate: new Date("2026-01-20"),
       createdBy: user.id,
@@ -266,16 +254,16 @@ async function main() {
           {
             productId: "prod-mozzarella",
             productName: "Mozzarella",
-            quantityKg: new Prisma.Decimal(10),
-            pricePerKg: new Prisma.Decimal(85500), // VIP price
-            lineTotal: new Prisma.Decimal(855000),
+            quantityKg: 10,
+            pricePerKg: 85500, // VIP price
+            lineTotal: 855000,
           },
           {
             productId: "prod-chicken",
             productName: "Chicken Breast",
-            quantityKg: new Prisma.Decimal(7.5),
-            pricePerKg: new Prisma.Decimal(48000),
-            lineTotal: new Prisma.Decimal(360000),
+            quantityKg: 7.5,
+            pricePerKg: 48000,
+            lineTotal: 360000,
           },
         ],
       },
@@ -289,7 +277,7 @@ async function main() {
       tenantId: tenant.id,
       clientId: "client-pizzeria",
       type: "DEBIT",
-      amount: new Prisma.Decimal(1215000),
+      amount: 1215000,
       orderId: order.id,
       description: `Order ${order.orderNumber}`,
     },
@@ -300,7 +288,7 @@ async function main() {
     data: {
       tenantId: tenant.id,
       clientId: "client-pizzeria",
-      amount: new Prisma.Decimal(1000000),
+      amount: 1000000,
       method: "transfer",
       reference: "TXN-2026-01-20-001",
       notes: "Partial payment via bank transfer",
@@ -314,7 +302,7 @@ async function main() {
       tenantId: tenant.id,
       clientId: "client-pizzeria",
       type: "CREDIT",
-      amount: new Prisma.Decimal(1000000),
+      amount: 1000000,
       paymentId: payment.id,
       description: "Payment received",
     },
@@ -324,7 +312,7 @@ async function main() {
   await prisma.client.update({
     where: { id: "client-pizzeria" },
     data: {
-      debtBalance: new Prisma.Decimal(215000), // 1,215,000 - 1,000,000
+      debtBalance: 215000, // 1,215,000 - 1,000,000
     },
   });
   console.log(`✅ Created payment and debt ledger entries`);
@@ -336,7 +324,7 @@ async function main() {
         tenantId: tenant.id,
         productId: "prod-mozzarella",
         type: "OUT",
-        quantityKg: new Prisma.Decimal(10),
+        quantityKg: 10,
         referenceType: "order",
         referenceId: order.id,
         createdBy: user.id,
@@ -345,7 +333,7 @@ async function main() {
         tenantId: tenant.id,
         productId: "prod-chicken",
         type: "OUT",
-        quantityKg: new Prisma.Decimal(7.5),
+        quantityKg: 7.5,
         referenceType: "order",
         referenceId: order.id,
         createdBy: user.id,
