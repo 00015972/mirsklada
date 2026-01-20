@@ -1,0 +1,42 @@
+{
+  "name": "mirsklada",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-tenant SaaS Inventory Management System for Uzbekistan's Wholesale Food Market",
+  "keywords": [
+    "inventory",
+    "saas",
+    "multi-tenant",
+    "uzbekistan",
+    "telegram-bot"
+  ],
+  "author": "Mirsodiq Akramov <akramov.mirsodiq@gmail.com>",
+  "license": "MIT",
+  "packageManager": "pnpm@10.28.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "start": "turbo start",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "turbo clean && rimraf node_modules",
+    "db:generate": "pnpm --filter @mirsklada/database db:generate",
+    "db:push": "pnpm --filter @mirsklada/database db:push",
+    "db:migrate": "pnpm --filter @mirsklada/database db:migrate",
+    "db:studio": "pnpm --filter @mirsklada/database db:studio",
+    "db:seed": "pnpm --filter @mirsklada/database db:seed",
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker compose -f docker/docker-compose.yml logs -f"
+  },
+  "devDependencies": {
+    "turbo": "^2.7.5"
+  }
+}

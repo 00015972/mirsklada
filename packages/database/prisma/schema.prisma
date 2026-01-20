@@ -1,0 +1,386 @@
+// Mirsklada Database Schema
+// Multi-tenant SaaS Inventory Management System
+// PostgreSQL 15+ with Row-Level Security
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// TENANTS & USERS
+// ============================================================================
+
+/// Business/Organization - Root of multi-tenancy
+model Tenant {
+  id               String   @id @default(cuid())
+  name             String   @db.VarChar(255)
+  slug             String   @unique @db.VarChar(100)
+  subscriptionTier String   @default("basic") @map("subscription_tier") @db.VarChar(20) // 'basic' | 'pro'
+  status           String   @default("active") @db.VarChar(20) // 'active' | 'suspended' | 'cancelled'
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  members        TenantMember[]
+  categories     Category[]
+  products       Product[]
+  stockMovements StockMovement[]
+  clients        Client[]
+  priceMatrices  PriceMatrix[]
+  orders         Order[]
+  payments       Payment[]
+  debtLedger     DebtLedger[]
+  secrets        TenantSecret[]
+  driveFiles     DriveFile[]
+  subscriptions  Subscription[]
+
+  @@map("tenants")
+}
+
+/// Users - Synced with Supabase Auth
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique @db.VarChar(255)
+  name      String?  @db.VarChar(255)
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  memberships    TenantMember[]
+  stockMovements StockMovement[]
+  orders         Order[]
+  payments       Payment[]
+  driveFiles     DriveFile[]
+
+  @@map("users")
+}
+
+/// User-Tenant membership with RBAC
+model TenantMember {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  userId    String   @map("user_id")
+  role      String   @db.VarChar(20) // 'admin' | 'staff'
+  status    String   @default("active") @db.VarChar(20) // 'active' | 'invited' | 'disabled'
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("tenant_members")
+}
+
+// ============================================================================
+// INVENTORY
+// ============================================================================
+
+/// Product categories
+model Category {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  name      String   @db.VarChar(255)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@index([tenantId])
+  @@map("categories")
+}
+
+/// Products - Weight-based inventory
+model Product {
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+  categoryId     String?  @map("category_id")
+  name           String   @db.VarChar(255)
+  description    String?  @db.Text
+  unit           String   @default("kg") @db.VarChar(20)
+  basePricePerKg Decimal  @map("base_price_per_kg") @db.Decimal(12, 2)
+  currentStockKg Decimal  @default(0) @map("current_stock_kg") @db.Decimal(10, 2)
+  minStockKg     Decimal  @default(0) @map("min_stock_kg") @db.Decimal(10, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant           Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category         Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  stockMovements   StockMovement[]
+  orderItems       OrderItem[]
+  priceMatrixItems PriceMatrixItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, name])
+  @@index([categoryId])
+  @@map("products")
+}
+
+/// Stock movements - Audit trail for inventory changes
+model StockMovement {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  productId     String   @map("product_id")
+  type          String   @db.VarChar(10) // 'IN' | 'OUT' | 'ADJUST'
+  quantityKg    Decimal  @map("quantity_kg") @db.Decimal(10, 2)
+  referenceType String?  @map("reference_type") @db.VarChar(50) // 'purchase' | 'order' | 'adjustment'
+  referenceId   String?  @map("reference_id")
+  notes         String?  @db.Text
+  createdBy     String?  @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+// ============================================================================
+// CLIENTS & PRICING
+// ============================================================================
+
+/// Client businesses (pizzerias, restaurants, etc.)
+model Client {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  name          String   @db.VarChar(255)
+  contactPerson String?  @map("contact_person") @db.VarChar(255)
+  phone         String?  @db.VarChar(50)
+  telegramId    BigInt?  @map("telegram_id") // For client bot
+  address       String?  @db.Text
+  priceMatrixId String?  @map("price_matrix_id")
+  debtBalance   Decimal  @default(0) @map("debt_balance") @db.Decimal(14, 2) // Cached balance
+  notes         String?  @db.Text
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  priceMatrix PriceMatrix? @relation(fields: [priceMatrixId], references: [id], onDelete: SetNull)
+  orders      Order[]
+  payments    Payment[]
+  debtLedger  DebtLedger[]
+
+  @@index([tenantId])
+  @@index([tenantId, name])
+  @@index([tenantId, phone])
+  @@index([telegramId])
+  @@map("clients")
+}
+
+/// Custom pricing tiers
+model PriceMatrix {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  name        String   @db.VarChar(255) // e.g., "VIP Clients", "Retail"
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenant  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items   PriceMatrixItem[]
+  clients Client[]
+
+  @@index([tenantId])
+  @@map("price_matrices")
+}
+
+/// Product prices per matrix
+model PriceMatrixItem {
+  id            String  @id @default(cuid())
+  priceMatrixId String  @map("price_matrix_id")
+  productId     String  @map("product_id")
+  customPriceKg Decimal @map("custom_price_kg") @db.Decimal(12, 2)
+
+  // Relations
+  priceMatrix PriceMatrix @relation(fields: [priceMatrixId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([priceMatrixId, productId])
+  @@map("price_matrix_items")
+}
+
+// ============================================================================
+// ORDERS & PAYMENTS
+// ============================================================================
+
+/// Orders
+model Order {
+  id              String    @id @default(cuid())
+  tenantId        String    @map("tenant_id")
+  clientId        String    @map("client_id")
+  orderNumber     String?   @map("order_number") @db.VarChar(50) // Human-readable
+  status          String    @default("pending") @db.VarChar(20) // 'pending' | 'confirmed' | 'preparing' | 'delivered' | 'cancelled'
+  totalAmount     Decimal   @map("total_amount") @db.Decimal(14, 2)
+  notes           String?   @db.Text
+  deliveryAddress String?   @map("delivery_address") @db.Text
+  deliveryDate    DateTime? @map("delivery_date") @db.Date
+  createdBy       String?   @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deliveredAt     DateTime? @map("delivered_at")
+
+  // Relations
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client     Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  user       User?        @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  items      OrderItem[]
+  debtLedger DebtLedger[]
+
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("orders")
+}
+
+/// Order line items
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String   @map("order_id")
+  productId   String   @map("product_id")
+  productName String   @map("product_name") @db.VarChar(255) // Snapshot at order time
+  quantityKg  Decimal  @map("quantity_kg") @db.Decimal(10, 2)
+  pricePerKg  Decimal  @map("price_per_kg") @db.Decimal(12, 2) // Price at order time
+  lineTotal   Decimal  @map("line_total") @db.Decimal(14, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+/// Payments received
+model Payment {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  clientId   String   @map("client_id")
+  amount     Decimal  @db.Decimal(14, 2)
+  method     String?  @db.VarChar(50) // 'cash' | 'card' | 'transfer' | 'click' | 'payme'
+  reference  String?  @db.VarChar(255) // Transaction ID from payment gateway
+  notes      String?  @db.Text
+  receivedBy String?  @map("received_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client     Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  user       User?        @relation(fields: [receivedBy], references: [id], onDelete: SetNull)
+  debtLedger DebtLedger[]
+
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+/// Debt ledger - Double-entry for accuracy
+model DebtLedger {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  clientId    String   @map("client_id")
+  type        String   @db.VarChar(10) // 'DEBIT' (owes more) | 'CREDIT' (paid)
+  amount      Decimal  @db.Decimal(14, 2)
+  orderId     String?  @map("order_id")
+  paymentId   String?  @map("payment_id")
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([createdAt])
+  @@map("debt_ledger")
+}
+
+// ============================================================================
+// INTEGRATIONS
+// ============================================================================
+
+/// Encrypted OAuth tokens (Google Drive, etc.)
+model TenantSecret {
+  id             String    @id @default(cuid())
+  tenantId       String    @map("tenant_id")
+  provider       String    @db.VarChar(50) // 'google_drive' | 'yandex'
+  encryptedToken String    @map("encrypted_token") @db.Text // AES-256-GCM encrypted
+  iv             String    @db.Text // Initialization vector
+  metadata       Json? // Additional provider-specific data
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, provider])
+  @@index([tenantId])
+  @@map("tenant_secrets")
+}
+
+/// Google Drive file references
+model DriveFile {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  driveFileId String   @map("drive_file_id") @db.VarChar(255)
+  filename    String   @db.VarChar(255)
+  purpose     String?  @db.VarChar(50) // 'warehouse_photo' | 'invoice' | 'report'
+  mimeType    String?  @map("mime_type") @db.VarChar(100)
+  uploadedBy  String?  @map("uploaded_by")
+  uploadedAt  DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@map("drive_files")
+}
+
+/// Subscription billing
+model Subscription {
+  id                 String    @id @default(cuid())
+  tenantId           String    @map("tenant_id")
+  tier               String    @db.VarChar(20) // 'basic' | 'pro'
+  provider           String    @db.VarChar(50) // 'dodo' | 'click' | 'payme'
+  externalId         String?   @map("external_id") @db.VarChar(255) // Provider's subscription ID
+  status             String    @default("active") @db.VarChar(20) // 'active' | 'past_due' | 'cancelled'
+  currentPeriodStart DateTime? @map("current_period_start")
+  currentPeriodEnd   DateTime? @map("current_period_end")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("subscriptions")
+}

@@ -1,0 +1,39 @@
+{
+  "name": "@mirsklada/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Express.js REST API for Mirsklada",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "@mirsklada/database": "workspace:*",
+    "@mirsklada/shared": "workspace:*",
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "express-rate-limit": "^7.4.0",
+    "zod": "^3.23.8",
+    "decimal.js": "^10.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.0",
+    "supertest": "^7.0.0",
+    "@types/supertest": "^6.0.2",
+    "rimraf": "^6.0.0"
+  }
+}
