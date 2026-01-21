@@ -15,5 +15,9 @@
   "tailwindCSS.experimental.classRegex": [
     ["cn\\(([^)]*)\\)", "\"([^\"]*)\""],
     ["clsx\\(([^)]*)\\)", "\"([^\"]*)\""]
-  ]
+  ],
+  "[sql]": {
+    "editor.defaultFormatter": "inferrinizzard.prettier-sql-vscode"
+  },
+  "prisma.pinToPrisma6": true
 }
