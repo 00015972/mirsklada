@@ -16,10 +16,10 @@
 ## Phase 1: MVP Core (January - February 2026)
 
 ### 1.1 Project Setup
-- [ ] Initialize Turborepo monorepo
-- [ ] Configure TypeScript (strict mode)
-- [ ] Setup PostgreSQL + Prisma
-- [ ] Configure Docker Compose for local dev
+- [x] Initialize Turborepo monorepo
+- [x] Configure TypeScript (strict mode)
+- [x] Setup PostgreSQL + Prisma
+- [x] Configure Docker Compose for local dev
 - [ ] Setup ESLint + Prettier
 - [ ] Configure Vitest for testing
 
