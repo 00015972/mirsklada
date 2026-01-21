@@ -4,18 +4,19 @@
 
 ## Phase Overview
 
-| Phase | Timeline | Focus | Status |
-|-------|----------|-------|--------|
-| Phase 1 | Jan-Feb 2026 | MVP Core | 🔄 In Progress |
-| Phase 2 | March 2026 | Integrations | ⏳ Planned |
-| Phase 3 | April 2026 | Advanced | ⏳ Planned |
-| Phase 4 | May 2026 | Polish | ⏳ Planned |
+| Phase   | Timeline     | Focus        | Status         |
+| ------- | ------------ | ------------ | -------------- |
+| Phase 1 | Jan-Feb 2026 | MVP Core     | 🔄 In Progress |
+| Phase 2 | March 2026   | Integrations | ⏳ Planned     |
+| Phase 3 | April 2026   | Advanced     | ⏳ Planned     |
+| Phase 4 | May 2026     | Polish       | ⏳ Planned     |
 
 ---
 
 ## Phase 1: MVP Core (January - February 2026)
 
 ### 1.1 Project Setup
+
 - [x] Initialize Turborepo monorepo
 - [x] Configure TypeScript (strict mode)
 - [x] Setup PostgreSQL + Prisma
@@ -24,6 +25,7 @@
 - [ ] Configure Vitest for testing
 
 ### 1.2 Authentication & Multi-tenancy
+
 - [ ] Integrate Supabase Auth (or Clerk)
 - [ ] User registration/login flow
 - [ ] Tenant creation wizard
@@ -34,6 +36,7 @@
 - [ ] Tenant middleware for API
 
 ### 1.3 Product Management
+
 - [ ] `Category` CRUD
 - [ ] `Product` CRUD
 - [ ] Weight validation (2 decimal places)
@@ -42,6 +45,7 @@
 - [ ] Category management UI
 
 ### 1.4 Stock Management
+
 - [ ] Stock-in recording (purchases)
 - [ ] Stock-out recording (sales/damage)
 - [ ] Real-time stock balance calculation
@@ -49,6 +53,7 @@
 - [ ] Low stock alerts (visual indicator)
 
 ### 1.5 Client Management
+
 - [ ] `Client` CRUD
 - [ ] Client list with search
 - [ ] Client detail with order history
@@ -56,6 +61,7 @@
 - [ ] Basic price matrix assignment
 
 ### 1.6 Order Management
+
 - [ ] Create order for client
 - [ ] Auto-calculate line totals (weight × price)
 - [ ] Apply client's price matrix
@@ -64,12 +70,14 @@
 - [ ] Order detail view
 
 ### 1.7 Debt & Payments
+
 - [ ] Manual payment recording
 - [ ] Debt ledger entries (DEBIT/CREDIT)
 - [ ] Client debt balance view
 - [ ] Payment history
 
 ### 1.8 Basic UI
+
 - [ ] Dark mode Tailwind theme
 - [ ] Responsive sidebar layout
 - [ ] Dashboard with key metrics
@@ -79,6 +87,7 @@
 - [ ] Toast notifications
 
 ### 🎯 Milestone: MVP Demo (End of February)
+
 > Demonstrate: Multi-tenant login, product/stock CRUD, order creation, debt tracking
 
 ---
@@ -86,6 +95,7 @@
 ## Phase 2: Integrations (March 2026)
 
 ### 2.1 Telegram Admin Bot
+
 - [ ] Bot setup with grammY
 - [ ] `/start` - Welcome & registration link
 - [ ] `/stock` - View current stock levels
@@ -95,6 +105,7 @@
 - [ ] Bot-to-API authentication
 
 ### 2.2 Telegram Client Bot
+
 - [ ] Bot setup with grammY
 - [ ] Client registration via phone
 - [ ] `/menu` - View products & prices
@@ -103,6 +114,7 @@
 - [ ] Order status notifications
 
 ### 2.3 Google Drive Integration
+
 - [ ] OAuth consent screen setup
 - [ ] Token encryption (AES-256-GCM)
 - [ ] Connect/disconnect flow
@@ -111,6 +123,7 @@
 - [ ] Connection status UI
 
 ### 2.4 Subscription System
+
 - [ ] Tier configuration (Basic/Pro)
 - [ ] Feature gating middleware
 - [ ] Usage limits enforcement
@@ -118,6 +131,7 @@
 - [ ] Upgrade prompts
 
 ### 🎯 Milestone: Integrations Complete (End of March)
+
 > Demonstrate: Both Telegram bots, Google Drive photo backup
 
 ---
@@ -125,6 +139,7 @@
 ## Phase 3: Advanced Features (April 2026)
 
 ### 3.1 Payment Gateways
+
 - [ ] Click integration (Uzbekistan)
 - [ ] Payme integration (Uzbekistan)
 - [ ] Dodo Payments (international)
@@ -133,6 +148,7 @@
 - [ ] Subscription billing flow
 
 ### 3.2 Yandex Delivery (Pro)
+
 - [ ] API integration
 - [ ] Address validation
 - [ ] Delivery cost estimation
@@ -141,6 +157,7 @@
 - [ ] Driver assignment
 
 ### 3.3 Reports & Analytics
+
 - [ ] Daily sales summary
 - [ ] Weekly/monthly trends
 - [ ] Top-selling products
@@ -149,12 +166,14 @@
 - [ ] Export to Excel/PDF
 
 ### 3.4 Price Matrices (Advanced)
+
 - [ ] Multiple matrices per tenant
 - [ ] Bulk price updates
 - [ ] Price history tracking
 - [ ] Seasonal price adjustments
 
 ### 🎯 Milestone: Feature Complete (End of April)
+
 > Demonstrate: Payment processing, delivery integration, reporting
 
 ---
@@ -162,6 +181,7 @@
 ## Phase 4: Polish & Documentation (May 2026)
 
 ### 4.1 Testing
+
 - [ ] Unit tests for weight calculations
 - [ ] Unit tests for price calculations
 - [ ] Integration tests for API endpoints
@@ -170,6 +190,7 @@
 - [ ] Load testing
 
 ### 4.2 Documentation
+
 - [ ] API documentation (Swagger/OpenAPI)
 - [ ] User manual (EN, RU, UZ)
 - [ ] Deployment guide
@@ -177,6 +198,7 @@
 - [ ] All UML diagrams finalized
 
 ### 4.3 Deployment
+
 - [ ] Docker production images
 - [ ] CI/CD pipeline (GitHub Actions)
 - [ ] Render/Railway deployment
@@ -185,6 +207,7 @@
 - [ ] Monitoring setup
 
 ### 4.4 Final Polish
+
 - [ ] Performance optimization
 - [ ] Accessibility improvements
 - [ ] Mobile responsiveness audit
@@ -192,6 +215,7 @@
 - [ ] Bug fixes from testing
 
 ### 🎯 Milestone: Project Submission (End of May)
+
 > Deliverables: Working system, documentation, presentation
 
 ---
