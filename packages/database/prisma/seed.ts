@@ -242,25 +242,28 @@ async function main() {
     data: {
       tenantId: tenant.id,
       clientId: "client-pizzeria",
+      createdById: user.id,
       orderNumber: "ORD-2026-0001",
-      status: "delivered",
+      status: "COMPLETED",
+      paymentStatus: "PARTIAL",
+      totalKg: 17.5,
       totalAmount: 1215000,
+      paidAmount: 1000000,
       notes: "Please deliver before 10 AM",
       deliveryDate: new Date("2026-01-20"),
-      createdBy: user.id,
       deliveredAt: new Date("2026-01-20T09:30:00Z"),
       items: {
         create: [
           {
+            tenantId: tenant.id,
             productId: "prod-mozzarella",
-            productName: "Mozzarella",
             quantityKg: 10,
             pricePerKg: 85500, // VIP price
             lineTotal: 855000,
           },
           {
+            tenantId: tenant.id,
             productId: "prod-chicken",
-            productName: "Chicken Breast",
             quantityKg: 7.5,
             pricePerKg: 48000,
             lineTotal: 360000,
@@ -276,8 +279,8 @@ async function main() {
     data: {
       tenantId: tenant.id,
       clientId: "client-pizzeria",
-      type: "DEBIT",
-      amount: 1215000,
+      changeAmount: 1215000,
+      balanceAfter: 1215000,
       orderId: order.id,
       description: `Order ${order.orderNumber}`,
     },
@@ -288,11 +291,12 @@ async function main() {
     data: {
       tenantId: tenant.id,
       clientId: "client-pizzeria",
+      orderId: order.id,
       amount: 1000000,
-      method: "transfer",
+      method: "TRANSFER",
       reference: "TXN-2026-01-20-001",
       notes: "Partial payment via bank transfer",
-      receivedBy: user.id,
+      receivedById: user.id,
     },
   });
 
@@ -301,8 +305,8 @@ async function main() {
     data: {
       tenantId: tenant.id,
       clientId: "client-pizzeria",
-      type: "CREDIT",
-      amount: 1000000,
+      changeAmount: -1000000,
+      balanceAfter: 215000,
       paymentId: payment.id,
       description: "Payment received",
     },
@@ -312,7 +316,7 @@ async function main() {
   await prisma.client.update({
     where: { id: "client-pizzeria" },
     data: {
-      debtBalance: 215000, // 1,215,000 - 1,000,000
+      currentDebt: 215000, // 1,215,000 - 1,000,000
     },
   });
   console.log(`✅ Created payment and debt ledger entries`);
@@ -324,19 +328,21 @@ async function main() {
         tenantId: tenant.id,
         productId: "prod-mozzarella",
         type: "OUT",
-        quantityKg: 10,
-        referenceType: "order",
-        referenceId: order.id,
-        createdBy: user.id,
+        quantityKg: -10,
+        balanceAfterKg: 40, // Assuming 50kg initial stock
+        reason: "Order fulfillment",
+        reference: order.id,
+        performedById: user.id,
       },
       {
         tenantId: tenant.id,
         productId: "prod-chicken",
         type: "OUT",
-        quantityKg: 7.5,
-        referenceType: "order",
-        referenceId: order.id,
-        createdBy: user.id,
+        quantityKg: -7.5,
+        balanceAfterKg: 17.5, // Assuming 25kg initial stock
+        reason: "Order fulfillment",
+        reference: order.id,
+        performedById: user.id,
       },
     ],
   });
