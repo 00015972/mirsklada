@@ -11,8 +11,18 @@ import {
   defaultRateLimiter,
   errorHandler,
   notFoundHandler,
+  authenticate,
+  resolveTenant,
 } from "./middleware";
-import { healthRouter } from "./modules";
+import {
+  healthRouter,
+  categoryRouter,
+  productRouter,
+  clientRouter,
+  stockRouter,
+  orderRouter,
+  paymentRouter,
+} from "./modules";
 import { logger } from "./utils/logger";
 
 /**
@@ -62,11 +72,19 @@ export function createApp(): Express {
   app.use("/health", healthRouter);
   app.use("/api/health", healthRouter);
 
-  // API v1 routes (to be added)
-  // app.use('/api/v1/auth', authRouter);
-  // app.use('/api/v1/products', authenticate, resolveTenant, productRouter);
-  // app.use('/api/v1/orders', authenticate, resolveTenant, orderRouter);
-  // etc.
+  // API v1 routes (protected with auth + tenant middleware)
+  const apiV1 = express.Router();
+  apiV1.use(authenticate);
+  apiV1.use(resolveTenant);
+
+  apiV1.use("/categories", categoryRouter);
+  apiV1.use("/products", productRouter);
+  apiV1.use("/clients", clientRouter);
+  apiV1.use("/stock", stockRouter);
+  apiV1.use("/orders", orderRouter);
+  apiV1.use("/payments", paymentRouter);
+
+  app.use("/api/v1", apiV1);
 
   // Root route
   app.get("/", (_req, res) => {

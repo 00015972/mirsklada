@@ -118,8 +118,8 @@ model Product {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   // Relations
-  tenant           Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category         Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   stockMovements   StockMovement[]
   orderItems       OrderItem[]
   priceMatrixItems PriceMatrixItem[]
@@ -132,21 +132,21 @@ model Product {
 
 /// Stock movements - Audit trail for inventory changes
 model StockMovement {
-  id            String   @id @default(cuid())
-  tenantId      String   @map("tenant_id")
-  productId     String   @map("product_id")
-  type          String   @db.VarChar(10) // 'IN' | 'OUT' | 'ADJUST'
-  quantityKg    Decimal  @map("quantity_kg") @db.Decimal(10, 2)
-  referenceType String?  @map("reference_type") @db.VarChar(50) // 'purchase' | 'order' | 'adjustment'
-  referenceId   String?  @map("reference_id")
-  notes         String?  @db.Text
-  createdBy     String?  @map("created_by")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+  productId      String   @map("product_id")
+  type           String   @db.VarChar(10) // 'IN' | 'OUT' | 'ADJUST'
+  quantityKg     Decimal  @map("quantity_kg") @db.Decimal(10, 2)
+  balanceAfterKg Decimal  @map("balance_after_kg") @db.Decimal(10, 2) // Balance after movement
+  reason         String?  @db.VarChar(255) // Reason for movement
+  reference      String?  @db.VarChar(255) // Order ID or other reference
+  performedById  String?  @map("performed_by")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   // Relations
-  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user    User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  performedBy User?   @relation(fields: [performedById], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([productId])
@@ -165,10 +165,10 @@ model Client {
   name          String   @db.VarChar(255)
   contactPerson String?  @map("contact_person") @db.VarChar(255)
   phone         String?  @db.VarChar(50)
-  telegramId    BigInt?  @map("telegram_id") // For client bot
+  telegramId    String?  @map("telegram_id") @db.VarChar(50) // For client bot
   address       String?  @db.Text
   priceMatrixId String?  @map("price_matrix_id")
-  debtBalance   Decimal  @default(0) @map("debt_balance") @db.Decimal(14, 2) // Cached balance
+  currentDebt   Decimal  @default(0) @map("current_debt") @db.Decimal(14, 2) // Cached debt balance
   notes         String?  @db.Text
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -192,6 +192,7 @@ model Client {
 model PriceMatrix {
   id          String   @id @default(cuid())
   tenantId    String   @map("tenant_id")
+  clientId    String?  @map("client_id") // Optional: client-specific pricing
   name        String   @db.VarChar(255) // e.g., "VIP Clients", "Retail"
   description String?  @db.Text
   createdAt   DateTime @default(now()) @map("created_at")
@@ -203,6 +204,7 @@ model PriceMatrix {
   clients Client[]
 
   @@index([tenantId])
+  @@index([tenantId, clientId])
   @@map("price_matrices")
 }
 
@@ -230,13 +232,16 @@ model Order {
   id              String    @id @default(cuid())
   tenantId        String    @map("tenant_id")
   clientId        String    @map("client_id")
+  createdById     String?   @map("created_by")
   orderNumber     String?   @map("order_number") @db.VarChar(50) // Human-readable
-  status          String    @default("pending") @db.VarChar(20) // 'pending' | 'confirmed' | 'preparing' | 'delivered' | 'cancelled'
+  status          String    @default("DRAFT") @db.VarChar(20) // 'DRAFT' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
+  paymentStatus   String    @default("UNPAID") @map("payment_status") @db.VarChar(20) // 'UNPAID' | 'PARTIAL' | 'PAID'
+  totalKg         Decimal   @default(0) @map("total_kg") @db.Decimal(10, 2)
   totalAmount     Decimal   @map("total_amount") @db.Decimal(14, 2)
+  paidAmount      Decimal   @default(0) @map("paid_amount") @db.Decimal(14, 2)
   notes           String?   @db.Text
   deliveryAddress String?   @map("delivery_address") @db.Text
   deliveryDate    DateTime? @map("delivery_date") @db.Date
-  createdBy       String?   @map("created_by")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   deliveredAt     DateTime? @map("delivered_at")
@@ -244,8 +249,9 @@ model Order {
   // Relations
   tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client     Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  user       User?        @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  createdBy  User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
   items      OrderItem[]
+  payments   Payment[]
   debtLedger DebtLedger[]
 
   @@index([tenantId])
@@ -257,14 +263,14 @@ model Order {
 
 /// Order line items
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String   @map("order_id")
-  productId   String   @map("product_id")
-  productName String   @map("product_name") @db.VarChar(255) // Snapshot at order time
-  quantityKg  Decimal  @map("quantity_kg") @db.Decimal(10, 2)
-  pricePerKg  Decimal  @map("price_per_kg") @db.Decimal(12, 2) // Price at order time
-  lineTotal   Decimal  @map("line_total") @db.Decimal(14, 2)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  orderId    String   @map("order_id")
+  productId  String   @map("product_id")
+  quantityKg Decimal  @map("quantity_kg") @db.Decimal(10, 2)
+  pricePerKg Decimal  @map("price_per_kg") @db.Decimal(12, 2) // Price at order time
+  lineTotal  Decimal  @map("line_total") @db.Decimal(14, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
 
   // Relations
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -276,20 +282,22 @@ model OrderItem {
 
 /// Payments received
 model Payment {
-  id         String   @id @default(cuid())
-  tenantId   String   @map("tenant_id")
-  clientId   String   @map("client_id")
-  amount     Decimal  @db.Decimal(14, 2)
-  method     String?  @db.VarChar(50) // 'cash' | 'card' | 'transfer' | 'click' | 'payme'
-  reference  String?  @db.VarChar(255) // Transaction ID from payment gateway
-  notes      String?  @db.Text
-  receivedBy String?  @map("received_by")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  clientId     String   @map("client_id")
+  orderId      String?  @map("order_id") // Optional link to order
+  amount       Decimal  @db.Decimal(14, 2)
+  method       String?  @db.VarChar(50) // 'CASH' | 'CARD' | 'TRANSFER' | 'CLICK' | 'PAYME'
+  reference    String?  @db.VarChar(255) // Transaction ID from payment gateway
+  notes        String?  @db.Text
+  receivedById String?  @map("received_by")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
   tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client     Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  user       User?        @relation(fields: [receivedBy], references: [id], onDelete: SetNull)
+  order      Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  receivedBy User?        @relation(fields: [receivedById], references: [id], onDelete: SetNull)
   debtLedger DebtLedger[]
 
   @@index([tenantId])
@@ -300,15 +308,15 @@ model Payment {
 
 /// Debt ledger - Double-entry for accuracy
 model DebtLedger {
-  id          String   @id @default(cuid())
-  tenantId    String   @map("tenant_id")
-  clientId    String   @map("client_id")
-  type        String   @db.VarChar(10) // 'DEBIT' (owes more) | 'CREDIT' (paid)
-  amount      Decimal  @db.Decimal(14, 2)
-  orderId     String?  @map("order_id")
-  paymentId   String?  @map("payment_id")
-  description String?  @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  clientId     String   @map("client_id")
+  orderId      String?  @map("order_id")
+  paymentId    String?  @map("payment_id")
+  changeAmount Decimal  @map("change_amount") @db.Decimal(14, 2) // Positive for debt increase, negative for payment
+  balanceAfter Decimal  @map("balance_after") @db.Decimal(14, 2) // Balance after this transaction
+  description  String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
   tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
