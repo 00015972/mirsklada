@@ -16,6 +16,7 @@ import {
 } from "./middleware";
 import {
   healthRouter,
+  authRouter,
   categoryRouter,
   productRouter,
   clientRouter,
@@ -74,15 +75,23 @@ export function createApp(): Express {
 
   // API v1 routes (protected with auth + tenant middleware)
   const apiV1 = express.Router();
-  apiV1.use(authenticate);
-  apiV1.use(resolveTenant);
 
-  apiV1.use("/categories", categoryRouter);
-  apiV1.use("/products", productRouter);
-  apiV1.use("/clients", clientRouter);
-  apiV1.use("/stock", stockRouter);
-  apiV1.use("/orders", orderRouter);
-  apiV1.use("/payments", paymentRouter);
+  // Auth routes FIRST (public - no auth required)
+  apiV1.use("/auth", authRouter);
+
+  // Protected routes (require auth + tenant)
+  const protectedRoutes = express.Router();
+  protectedRoutes.use(authenticate);
+  protectedRoutes.use(resolveTenant);
+
+  protectedRoutes.use("/categories", categoryRouter);
+  protectedRoutes.use("/products", productRouter);
+  protectedRoutes.use("/clients", clientRouter);
+  protectedRoutes.use("/stock", stockRouter);
+  protectedRoutes.use("/orders", orderRouter);
+  protectedRoutes.use("/payments", paymentRouter);
+
+  apiV1.use(protectedRoutes);
 
   app.use("/api/v1", apiV1);
 

@@ -1,15 +1,16 @@
 /**
  * Authentication Middleware
- * Validates JWT token and sets user info on request
- *
- * TODO: Integrate with Supabase Auth or Clerk in Phase 1.2
+ * Validates JWT token from Supabase and sets user info on request
  */
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/app-error";
 import { logger } from "../utils/logger";
+import { verifyToken, isSupabaseConfigured } from "../config/supabase";
+import { syncUserFromSupabase } from "../services/user-sync.service";
 
 /**
  * Authenticates request using Bearer token
+ * Validates with Supabase Auth and syncs user to local database
  * Sets req.userId and req.userEmail if valid
  */
 export const authenticate = async (
@@ -30,23 +31,42 @@ export const authenticate = async (
       throw AppError.unauthorized("Token not provided");
     }
 
-    // TODO: Replace with actual Supabase/Clerk token validation
-    // For now, we'll use a placeholder that accepts any token in development
-    if (process.env.NODE_ENV === "development") {
-      // In development, accept a simple user ID as token for testing
-      req.userId = token;
-      req.userEmail = `${token}@dev.local`;
-      logger.debug("Auth: Development mode - accepting token as userId", {
-        userId: token,
-      });
-    } else {
-      // In production, this will validate with Supabase
-      // const { data: { user }, error } = await supabase.auth.getUser(token);
-      // if (error || !user) throw AppError.unauthorized('Invalid token');
-      // req.userId = user.id;
-      // req.userEmail = user.email;
-      throw AppError.internal("Auth not configured for production");
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      // Development fallback: accept token as userId for testing
+      if (process.env.NODE_ENV === "development") {
+        req.userId = token;
+        req.userEmail = `${token}@dev.local`;
+        logger.debug(
+          "Auth: Dev mode - Supabase not configured, using token as userId",
+          {
+            userId: token,
+          },
+        );
+        return next();
+      }
+      throw AppError.internal("Authentication not configured");
     }
+
+    // Verify token with Supabase
+    const { user, error } = await verifyToken(token);
+
+    if (error || !user) {
+      logger.warn("Auth: Token verification failed", { error: error?.message });
+      throw AppError.unauthorized("Invalid or expired token");
+    }
+
+    // Sync user to local database (creates if not exists)
+    const localUser = await syncUserFromSupabase(user);
+
+    // Set user context on request
+    req.userId = localUser.id;
+    req.userEmail = localUser.email;
+
+    logger.debug("Auth: User authenticated", {
+      userId: localUser.id,
+      email: localUser.email,
+    });
 
     next();
   } catch (error) {
