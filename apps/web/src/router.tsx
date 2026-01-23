@@ -8,7 +8,13 @@ import {
 } from "react-router-dom";
 import { AppLayout } from "@/layouts";
 import { ProtectedRoute } from "@/components";
-import { LoginPage, SignupPage, DashboardPage } from "@/pages";
+import {
+  LoginPage,
+  SignupPage,
+  DashboardPage,
+  OnboardingPage,
+  CategoriesPage,
+} from "@/pages";
 
 const routes: RouteObject[] = [
   // Public Routes
@@ -21,11 +27,21 @@ const routes: RouteObject[] = [
     element: <SignupPage />,
   },
 
-  // Protected Routes
+  // Onboarding (auth required, but no tenant required)
+  {
+    path: "/onboarding",
+    element: (
+      <ProtectedRoute requireTenant={false}>
+        <OnboardingPage />
+      </ProtectedRoute>
+    ),
+  },
+
+  // Protected Routes (require auth + tenant)
   {
     path: "/",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requireTenant={true}>
         <AppLayout />
       </ProtectedRoute>
     ),
@@ -37,6 +53,10 @@ const routes: RouteObject[] = [
       {
         path: "dashboard",
         element: <DashboardPage />,
+      },
+      {
+        path: "categories",
+        element: <CategoriesPage />,
       },
       // Placeholder routes - will be implemented later
       {

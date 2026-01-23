@@ -17,6 +17,7 @@ import {
 import {
   healthRouter,
   authRouter,
+  tenantRoutes,
   categoryRouter,
   productRouter,
   clientRouter,
@@ -78,6 +79,12 @@ export function createApp(): Express {
 
   // Auth routes FIRST (public - no auth required)
   apiV1.use("/auth", authRouter);
+
+  // Tenant routes (require auth but NOT tenant resolution)
+  const tenantRouter = express.Router();
+  tenantRouter.use(authenticate);
+  tenantRouter.use("/tenants", tenantRoutes);
+  apiV1.use(tenantRouter);
 
   // Protected routes (require auth + tenant)
   const protectedRoutes = express.Router();

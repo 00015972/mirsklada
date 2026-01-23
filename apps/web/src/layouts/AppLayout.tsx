@@ -6,6 +6,7 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
+  FolderTree,
   Users,
   ShoppingCart,
   CreditCard,
@@ -21,6 +22,7 @@ import { clsx } from "clsx";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Categories", href: "/categories", icon: FolderTree },
   { name: "Products", href: "/products", icon: Package },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Orders", href: "/orders", icon: ShoppingCart },

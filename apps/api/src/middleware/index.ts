@@ -19,3 +19,9 @@ export {
   type ProFeature,
 } from "./subscription.middleware";
 export { requestLogger } from "./request-logger.middleware";
+
+// Re-export request types
+export type {
+  AuthenticatedRequest,
+  TenantRequest,
+} from "../types/request.types";
