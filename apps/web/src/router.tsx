@@ -14,6 +14,9 @@ import {
   DashboardPage,
   OnboardingPage,
   CategoriesPage,
+  ProductsPage,
+  ClientsPage,
+  OrdersPage,
 } from "@/pages";
 
 const routes: RouteObject[] = [
@@ -58,19 +61,19 @@ const routes: RouteObject[] = [
         path: "categories",
         element: <CategoriesPage />,
       },
-      // Placeholder routes - will be implemented later
       {
         path: "products",
-        element: <PlaceholderPage title="Products" />,
+        element: <ProductsPage />,
       },
       {
         path: "clients",
-        element: <PlaceholderPage title="Clients" />,
+        element: <ClientsPage />,
       },
       {
         path: "orders",
-        element: <PlaceholderPage title="Orders" />,
+        element: <OrdersPage />,
       },
+      // Placeholder routes - will be implemented later
       {
         path: "payments",
         element: <PlaceholderPage title="Payments" />,
