@@ -1,0 +1,119 @@
+{
+  "common": {
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "actions": "Actions",
+    "goHome": "Go Home",
+    "noData": "No data available"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "loginSubtitle": "Welcome back! Please enter your credentials.",
+    "registerSubtitle": "Create your account to get started.",
+    "organizationName": "Organization Name",
+    "confirmPassword": "Confirm Password",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "loginSuccess": "Successfully logged in!",
+    "loginError": "Login failed. Please check your credentials.",
+    "registerSuccess": "Account created successfully!",
+    "registerError": "Registration failed. Please try again.",
+    "tagline": "Inventory Management System for Wholesale Businesses",
+    "feature1": "Track inventory in real-time",
+    "feature2": "Manage suppliers and clients",
+    "feature3": "Process orders via Telegram",
+    "feature4": "Generate detailed reports"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email",
+    "minLength": "Must be at least {{min}} characters",
+    "passwordMismatch": "Passwords do not match"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "suppliers": "Suppliers",
+    "clients": "Clients",
+    "purchases": "Purchases",
+    "orders": "Orders",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "roles": {
+    "owner": "Owner",
+    "warehouse_manager": "Warehouse Manager",
+    "salesperson": "Salesperson"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}!",
+    "subtitle": "Here's what's happening with your business today.",
+    "totalProducts": "Total Products",
+    "todayOrders": "Today's Orders",
+    "totalClients": "Total Clients",
+    "pendingPayments": "Pending Payments",
+    "recentOrders": "Recent Orders",
+    "noRecentOrders": "No recent orders",
+    "lowStockAlerts": "Low Stock Alerts",
+    "noLowStock": "All products are well stocked"
+  },
+  "products": {
+    "title": "Products",
+    "addProduct": "Add Product",
+    "noProducts": "No products found. Start by adding your first product.",
+    "detail": "Product Detail"
+  },
+  "suppliers": {
+    "title": "Suppliers",
+    "addSupplier": "Add Supplier",
+    "noSuppliers": "No suppliers found. Start by adding your first supplier."
+  },
+  "clients": {
+    "title": "Clients",
+    "addClient": "Add Client",
+    "noClients": "No clients found. Start by adding your first client."
+  },
+  "purchases": {
+    "title": "Purchases",
+    "addPurchase": "New Purchase",
+    "noPurchases": "No purchases found."
+  },
+  "orders": {
+    "title": "Orders",
+    "addOrder": "New Order",
+    "noOrders": "No orders found."
+  },
+  "reports": {
+    "title": "Reports",
+    "dailySales": "Daily Sales Report",
+    "dailySalesDesc": "View sales summary for any day",
+    "lowStock": "Low Stock Report",
+    "lowStockDesc": "Products that need restocking",
+    "clientDebt": "Client Debt Report",
+    "clientDebtDesc": "Outstanding payments from clients",
+    "generate": "Generate Report"
+  },
+  "settings": {
+    "title": "Settings",
+    "organization": "Organization Settings",
+    "organizationDesc": "Manage your organization details and preferences",
+    "users": "User Management",
+    "usersDesc": "Add and manage staff accounts",
+    "telegram": "Telegram Bot",
+    "telegramDesc": "Configure your Telegram bot integration"
+  },
+  "errors": {
+    "notFoundTitle": "Page Not Found",
+    "notFoundDesc": "The page you're looking for doesn't exist."
+  }
+}

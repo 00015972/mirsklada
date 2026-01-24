@@ -1,0 +1,119 @@
+{
+  "common": {
+    "email": "Elektron pochta",
+    "password": "Parol",
+    "fullName": "To'liq ism",
+    "loading": "Yuklanmoqda...",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "search": "Qidirish",
+    "filter": "Filtr",
+    "actions": "Amallar",
+    "goHome": "Bosh sahifaga",
+    "noData": "Ma'lumot topilmadi"
+  },
+  "auth": {
+    "login": "Kirish",
+    "logout": "Chiqish",
+    "register": "Ro'yxatdan o'tish",
+    "loginSubtitle": "Xush kelibsiz! Ma'lumotlaringizni kiriting.",
+    "registerSubtitle": "Ishlashni boshlash uchun hisob yarating.",
+    "organizationName": "Tashkilot nomi",
+    "confirmPassword": "Parolni tasdiqlang",
+    "noAccount": "Hisobingiz yo'qmi?",
+    "haveAccount": "Hisobingiz bormi?",
+    "loginSuccess": "Muvaffaqiyatli kirdingiz!",
+    "loginError": "Kirish xatosi. Ma'lumotlarni tekshiring.",
+    "registerSuccess": "Hisob muvaffaqiyatli yaratildi!",
+    "registerError": "Ro'yxatdan o'tish xatosi. Qaytadan urinib ko'ring.",
+    "tagline": "Ulgurji savdo uchun ombor boshqaruv tizimi",
+    "feature1": "Zaxiralarni real vaqtda kuzatish",
+    "feature2": "Yetkazib beruvchilar va mijozlarni boshqarish",
+    "feature3": "Telegram orqali buyurtmalarni qayta ishlash",
+    "feature4": "Batafsil hisobotlar yaratish"
+  },
+  "validation": {
+    "required": "Bu maydon to'ldirilishi shart",
+    "invalidEmail": "To'g'ri email kiriting",
+    "minLength": "Kamida {{min}} ta belgi bo'lishi kerak",
+    "passwordMismatch": "Parollar mos kelmaydi"
+  },
+  "nav": {
+    "dashboard": "Bosh sahifa",
+    "products": "Mahsulotlar",
+    "suppliers": "Yetkazib beruvchilar",
+    "clients": "Mijozlar",
+    "purchases": "Xaridlar",
+    "orders": "Buyurtmalar",
+    "reports": "Hisobotlar",
+    "settings": "Sozlamalar"
+  },
+  "roles": {
+    "owner": "Egasi",
+    "warehouse_manager": "Ombor boshqaruvchisi",
+    "salesperson": "Sotuvchi"
+  },
+  "dashboard": {
+    "welcome": "Xush kelibsiz, {{name}}!",
+    "subtitle": "Bugun biznesingizda nima bo'layotganini ko'ring.",
+    "totalProducts": "Jami mahsulotlar",
+    "todayOrders": "Bugungi buyurtmalar",
+    "totalClients": "Jami mijozlar",
+    "pendingPayments": "Kutilayotgan to'lovlar",
+    "recentOrders": "So'nggi buyurtmalar",
+    "noRecentOrders": "So'nggi buyurtmalar yo'q",
+    "lowStockAlerts": "Kam qolgan mahsulotlar",
+    "noLowStock": "Barcha mahsulotlar yetarli"
+  },
+  "products": {
+    "title": "Mahsulotlar",
+    "addProduct": "Mahsulot qo'shish",
+    "noProducts": "Mahsulotlar topilmadi. Birinchi mahsulotni qo'shing.",
+    "detail": "Mahsulot ma'lumotlari"
+  },
+  "suppliers": {
+    "title": "Yetkazib beruvchilar",
+    "addSupplier": "Yetkazib beruvchi qo'shish",
+    "noSuppliers": "Yetkazib beruvchilar topilmadi."
+  },
+  "clients": {
+    "title": "Mijozlar",
+    "addClient": "Mijoz qo'shish",
+    "noClients": "Mijozlar topilmadi. Birinchi mijozni qo'shing."
+  },
+  "purchases": {
+    "title": "Xaridlar",
+    "addPurchase": "Yangi xarid",
+    "noPurchases": "Xaridlar topilmadi."
+  },
+  "orders": {
+    "title": "Buyurtmalar",
+    "addOrder": "Yangi buyurtma",
+    "noOrders": "Buyurtmalar topilmadi."
+  },
+  "reports": {
+    "title": "Hisobotlar",
+    "dailySales": "Kunlik sotuvlar hisoboti",
+    "dailySalesDesc": "Har qanday kun uchun sotuvlarni ko'ring",
+    "lowStock": "Kam qolgan mahsulotlar hisoboti",
+    "lowStockDesc": "To'ldirilishi kerak bo'lgan mahsulotlar",
+    "clientDebt": "Mijozlar qarzi hisoboti",
+    "clientDebtDesc": "Mijozlarning to'lanmagan to'lovlari",
+    "generate": "Hisobot yaratish"
+  },
+  "settings": {
+    "title": "Sozlamalar",
+    "organization": "Tashkilot sozlamalari",
+    "organizationDesc": "Tashkilot ma'lumotlari va sozlamalarini boshqarish",
+    "users": "Foydalanuvchilarni boshqarish",
+    "usersDesc": "Xodimlar hisoblarini qo'shish va boshqarish",
+    "telegram": "Telegram bot",
+    "telegramDesc": "Telegram bot integratsiyasini sozlash"
+  },
+  "errors": {
+    "notFoundTitle": "Sahifa topilmadi",
+    "notFoundDesc": "Siz qidirayotgan sahifa mavjud emas."
+  }
+}
