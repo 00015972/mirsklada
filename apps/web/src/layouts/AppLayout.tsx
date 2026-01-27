@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  Warehouse,
 } from "lucide-react";
 import { useAuthStore } from "@/stores";
 import { clsx } from "clsx";
@@ -24,6 +25,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Categories", href: "/categories", icon: FolderTree },
   { name: "Products", href: "/products", icon: Package },
+  { name: "Stock", href: "/stock", icon: Warehouse },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Payments", href: "/payments", icon: CreditCard },

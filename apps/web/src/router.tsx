@@ -17,6 +17,7 @@ import {
   ProductsPage,
   ClientsPage,
   OrdersPage,
+  StockPage,
 } from "@/pages";
 
 const routes: RouteObject[] = [
@@ -72,6 +73,10 @@ const routes: RouteObject[] = [
       {
         path: "orders",
         element: <OrdersPage />,
+      },
+      {
+        path: "stock",
+        element: <StockPage />,
       },
       // Placeholder routes - will be implemented later
       {

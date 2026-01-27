@@ -5,3 +5,4 @@ export { CategoriesPage } from "./categories";
 export { ProductsPage } from "./products";
 export { ClientsPage } from "./clients";
 export { OrdersPage } from "./orders";
+export { StockPage } from "./stock";
