@@ -33,9 +33,9 @@ interface Product {
   name: string;
   description: string | null;
   unit: string;
-  basePricePerKg: number;
-  currentStockKg: number;
-  minStockKg: number;
+  basePricePerKg: number | string;
+  currentStockKg: number | string;
+  minStockKg: number | string;
   isActive: boolean;
   category: Category | null;
 }
@@ -43,15 +43,17 @@ interface Product {
 /**
  * Format price with thousand separators (Uzbek format)
  */
-function formatPrice(amount: number): string {
-  return new Intl.NumberFormat("uz-UZ").format(amount) + " UZS";
+function formatPrice(amount: number | string): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat("uz-UZ").format(num) + " UZS";
 }
 
 /**
  * Format weight with 2 decimal places
  */
-function formatWeight(kg: number): string {
-  return kg.toFixed(2) + " kg";
+function formatWeight(kg: number | string): string {
+  const num = typeof kg === "string" ? parseFloat(kg) : kg;
+  return num.toFixed(2) + " kg";
 }
 
 export function ProductsPage() {
@@ -95,7 +97,7 @@ export function ProductsPage() {
       if (showLowStock) params.append("lowStock", "true");
 
       const response = await api.get(`/products?${params.toString()}`);
-      setProducts(response.data.products || response.data);
+      setProducts(response.data.data || []);
       setError(null);
     } catch (err) {
       setError("Failed to load products");
@@ -109,7 +111,7 @@ export function ProductsPage() {
   const fetchCategories = async () => {
     try {
       const response = await api.get("/categories");
-      setCategories(response.data.categories || response.data);
+      setCategories(response.data.data || []);
     } catch (err) {
       console.error("Failed to load categories:", err);
     }
@@ -188,15 +190,21 @@ export function ProductsPage() {
     setFormError(null);
 
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        categoryId: formData.categoryId || null,
         unit: formData.unit,
         basePricePerKg: parseFloat(formData.basePricePerKg),
         currentStockKg: parseFloat(formData.currentStockKg) || 0,
         minStockKg: parseFloat(formData.minStockKg) || 0,
       };
+
+      // Only include optional fields if they have values
+      if (formData.description.trim()) {
+        payload.description = formData.description.trim();
+      }
+      if (formData.categoryId) {
+        payload.categoryId = formData.categoryId;
+      }
 
       if (editingProduct) {
         await api.patch(`/products/${editingProduct.id}`, payload);

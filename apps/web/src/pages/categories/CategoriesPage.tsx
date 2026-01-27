@@ -52,7 +52,7 @@ export function CategoriesPage() {
     try {
       setIsLoading(true);
       const response = await api.get("/categories");
-      setCategories(response.data.categories || response.data);
+      setCategories(response.data.data || []);
       setError(null);
     } catch (err) {
       setError("Failed to load categories");

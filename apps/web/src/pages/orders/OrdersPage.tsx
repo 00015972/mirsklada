@@ -62,21 +62,23 @@ interface Product {
   id: string;
   name: string;
   basePricePerKg: number;
-  currentStockKg: number;
+  currentStockKg: number | string;
 }
 
 /**
  * Format price with thousand separators (Uzbek format)
  */
-function formatPrice(amount: number): string {
-  return new Intl.NumberFormat("uz-UZ").format(amount) + " UZS";
+function formatPrice(amount: number | string): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat("uz-UZ").format(num) + " UZS";
 }
 
 /**
  * Format weight with 2 decimal places
  */
-function formatWeight(kg: number): string {
-  return kg.toFixed(2) + " kg";
+function formatWeight(kg: number | string): string {
+  const num = typeof kg === "string" ? parseFloat(kg) : kg;
+  return num.toFixed(2) + " kg";
 }
 
 /**
@@ -166,7 +168,7 @@ export function OrdersPage() {
         params.append("paymentStatus", selectedPaymentStatus);
 
       const response = await api.get(`/orders?${params.toString()}`);
-      let ordersData = response.data.orders || response.data;
+      let ordersData = response.data.data || [];
 
       // Filter by search locally
       if (searchQuery) {
@@ -195,8 +197,8 @@ export function OrdersPage() {
         api.get("/clients"),
         api.get("/products"),
       ]);
-      setClients(clientsRes.data.clients || clientsRes.data);
-      setProducts(productsRes.data.products || productsRes.data);
+      setClients(clientsRes.data.data || []);
+      setProducts(productsRes.data.data || []);
     } catch (err) {
       console.error("Failed to load clients/products:", err);
     }
@@ -323,7 +325,7 @@ export function OrdersPage() {
       if (viewingOrder?.id === orderId) {
         // Refresh the viewing order
         const response = await api.get(`/orders/${orderId}`);
-        setViewingOrder(response.data.order || response.data);
+        setViewingOrder(response.data.data || null);
       }
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {

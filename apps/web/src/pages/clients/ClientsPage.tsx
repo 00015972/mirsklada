@@ -32,15 +32,16 @@ interface Client {
   address: string | null;
   notes: string | null;
   isActive: boolean;
-  totalDebtSum: number;
+  totalDebtSum: number | string;
   createdAt: string;
 }
 
 /**
  * Format price with thousand separators (Uzbek format)
  */
-function formatPrice(amount: number): string {
-  return new Intl.NumberFormat("uz-UZ").format(amount) + " UZS";
+function formatPrice(amount: number | string): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat("uz-UZ").format(num) + " UZS";
 }
 
 export function ClientsPage() {
@@ -79,7 +80,7 @@ export function ClientsPage() {
       if (showWithDebt) params.append("hasDebt", "true");
 
       const response = await api.get(`/clients?${params.toString()}`);
-      setClients(response.data.clients || response.data);
+      setClients(response.data.data || []);
       setError(null);
     } catch (err) {
       setError("Failed to load clients");
