@@ -4,7 +4,7 @@
  * Redirects to onboarding if no tenant and requireTenant is true
  */
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useHasHydrated } from "@/stores";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -20,9 +20,10 @@ export function ProtectedRoute({
   const { isAuthenticated, isLoading, tenants, currentTenantId } =
     useAuthStore();
   const location = useLocation();
+  const hasHydrated = useHasHydrated();
 
-  // Show loading spinner while checking auth state
-  if (isLoading) {
+  // Show loading spinner while hydrating or checking auth state
+  if (!hasHydrated || isLoading) {
     return (
       <div className="min-h-screen bg-surface-950 flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-primary-500 animate-spin" />

@@ -43,17 +43,21 @@ interface Product {
 /**
  * Format price with thousand separators (Uzbek format)
  */
-function formatPrice(amount: number | string): string {
+function formatPrice(amount: number | string, unit?: string): string {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  return new Intl.NumberFormat("uz-UZ").format(num) + " UZS";
+  const unitLabel = unit === "pcs" ? "/pc" : unit === "g" ? "/g" : "/kg";
+  return new Intl.NumberFormat("uz-UZ").format(num) + " UZS" + unitLabel;
 }
 
 /**
- * Format weight with 2 decimal places
+ * Format stock amount with appropriate unit
  */
-function formatWeight(kg: number | string): string {
-  const num = typeof kg === "string" ? parseFloat(kg) : kg;
-  return num.toFixed(2) + " kg";
+function formatStock(amount: number | string, unit: string): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (unit === "pcs") {
+    return num.toFixed(0) + " pcs";
+  }
+  return num.toFixed(2) + " " + unit;
 }
 
 export function ProductsPage() {
@@ -359,7 +363,7 @@ export function ProductsPage() {
                     Category
                   </th>
                   <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Price/kg
+                    Price
                   </th>
                   <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
                     Stock
@@ -371,8 +375,15 @@ export function ProductsPage() {
               </thead>
               <tbody className="divide-y divide-surface-800">
                 {products.map((product) => {
-                  const isLowStock =
-                    product.currentStockKg <= product.minStockKg;
+                  const currentStock =
+                    typeof product.currentStockKg === "string"
+                      ? parseFloat(product.currentStockKg)
+                      : product.currentStockKg;
+                  const minStock =
+                    typeof product.minStockKg === "string"
+                      ? parseFloat(product.minStockKg)
+                      : product.minStockKg;
+                  const isLowStock = currentStock <= minStock && minStock > 0;
                   return (
                     <tr
                       key={product.id}
@@ -406,7 +417,7 @@ export function ProductsPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className="font-medium text-surface-100">
-                          {formatPrice(product.basePricePerKg)}
+                          {formatPrice(product.basePricePerKg, product.unit)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -421,12 +432,12 @@ export function ProductsPage() {
                                 : "text-surface-300"
                             }
                           >
-                            {formatWeight(product.currentStockKg)}
+                            {formatStock(product.currentStockKg, product.unit)}
                           </span>
                         </div>
-                        {product.minStockKg > 0 && (
+                        {minStock > 0 && (
                           <p className="text-xs text-surface-500 mt-1">
-                            Min: {formatWeight(product.minStockKg)}
+                            Min: {formatStock(product.minStockKg, product.unit)}
                           </p>
                         )}
                       </td>
@@ -532,7 +543,7 @@ export function ProductsPage() {
                   </div>
 
                   <Input
-                    label="Price per kg (UZS) *"
+                    label={`Price per ${formData.unit === "pcs" ? "piece" : formData.unit} (UZS) *`}
                     name="basePricePerKg"
                     type="number"
                     placeholder="e.g., 85000"
@@ -544,26 +555,40 @@ export function ProductsPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Current Stock (kg)"
-                    name="currentStockKg"
-                    type="number"
-                    placeholder="0.00"
-                    value={formData.currentStockKg}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="0.01"
-                  />
+                  {editingProduct ? (
+                    <div>
+                      <label className="block text-sm font-medium text-surface-300 mb-1">
+                        Current Stock ({formData.unit})
+                      </label>
+                      <div className="px-3 py-2 bg-surface-700/50 border border-surface-600 rounded-lg text-surface-400">
+                        {formData.currentStockKg || "0"} {formData.unit}
+                      </div>
+                      <p className="text-xs text-surface-500 mt-1">
+                        Use Stock Management to adjust stock
+                      </p>
+                    </div>
+                  ) : (
+                    <Input
+                      label={`Current Stock (${formData.unit})`}
+                      name="currentStockKg"
+                      type="number"
+                      placeholder="0.00"
+                      value={formData.currentStockKg}
+                      onChange={handleInputChange}
+                      min="0"
+                      step={formData.unit === "pcs" ? "1" : "0.01"}
+                    />
+                  )}
 
                   <Input
-                    label="Minimum Stock (kg)"
+                    label={`Minimum Stock (${formData.unit})`}
                     name="minStockKg"
                     type="number"
                     placeholder="0.00"
                     value={formData.minStockKg}
                     onChange={handleInputChange}
                     min="0"
-                    step="0.01"
+                    step={formData.unit === "pcs" ? "1" : "0.01"}
                   />
                 </div>
 
@@ -618,12 +643,16 @@ export function ProductsPage() {
                 ? This action cannot be undone.
               </p>
 
-              {deletingProduct.currentStockKg > 0 && (
+              {parseFloat(String(deletingProduct.currentStockKg)) > 0 && (
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <span>
                     This product still has{" "}
-                    {formatWeight(deletingProduct.currentStockKg)} in stock.
+                    {formatStock(
+                      deletingProduct.currentStockKg,
+                      deletingProduct.unit,
+                    )}{" "}
+                    in stock.
                   </span>
                 </div>
               )}

@@ -11,16 +11,11 @@ import "./styles/globals.css";
  * Handles Supabase auth state synchronization
  */
 function AuthInitializer({ children }: { children: React.ReactNode }) {
-  const { setSession, setLoading } = useAuthStore();
+  const { initialize, setSession } = useAuthStore();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setSession(session);
-      }
-      setLoading(false);
-    });
+    // Initialize auth state from Supabase session
+    initialize();
 
     // Listen for auth changes
     const {
@@ -36,7 +31,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [setSession, setLoading]);
+  }, [initialize, setSession]);
 
   return <>{children}</>;
 }

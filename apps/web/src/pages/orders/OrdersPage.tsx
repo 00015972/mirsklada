@@ -13,6 +13,7 @@ import {
   Clock,
   XCircle,
   Package,
+  CreditCard,
 } from "lucide-react";
 import {
   Button,
@@ -20,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
+  Input,
 } from "@/components/ui";
 import { api } from "@/lib/api";
 
@@ -39,8 +41,8 @@ interface Order {
   orderNumber: string;
   status: "DRAFT" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
   paymentStatus: "UNPAID" | "PARTIAL" | "PAID";
-  totalAmountSum: number;
-  paidAmountSum: number;
+  totalAmount: number | string;
+  paidAmount: number | string;
   notes: string | null;
   createdAt: string;
   client: {
@@ -68,16 +70,20 @@ interface Product {
 /**
  * Format price with thousand separators (Uzbek format)
  */
-function formatPrice(amount: number | string): string {
+function formatPrice(amount: number | string | null | undefined): string {
+  if (amount === null || amount === undefined) return "0 UZS";
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (isNaN(num)) return "0 UZS";
   return new Intl.NumberFormat("uz-UZ").format(num) + " UZS";
 }
 
 /**
  * Format weight with 2 decimal places
  */
-function formatWeight(kg: number | string): string {
+function formatWeight(kg: number | string | null | undefined): string {
+  if (kg === null || kg === undefined) return "0.00 kg";
   const num = typeof kg === "string" ? parseFloat(kg) : kg;
+  if (isNaN(num)) return "0.00 kg";
   return num.toFixed(2) + " kg";
 }
 
@@ -157,6 +163,14 @@ export function OrdersPage() {
     Array<{ productId: string; quantityKg: string; pricePerKg: string }>
   >([{ productId: "", quantityKg: "", pricePerKg: "" }]);
   const [orderNotes, setOrderNotes] = useState("");
+
+  // Payment modal state
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [payingOrder, setPayingOrder] = useState<Order | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("CASH");
+  const [paymentNotes, setPaymentNotes] = useState("");
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Fetch orders
   const fetchOrders = async () => {
@@ -357,6 +371,74 @@ export function OrdersPage() {
     }
   };
 
+  // Open payment modal
+  const handleOpenPayment = (order: Order) => {
+    setPayingOrder(order);
+    const totalAmount =
+      typeof order.totalAmount === "string"
+        ? parseFloat(order.totalAmount)
+        : order.totalAmount || 0;
+    const paidAmount =
+      typeof order.paidAmount === "string"
+        ? parseFloat(order.paidAmount)
+        : order.paidAmount || 0;
+    const remaining = totalAmount - paidAmount;
+    setPaymentAmount(remaining > 0 ? remaining.toString() : "");
+    setPaymentMethod("CASH");
+    setPaymentNotes("");
+    setPaymentError(null);
+    setIsPaymentModalOpen(true);
+  };
+
+  // Record payment
+  const handleRecordPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!payingOrder) return;
+
+    const amount = parseFloat(paymentAmount);
+    if (!amount || amount <= 0) {
+      setPaymentError("Please enter a valid amount");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setPaymentError(null);
+
+    try {
+      await api.post("/payments", {
+        orderId: payingOrder.id,
+        clientId: payingOrder.client.id,
+        amount,
+        method: paymentMethod,
+        notes: paymentNotes.trim() || undefined,
+      });
+
+      setIsPaymentModalOpen(false);
+      setPayingOrder(null);
+      fetchOrders();
+
+      // Refresh viewing order if it's the same one
+      if (viewingOrder?.id === payingOrder.id) {
+        const response = await api.get(`/orders/${payingOrder.id}`);
+        setViewingOrder(response.data.data || null);
+      }
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as {
+          response?: { data?: { message?: string } };
+        };
+        setPaymentError(
+          axiosError.response?.data?.message || "Failed to record payment",
+        );
+      } else {
+        setPaymentError("Failed to record payment");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (isLoading && orders.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -510,7 +592,7 @@ export function OrdersPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className="font-medium text-surface-100">
-                          {formatPrice(order.totalAmountSum)}
+                          {formatPrice(order.totalAmount)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -521,7 +603,7 @@ export function OrdersPage() {
                         </span>
                         {order.paymentStatus === "PARTIAL" && (
                           <p className="text-xs text-surface-500">
-                            Paid: {formatPrice(order.paidAmountSum)}
+                            Paid: {formatPrice(order.paidAmount)}
                           </p>
                         )}
                       </td>
@@ -531,15 +613,30 @@ export function OrdersPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setViewingOrder(order);
-                          }}
-                          className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {order.paymentStatus !== "PAID" &&
+                            order.status !== "CANCELLED" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenPayment(order);
+                                }}
+                                className="p-2 text-surface-400 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+                                title="Record Payment"
+                              >
+                                <CreditCard className="h-4 w-4" />
+                              </button>
+                            )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingOrder(order);
+                            }}
+                            className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -790,7 +887,7 @@ export function OrdersPage() {
                     {paymentStatusConfig[viewingOrder.paymentStatus].label}
                     {viewingOrder.paymentStatus !== "PAID" && (
                       <span className="text-surface-500 ml-2">
-                        (Paid: {formatPrice(viewingOrder.paidAmountSum)})
+                        (Paid: {formatPrice(viewingOrder.paidAmount)})
                       </span>
                     )}
                   </p>
@@ -798,7 +895,7 @@ export function OrdersPage() {
                 <div className="text-right">
                   <p className="text-sm text-surface-400">Total</p>
                   <p className="text-xl font-bold text-surface-100">
-                    {formatPrice(viewingOrder.totalAmountSum)}
+                    {formatPrice(viewingOrder.totalAmount)}
                   </p>
                 </div>
               </div>
@@ -811,7 +908,7 @@ export function OrdersPage() {
               )}
 
               {/* Actions */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-2 flex-wrap">
                 <Button
                   variant="secondary"
                   className="flex-1"
@@ -819,6 +916,16 @@ export function OrdersPage() {
                 >
                   Close
                 </Button>
+                {viewingOrder.paymentStatus !== "PAID" &&
+                  viewingOrder.status !== "CANCELLED" && (
+                    <Button
+                      variant="primary"
+                      onClick={() => handleOpenPayment(viewingOrder)}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Record Payment
+                    </Button>
+                  )}
                 {viewingOrder.status === "DRAFT" && (
                   <>
                     <Button
@@ -833,6 +940,134 @@ export function OrdersPage() {
                   </>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {isPaymentModalOpen && payingOrder && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Record Payment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleRecordPayment} className="space-y-4">
+                {paymentError && (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                    {paymentError}
+                  </div>
+                )}
+
+                {/* Order Info */}
+                <div className="p-3 bg-surface-800/50 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-surface-400">Order</span>
+                    <span className="text-surface-100 font-medium">
+                      {payingOrder.orderNumber}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-surface-400">Client</span>
+                    <span className="text-surface-100">
+                      {payingOrder.client.name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-surface-400">Total</span>
+                    <span className="text-surface-100">
+                      {formatPrice(payingOrder.totalAmount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-surface-400">Paid</span>
+                    <span className="text-green-400">
+                      {formatPrice(payingOrder.paidAmount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-surface-700 pt-2">
+                    <span className="text-surface-400">Remaining</span>
+                    <span className="text-amber-400 font-medium">
+                      {formatPrice(
+                        (typeof payingOrder.totalAmount === "string"
+                          ? parseFloat(payingOrder.totalAmount)
+                          : payingOrder.totalAmount || 0) -
+                          (typeof payingOrder.paidAmount === "string"
+                            ? parseFloat(payingOrder.paidAmount)
+                            : payingOrder.paidAmount || 0),
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                <Input
+                  label="Amount (UZS) *"
+                  type="number"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  min="0"
+                  step="100"
+                  placeholder="Enter payment amount"
+                  autoFocus
+                />
+
+                <div>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                    Payment Method *
+                  </label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+                  >
+                    <option value="CASH">Cash</option>
+                    <option value="CARD">Card</option>
+                    <option value="TRANSFER">Bank Transfer</option>
+                    <option value="CLICK">Click</option>
+                    <option value="PAYME">Payme</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                    Notes
+                  </label>
+                  <textarea
+                    value={paymentNotes}
+                    onChange={(e) => setPaymentNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Optional payment notes..."
+                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => {
+                      setIsPaymentModalOpen(false);
+                      setPayingOrder(null);
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Record Payment"
+                    )}
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         </div>

@@ -24,6 +24,7 @@ import {
   stockRouter,
   orderRouter,
   paymentRouter,
+  dashboardRouter,
 } from "./modules";
 import { logger } from "./utils/logger";
 
@@ -97,6 +98,7 @@ export function createApp(): Express {
   protectedRoutes.use("/stock", stockRouter);
   protectedRoutes.use("/orders", orderRouter);
   protectedRoutes.use("/payments", paymentRouter);
+  protectedRoutes.use("/dashboard", dashboardRouter);
 
   apiV1.use(protectedRoutes);
 

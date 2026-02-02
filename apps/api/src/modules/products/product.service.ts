@@ -51,7 +51,10 @@ class ProductService {
       ];
     }
 
-    if (filters.isActive !== undefined) {
+    // Default to showing only active products unless explicitly set to false
+    if (filters.isActive === undefined) {
+      where.isActive = true;
+    } else if (filters.isActive !== undefined) {
       where.isActive = filters.isActive;
     }
 

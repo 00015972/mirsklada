@@ -9,3 +9,4 @@ export { clientRouter } from "./clients";
 export { stockRouter } from "./stock";
 export { orderRouter } from "./orders";
 export { paymentRouter } from "./payments";
+export { dashboardRouter } from "./dashboard";

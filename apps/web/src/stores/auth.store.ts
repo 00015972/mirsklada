@@ -2,6 +2,7 @@
  * Auth Store - Zustand
  * Manages authentication state
  */
+import { useState, useEffect } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { supabase } from "@/lib/supabase";
@@ -163,7 +164,13 @@ export const useAuthStore = create<AuthState>()(
       },
 
       initialize: async () => {
-        set({ isLoading: true });
+        const currentState = get();
+
+        // If we already have a valid session from persistence, don't show loading
+        // Just validate in the background
+        if (!currentState.session?.accessToken) {
+          set({ isLoading: true });
+        }
 
         try {
           const {
@@ -191,25 +198,90 @@ export const useAuthStore = create<AuthState>()(
                     expiresAt: session.expires_at,
                   },
                   tenants: result.tenants || [],
-                  currentTenantId: result.tenants?.[0]?.id || null,
+                  currentTenantId:
+                    result.tenants?.[0]?.id || get().currentTenantId || null,
                   isAuthenticated: true,
+                  isLoading: false,
                 });
+                return;
               }
             }
           }
+
+          // No valid session - clear auth state
+          set({
+            user: null,
+            session: null,
+            tenants: [],
+            currentTenantId: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
         } catch (error) {
           console.error("Auth initialization failed:", error);
-        } finally {
-          set({ isLoading: false });
+          // On error, if we have a persisted session, keep user authenticated
+          // to prevent disruption. The session might still be valid.
+          if (!currentState.session?.accessToken) {
+            set({ isLoading: false });
+          } else {
+            set({ isLoading: false });
+          }
         }
       },
     }),
     {
       name: "mirsklada-auth",
       partialize: (state) => ({
+        user: state.user,
         session: state.session,
+        tenants: state.tenants,
         currentTenantId: state.currentTenantId,
+        isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => {
+        return (state, error) => {
+          if (error) {
+            console.error("Failed to rehydrate auth store:", error);
+            state?.setLoading(false);
+            return;
+          }
+
+          // After rehydration, if we have a persisted session, keep isAuthenticated true
+          // and keep isLoading true so ProtectedRoute shows loading spinner
+          // until initialize() completes validation
+          if (state?.session?.accessToken && state?.isAuthenticated) {
+            // Keep the user authenticated during revalidation
+            // isLoading remains true (default) until initialize() completes
+            // This prevents the flash of redirect to login
+          } else if (!state?.session?.accessToken) {
+            // No session stored, user needs to login
+            state?.setLoading(false);
+          }
+        };
+      },
     },
   ),
 );
+
+// Hook to check if store has been hydrated
+export const useHasHydrated = () => {
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    // Subscribe to hydration
+    const unsubFinishHydration = useAuthStore.persist.onFinishHydration(() => {
+      setHasHydrated(true);
+    });
+
+    // Check if already hydrated
+    if (useAuthStore.persist.hasHydrated()) {
+      setHasHydrated(true);
+    }
+
+    return () => {
+      unsubFinishHydration();
+    };
+  }, []);
+
+  return hasHydrated;
+};

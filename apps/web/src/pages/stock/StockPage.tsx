@@ -179,7 +179,7 @@ export function StockPage() {
       typeof product.minStockKg === "string"
         ? parseFloat(product.minStockKg)
         : product.minStockKg;
-    const isLow = currentStock <= minStock;
+    const isLow = currentStock <= minStock && minStock > 0;
 
     if (showLowStock) {
       return matchesSearch && isLow;

@@ -32,7 +32,7 @@ interface Client {
   address: string | null;
   notes: string | null;
   isActive: boolean;
-  totalDebtSum: number | string;
+  currentDebt: number | string;
   createdAt: string;
 }
 
@@ -305,9 +305,9 @@ export function ClientsPage() {
                     <h3 className="font-semibold text-surface-100 truncate">
                       {client.name}
                     </h3>
-                    {client.totalDebtSum > 0 && (
+                    {parseFloat(String(client.currentDebt)) > 0 && (
                       <p className="text-sm text-amber-400">
-                        Debt: {formatPrice(client.totalDebtSum)}
+                        Debt: {formatPrice(client.currentDebt)}
                       </p>
                     )}
                   </div>
@@ -462,10 +462,10 @@ export function ClientsPage() {
                 ? This will also delete all their order history.
               </p>
 
-              {deletingClient.totalDebtSum > 0 && (
+              {parseFloat(String(deletingClient.currentDebt)) > 0 && (
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
                   This client has an outstanding debt of{" "}
-                  {formatPrice(deletingClient.totalDebtSum)}
+                  {formatPrice(deletingClient.currentDebt)}
                 </div>
               )}
 
