@@ -28,8 +28,13 @@ export const resetPasswordBodySchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+export const updateProfileBodySchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").nullish(),
+});
+
 export type SignUpInput = z.infer<typeof signUpBodySchema>;
 export type SignInInput = z.infer<typeof signInBodySchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenBodySchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordBodySchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordBodySchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileBodySchema>;

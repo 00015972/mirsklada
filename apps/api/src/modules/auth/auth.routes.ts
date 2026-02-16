@@ -11,6 +11,7 @@ import {
   signInBodySchema,
   refreshTokenBodySchema,
   forgotPasswordBodySchema,
+  updateProfileBodySchema,
 } from "./auth.schemas";
 
 const router: RouterType = Router();
@@ -72,5 +73,17 @@ router.post(
  * @access  Private
  */
 router.get("/me", authenticate, authController.me);
+
+/**
+ * @route   PATCH /auth/profile
+ * @desc    Update user profile
+ * @access  Private
+ */
+router.patch(
+  "/profile",
+  authenticate,
+  validate({ body: updateProfileBodySchema }),
+  authController.updateProfile,
+);
 
 export { router as authRouter };

@@ -1,7 +1,7 @@
 /**
  * Main App Layout with Sidebar
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,6 +17,8 @@ import {
   X,
   ChevronDown,
   Warehouse,
+  Building2,
+  Bell,
 } from "lucide-react";
 import { useAuthStore } from "@/stores";
 import { clsx } from "clsx";
@@ -35,8 +37,39 @@ const navigation = [
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [newWorkspaceNotification, setNewWorkspaceNotification] = useState<
+    string | null
+  >(null);
   const { user, tenants, currentTenantId, setTenant, logout } = useAuthStore();
   const navigate = useNavigate();
+  const currentTenant = tenants.find((t) => t.id === currentTenantId);
+
+  // Check for new workspace invitations
+  useEffect(() => {
+    if (!user?.id || tenants.length === 0) return;
+
+    const storageKey = `mirsklada_workspaces_${user.id}`;
+    const knownWorkspaces = JSON.parse(
+      localStorage.getItem(storageKey) || "[]",
+    ) as string[];
+
+    // Find new workspaces
+    const newWorkspaces = tenants.filter(
+      (t) => !knownWorkspaces.includes(t.id),
+    );
+
+    if (newWorkspaces.length > 0 && knownWorkspaces.length > 0) {
+      // User has been invited to new workspace(s)
+      const newest = newWorkspaces[newWorkspaces.length - 1];
+      setNewWorkspaceNotification(`You've been invited to "${newest.name}"`);
+
+      // Auto-dismiss after 10 seconds
+      setTimeout(() => setNewWorkspaceNotification(null), 10000);
+    }
+
+    // Update known workspaces
+    localStorage.setItem(storageKey, JSON.stringify(tenants.map((t) => t.id)));
+  }, [user?.id, tenants]);
 
   const handleLogout = () => {
     logout();
@@ -80,7 +113,12 @@ export function AppLayout() {
         {tenants.length > 0 && (
           <div className="p-4 border-b border-surface-800">
             <label className="text-xs text-surface-500 mb-1 block">
-              Workspace
+              Workspace{" "}
+              {tenants.length > 1 && (
+                <span className="text-primary-400">
+                  ({tenants.length} workspaces)
+                </span>
+              )}
             </label>
             <div className="relative">
               <select
@@ -157,8 +195,35 @@ export function AppLayout() {
             >
               <Menu className="h-6 w-6" />
             </button>
+
+            {/* Current Workspace Indicator */}
+            {currentTenant && (
+              <div className="hidden lg:flex items-center gap-2 text-surface-400">
+                <Building2 className="h-4 w-4" />
+                <span className="text-sm">{currentTenant.name}</span>
+                <span className="text-xs px-2 py-0.5 rounded bg-surface-800 text-surface-500">
+                  {currentTenant.subscriptionTier}
+                </span>
+              </div>
+            )}
+
             <div className="flex-1" />
-            {/* Add notifications, search, etc. here */}
+
+            {/* Notification for new workspace invitation */}
+            {newWorkspaceNotification && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary-500/20 border border-primary-500/30 rounded-lg mr-4 animate-pulse">
+                <Bell className="h-4 w-4 text-primary-400" />
+                <span className="text-sm text-primary-300">
+                  {newWorkspaceNotification}
+                </span>
+                <button
+                  onClick={() => setNewWorkspaceNotification(null)}
+                  className="ml-2 p-0.5 hover:bg-primary-500/20 rounded"
+                >
+                  <X className="h-3 w-3 text-primary-400" />
+                </button>
+              </div>
+            )}
           </div>
         </header>
 

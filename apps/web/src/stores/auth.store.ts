@@ -47,6 +47,7 @@ interface AuthState {
   ) => void;
   setLoading: (loading: boolean) => void;
   setTenant: (tenantId: string) => void;
+  updateTenantName: (tenantId: string, name: string) => void;
   refreshSession: () => Promise<void>;
   logout: () => void;
   initialize: () => Promise<void>;
@@ -124,6 +125,13 @@ export const useAuthStore = create<AuthState>()(
         if (tenants.some((t) => t.id === tenantId)) {
           set({ currentTenantId: tenantId });
         }
+      },
+
+      updateTenantName: (tenantId, name) => {
+        const { tenants } = get();
+        set({
+          tenants: tenants.map((t) => (t.id === tenantId ? { ...t, name } : t)),
+        });
       },
 
       refreshSession: async () => {

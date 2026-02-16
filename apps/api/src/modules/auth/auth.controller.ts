@@ -118,3 +118,20 @@ export const me = async (
     next(error);
   }
 };
+
+/**
+ * PATCH /auth/profile
+ * Update user profile
+ */
+export const updateProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await authService.updateProfile(req.userId!, req.body);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -256,3 +256,30 @@ export const getCurrentUser = async (userId: string) => {
     })),
   };
 };
+
+/**
+ * Update user profile
+ */
+export const updateProfile = async (
+  userId: string,
+  input: { name?: string | null },
+) => {
+  const { prisma } = await import("@mirsklada/database");
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: input.name,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      avatarUrl: true,
+    },
+  });
+
+  logger.info("User profile updated", { userId: user.id });
+
+  return { user };
+};
