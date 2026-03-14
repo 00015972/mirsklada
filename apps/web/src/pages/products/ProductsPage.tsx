@@ -20,8 +20,10 @@ import {
   CardTitle,
   CardContent,
   Input,
+  SearchableSelect,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface Category {
   id: string;
@@ -217,6 +219,7 @@ export function ProductsPage() {
       }
 
       setIsModalOpen(false);
+      toast.success(editingProduct ? "Product updated" : "Product created");
       fetchProducts();
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -242,6 +245,7 @@ export function ProductsPage() {
     try {
       await api.delete(`/products/${deletingProduct.id}`);
       setDeletingProduct(null);
+      toast.success("Product deleted");
       fetchProducts();
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -506,24 +510,21 @@ export function ProductsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Category
-                  </label>
-                  <select
-                    name="categoryId"
-                    value={formData.categoryId}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
-                  >
-                    <option value="">No category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <SearchableSelect
+                  label="Category"
+                  placeholder="Select category..."
+                  value={formData.categoryId}
+                  onChange={(val) =>
+                    setFormData((prev) => ({ ...prev, categoryId: val }))
+                  }
+                  options={[
+                    { value: "", label: "No category" },
+                    ...categories.map((cat) => ({
+                      value: cat.id,
+                      label: cat.name,
+                    })),
+                  ]}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>

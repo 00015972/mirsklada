@@ -14,6 +14,7 @@ import {
   XCircle,
   Package,
   CreditCard,
+  EyeOff,
 } from "lucide-react";
 import {
   Button,
@@ -22,8 +23,10 @@ import {
   CardTitle,
   CardContent,
   Input,
+  SearchableSelect,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface OrderItem {
   id: string;
@@ -172,6 +175,19 @@ export function OrdersPage() {
   const [paymentNotes, setPaymentNotes] = useState("");
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
+  // Stock visibility toggle (persisted in localStorage)
+  const [showStockInOrders, setShowStockInOrders] = useState(() => {
+    return localStorage.getItem("mirsklada_showStockInOrders") === "true";
+  });
+
+  const toggleStockVisibility = () => {
+    setShowStockInOrders((prev) => {
+      const next = !prev;
+      localStorage.setItem("mirsklada_showStockInOrders", String(next));
+      return next;
+    });
+  };
+
   // Fetch orders
   const fetchOrders = async () => {
     try {
@@ -314,6 +330,7 @@ export function OrdersPage() {
 
       await api.post("/orders", payload);
       setIsCreateModalOpen(false);
+      toast.success("Order created");
       fetchOrders();
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -335,6 +352,7 @@ export function OrdersPage() {
   const handleConfirmOrder = async (orderId: string) => {
     try {
       await api.post(`/orders/${orderId}/confirm`);
+      toast.success("Order confirmed");
       fetchOrders();
       if (viewingOrder?.id === orderId) {
         // Refresh the viewing order
@@ -357,6 +375,7 @@ export function OrdersPage() {
   const handleCancelOrder = async (orderId: string) => {
     try {
       await api.post(`/orders/${orderId}/cancel`);
+      toast.success("Order cancelled");
       fetchOrders();
       setViewingOrder(null);
     } catch (err: unknown) {
@@ -416,6 +435,7 @@ export function OrdersPage() {
 
       setIsPaymentModalOpen(false);
       setPayingOrder(null);
+      toast.success("Payment recorded");
       fetchOrders();
 
       // Refresh viewing order if it's the same one
@@ -663,29 +683,41 @@ export function OrdersPage() {
                 )}
 
                 {/* Client Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Client *
-                  </label>
-                  <select
-                    value={selectedClientId}
-                    onChange={(e) => setSelectedClientId(e.target.value)}
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
-                  >
-                    <option value="">Select a client</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <SearchableSelect
+                  label="Client *"
+                  placeholder="Search clients..."
+                  value={selectedClientId}
+                  onChange={(val) => setSelectedClientId(val)}
+                  options={clients.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  }))}
+                />
 
                 {/* Order Items */}
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-2">
-                    Products *
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-surface-300">
+                      Products *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={toggleStockVisibility}
+                      className="flex items-center gap-1.5 text-xs text-surface-500 hover:text-surface-300 transition-colors"
+                      title={
+                        showStockInOrders
+                          ? "Hide stock levels"
+                          : "Show stock levels"
+                      }
+                    >
+                      {showStockInOrders ? (
+                        <Eye className="h-3.5 w-3.5" />
+                      ) : (
+                        <EyeOff className="h-3.5 w-3.5" />
+                      )}
+                      {showStockInOrders ? "Hide stock" : "Show stock"}
+                    </button>
+                  </div>
                   <div className="space-y-2">
                     {orderItems.map((item, index) => (
                       <div
@@ -696,21 +728,20 @@ export function OrdersPage() {
                           <label className="block text-xs text-surface-500 mb-1">
                             Product
                           </label>
-                          <select
+                          <SearchableSelect
+                            placeholder="Search products..."
                             value={item.productId}
-                            onChange={(e) =>
-                              updateItem(index, "productId", e.target.value)
+                            onChange={(val) =>
+                              updateItem(index, "productId", val)
                             }
-                            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 text-sm focus:outline-none focus:border-primary-500"
-                          >
-                            <option value="">Select product</option>
-                            {products.map((product) => (
-                              <option key={product.id} value={product.id}>
-                                {product.name} (
-                                {formatWeight(product.currentStockKg)} in stock)
-                              </option>
-                            ))}
-                          </select>
+                            options={products.map((product) => ({
+                              value: product.id,
+                              label: product.name,
+                              description: showStockInOrders
+                                ? `${formatWeight(product.currentStockKg)} in stock`
+                                : undefined,
+                            }))}
+                          />
                         </div>
                         <div className="w-28">
                           <label className="block text-xs text-surface-500 mb-1">

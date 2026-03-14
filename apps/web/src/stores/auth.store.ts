@@ -121,9 +121,14 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setTenant: (tenantId) => {
-        const { tenants } = get();
-        if (tenants.some((t) => t.id === tenantId)) {
+        const { tenants, currentTenantId } = get();
+        if (
+          tenants.some((t) => t.id === tenantId) &&
+          tenantId !== currentTenantId
+        ) {
           set({ currentTenantId: tenantId });
+          // Force reload to fetch fresh data for the new workspace
+          window.location.reload();
         }
       },
 

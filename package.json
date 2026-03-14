@@ -32,6 +32,7 @@
     "db:migrate": "pnpm --filter @mirsklada/database db:migrate",
     "db:studio": "pnpm --filter @mirsklada/database db:studio",
     "db:seed": "pnpm --filter @mirsklada/database db:seed",
+    "db:migrate:prod": "pnpm --filter @mirsklada/database db:migrate:prod",
     "docker:up": "docker compose -f docker/docker-compose.yml up -d",
     "docker:down": "docker compose -f docker/docker-compose.yml down",
     "docker:logs": "docker compose -f docker/docker-compose.yml logs -f"

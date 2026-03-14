@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+**/node_modules
+**/.turbo
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+docker
+*.md
+.vscode

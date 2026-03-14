@@ -41,6 +41,9 @@
     "db:migrate": {
       "cache": false
     },
+    "db:migrate:prod": {
+      "cache": false
+    },
     "db:studio": {
       "cache": false,
       "persistent": true

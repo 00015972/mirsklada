@@ -27,6 +27,7 @@ import {
   CardContent,
   Input,
 } from "@/components/ui";
+import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores";
 
@@ -69,13 +70,11 @@ export function SettingsPage() {
   const [isLoadingTenant, setIsLoadingTenant] = useState(true);
   const [isSavingBusiness, setIsSavingBusiness] = useState(false);
   const [businessError, setBusinessError] = useState<string | null>(null);
-  const [businessSuccess, setBusinessSuccess] = useState(false);
 
   // Profile state
   const [profileName, setProfileName] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
-  const [profileSuccess, setProfileSuccess] = useState(false);
 
   // Team state
   const [members, setMembers] = useState<TenantMember[]>([]);
@@ -147,7 +146,6 @@ export function SettingsPage() {
 
     setIsSavingBusiness(true);
     setBusinessError(null);
-    setBusinessSuccess(false);
 
     try {
       await api.patch(`/tenants/${currentTenantId}`, {
@@ -155,8 +153,7 @@ export function SettingsPage() {
       });
       // Update the sidebar tenant name
       updateTenantName(currentTenantId, businessName.trim());
-      setBusinessSuccess(true);
-      setTimeout(() => setBusinessSuccess(false), 3000);
+      toast.success("Business settings saved");
       // Refresh tenant data
       fetchTenantDetails();
     } catch (err: unknown) {
@@ -180,14 +177,12 @@ export function SettingsPage() {
     e.preventDefault();
     setIsSavingProfile(true);
     setProfileError(null);
-    setProfileSuccess(false);
 
     try {
       await api.patch("/auth/profile", {
         name: profileName.trim() || null,
       });
-      setProfileSuccess(true);
-      setTimeout(() => setProfileSuccess(false), 3000);
+      toast.success("Profile updated");
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
@@ -220,6 +215,7 @@ export function SettingsPage() {
       setIsInviteModalOpen(false);
       setInviteEmail("");
       setInviteRole("staff");
+      toast.success("Member invited successfully");
       fetchMembers();
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -248,8 +244,10 @@ export function SettingsPage() {
       await api.patch(`/tenants/${currentTenantId}/members/${memberId}`, {
         role: newRole,
       });
+      toast.success("Role updated");
       fetchMembers();
     } catch (err) {
+      toast.error("Failed to update role");
       console.error("Failed to update role:", err);
     }
   };
@@ -264,8 +262,10 @@ export function SettingsPage() {
         `/tenants/${currentTenantId}/members/${removingMember.id}`,
       );
       setRemovingMember(null);
+      toast.success("Member removed");
       fetchMembers();
     } catch (err) {
+      toast.error("Failed to remove member");
       console.error("Failed to remove member:", err);
     } finally {
       setIsRemoving(false);
@@ -332,13 +332,6 @@ export function SettingsPage() {
                       {businessError}
                     </div>
                   )}
-                  {businessSuccess && (
-                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm flex items-center gap-2">
-                      <Check className="h-4 w-4" />
-                      Settings saved successfully
-                    </div>
-                  )}
-
                   <Input
                     label="Business Name"
                     value={businessName}
@@ -464,13 +457,6 @@ export function SettingsPage() {
                     {profileError}
                   </div>
                 )}
-                {profileSuccess && (
-                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm flex items-center gap-2">
-                    <Check className="h-4 w-4" />
-                    Profile saved successfully
-                  </div>
-                )}
-
                 <Input
                   label="Display Name"
                   value={profileName}

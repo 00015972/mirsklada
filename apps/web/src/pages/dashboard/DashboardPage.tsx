@@ -39,6 +39,7 @@ import {
   Button,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 
 // Register Chart.js components
@@ -260,6 +261,7 @@ export function DashboardPage() {
         setLastUpdated(new Date());
       } catch (error) {
         console.error("Failed to load dashboard:", error);
+        toast.error("Failed to load dashboard data");
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);

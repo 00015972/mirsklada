@@ -22,8 +22,10 @@ import {
   CardTitle,
   CardContent,
   Input,
+  SearchableSelect,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface Client {
   id: string;
@@ -358,6 +360,7 @@ export function PaymentsPage() {
       });
 
       setIsRecordModalOpen(false);
+      toast.success("Payment recorded");
       fetchPayments();
       fetchSummary();
     } catch (err: unknown) {
@@ -405,6 +408,7 @@ export function PaymentsPage() {
 
       setIsVoidModalOpen(false);
       setViewingPayment(null);
+      toast.success("Payment voided");
       fetchPayments();
       fetchSummary();
     } catch (err: unknown) {
@@ -723,28 +727,21 @@ export function PaymentsPage() {
                 )}
 
                 {/* Client Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Client *
-                  </label>
-                  <select
-                    value={recordClientId}
-                    onChange={(e) => handleRecordClientChange(e.target.value)}
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
-                    autoFocus
-                  >
-                    <option value="">Select a client...</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name}
-                        {client.currentDebt &&
-                        parseFloat(String(client.currentDebt)) > 0
-                          ? ` (Debt: ${formatPrice(client.currentDebt)})`
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <SearchableSelect
+                  label="Client *"
+                  placeholder="Search clients..."
+                  value={recordClientId}
+                  onChange={(val) => handleRecordClientChange(val)}
+                  options={clients.map((client) => ({
+                    value: client.id,
+                    label: client.name,
+                    description:
+                      client.currentDebt &&
+                      parseFloat(String(client.currentDebt)) > 0
+                        ? `Debt: ${formatPrice(client.currentDebt)}`
+                        : undefined,
+                  }))}
+                />
 
                 {/* Client Debt Info */}
                 {selectedRecordClient &&

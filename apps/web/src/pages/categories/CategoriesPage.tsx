@@ -20,6 +20,7 @@ import {
   Input,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface Category {
   id: string;
@@ -106,6 +107,7 @@ export function CategoriesPage() {
       }
 
       setIsModalOpen(false);
+      toast.success(editingCategory ? "Category updated" : "Category created");
       fetchCategories();
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -131,6 +133,7 @@ export function CategoriesPage() {
     try {
       await api.delete(`/categories/${deletingCategory.id}`);
       setDeletingCategory(null);
+      toast.success("Category deleted");
       fetchCategories();
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -238,6 +241,8 @@ export function CategoriesPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          type="button"
+                          title="Edit category"
                           onClick={() => handleEdit(category)}
                           className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
                         >

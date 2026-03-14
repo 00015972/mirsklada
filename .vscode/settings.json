@@ -10,8 +10,10 @@
     "editor.defaultFormatter": "Prisma.prisma"
   },
   "files.associations": {
-    "*.css": "tailwindcss"
+    "*.css": "tailwindcss",
+    "*.sql": "sql"
   },
+  "sql.dialect": "postgresql",
   "tailwindCSS.experimental.classRegex": [
     ["cn\\(([^)]*)\\)", "\"([^\"]*)\""],
     ["clsx\\(([^)]*)\\)", "\"([^\"]*)\""]

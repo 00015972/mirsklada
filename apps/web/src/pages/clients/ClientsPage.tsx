@@ -13,6 +13,10 @@ import {
   Phone,
   MapPin,
   MessageCircle,
+  Eye,
+  ShoppingCart,
+  X,
+  Calendar,
 } from "lucide-react";
 import {
   Button,
@@ -23,6 +27,7 @@ import {
   Input,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface Client {
   id: string;
@@ -34,6 +39,26 @@ interface Client {
   isActive: boolean;
   currentDebt: number | string;
   createdAt: string;
+}
+
+interface ClientOrder {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number | string;
+  paidAmount: number | string;
+  createdAt: string;
+  items: Array<{
+    id: string;
+    quantityKg: number;
+    pricePerKg: number;
+    totalPrice: number;
+    product: { name: string };
+  }>;
+}
+
+interface ClientDetail extends Client {
+  orders: ClientOrder[];
 }
 
 /**
@@ -70,6 +95,10 @@ export function ClientsPage() {
 
   // Delete confirmation
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+
+  // Client detail modal
+  const [viewingClient, setViewingClient] = useState<ClientDetail | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   // Fetch clients
   const fetchClients = async () => {
@@ -163,6 +192,7 @@ export function ClientsPage() {
       }
 
       setIsModalOpen(false);
+      toast.success(editingClient ? "Client updated" : "Client created");
       fetchClients();
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -188,6 +218,7 @@ export function ClientsPage() {
     try {
       await api.delete(`/clients/${deletingClient.id}`);
       setDeletingClient(null);
+      toast.success("Client deleted");
       fetchClients();
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -200,6 +231,23 @@ export function ClientsPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // View client details
+  const handleViewClient = async (client: Client) => {
+    setIsLoadingDetail(true);
+    setViewingClient({ ...client, orders: [] } as ClientDetail);
+    try {
+      const response = await api.get(
+        `/clients/${client.id}/with-orders?limit=10`,
+      );
+      setViewingClient(response.data.data);
+    } catch (err) {
+      console.error("Failed to load client details:", err);
+      toast.error("Failed to load client details");
+    } finally {
+      setIsLoadingDetail(false);
     }
   };
 
@@ -280,6 +328,13 @@ export function ClientsPage() {
               <CardContent className="p-4">
                 {/* Actions */}
                 <div className="absolute top-4 right-4 flex gap-1">
+                  <button
+                    onClick={() => handleViewClient(client)}
+                    className="p-2 text-surface-400 hover:text-primary-400 hover:bg-primary-500/10 rounded-lg transition-colors"
+                    title="View details"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
                   <button
                     onClick={() => handleEdit(client)}
                     className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
@@ -489,6 +544,183 @@ export function ClientsPage() {
                   ) : (
                     "Delete"
                   )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Client Details Modal */}
+      {viewingClient && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-2xl my-8">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary-600/20 flex items-center justify-center">
+                  <span className="text-lg font-semibold text-primary-400">
+                    {viewingClient.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                {viewingClient.name}
+              </CardTitle>
+              <button
+                onClick={() => setViewingClient(null)}
+                className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Client Info Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {viewingClient.phone && (
+                  <div className="flex items-center gap-2 text-surface-300">
+                    <Phone className="h-4 w-4 text-surface-500" />
+                    <span className="text-sm">{viewingClient.phone}</span>
+                  </div>
+                )}
+                {viewingClient.telegramId && (
+                  <div className="flex items-center gap-2 text-surface-300">
+                    <MessageCircle className="h-4 w-4 text-surface-500" />
+                    <span className="text-sm">@{viewingClient.telegramId}</span>
+                  </div>
+                )}
+                {viewingClient.address && (
+                  <div className="flex items-start gap-2 text-surface-300 col-span-2">
+                    <MapPin className="h-4 w-4 text-surface-500 mt-0.5" />
+                    <span className="text-sm">{viewingClient.address}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-surface-300">
+                  <Calendar className="h-4 w-4 text-surface-500" />
+                  <span className="text-sm">
+                    Client since{" "}
+                    {new Date(viewingClient.createdAt).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      },
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Debt Summary */}
+              {parseFloat(String(viewingClient.currentDebt)) > 0 && (
+                <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-amber-400">
+                      Outstanding Debt
+                    </span>
+                    <span className="text-lg font-bold text-amber-300">
+                      {formatPrice(viewingClient.currentDebt)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {viewingClient.notes && (
+                <div className="p-3 rounded-lg bg-surface-800 text-surface-400 text-sm">
+                  <span className="font-medium text-surface-300">Notes:</span>{" "}
+                  {viewingClient.notes}
+                </div>
+              )}
+
+              {/* Recent Orders */}
+              <div>
+                <h3 className="text-sm font-semibold text-surface-200 mb-3 flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4" />
+                  Recent Orders
+                </h3>
+                {isLoadingDetail ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 text-primary-500 animate-spin" />
+                  </div>
+                ) : viewingClient.orders?.length > 0 ? (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {viewingClient.orders.map((order) => {
+                      const total =
+                        typeof order.totalAmount === "string"
+                          ? parseFloat(order.totalAmount)
+                          : order.totalAmount;
+                      const paid =
+                        typeof order.paidAmount === "string"
+                          ? parseFloat(order.paidAmount)
+                          : order.paidAmount;
+                      return (
+                        <div
+                          key={order.id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-surface-800/50 border border-surface-700"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-surface-200">
+                                {order.orderNumber}
+                              </span>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded ${
+                                  order.status === "COMPLETED"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : order.status === "CANCELLED"
+                                      ? "bg-red-500/20 text-red-400"
+                                      : order.status === "CONFIRMED"
+                                        ? "bg-blue-500/20 text-blue-400"
+                                        : "bg-surface-700 text-surface-300"
+                                }`}
+                              >
+                                {order.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-surface-500 mt-1">
+                              {order.items?.length || 0} items &middot;{" "}
+                              {new Date(order.createdAt).toLocaleDateString(
+                                "en-US",
+                                { month: "short", day: "numeric" },
+                              )}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-surface-200">
+                              {formatPrice(total)}
+                            </p>
+                            {paid < total && (
+                              <p className="text-xs text-amber-400">
+                                Unpaid: {formatPrice(total - paid)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-surface-500 text-center py-4">
+                    No orders yet
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => setViewingClient(null)}
+                >
+                  Close
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    const client = viewingClient;
+                    setViewingClient(null);
+                    handleEdit(client);
+                  }}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Client
                 </Button>
               </div>
             </CardContent>

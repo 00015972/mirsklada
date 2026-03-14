@@ -24,8 +24,10 @@ import {
   CardTitle,
   CardContent,
   Input,
+  SearchableSelect,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface Product {
   id: string;
@@ -224,6 +226,7 @@ export function StockPage() {
       });
 
       setIsModalOpen(false);
+      toast.success(`Stock ${movementType.toLowerCase()} recorded`);
       fetchProducts();
       if (activeTab === "movements") {
         fetchMovements();
@@ -715,24 +718,17 @@ export function StockPage() {
                 )}
 
                 {/* Product Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Product *
-                  </label>
-                  <select
-                    value={selectedProductId}
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
-                  >
-                    <option value="">Select a product</option>
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} (Current:{" "}
-                        {formatWeight(product.currentStockKg)})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <SearchableSelect
+                  label="Product *"
+                  placeholder="Search products..."
+                  value={selectedProductId}
+                  onChange={(val) => setSelectedProductId(val)}
+                  options={products.map((product) => ({
+                    value: product.id,
+                    label: product.name,
+                    description: `Current: ${formatWeight(product.currentStockKg)}`,
+                  }))}
+                />
 
                 {/* Current Stock Display */}
                 {selectedProduct && (

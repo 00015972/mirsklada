@@ -19,6 +19,7 @@ export {
   type ProFeature,
 } from "./subscription.middleware";
 export { requestLogger } from "./request-logger.middleware";
+export { cacheControl } from "./cache.middleware";
 
 // Re-export request types
 export type {

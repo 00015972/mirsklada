@@ -15,13 +15,20 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronDown,
   Warehouse,
   Building2,
   Bell,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { useAuthStore } from "@/stores";
 import { clsx } from "clsx";
+import {
+  Listbox,
+  ListboxButton,
+  ListboxOptions,
+  ListboxOption,
+} from "@headlessui/react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -102,6 +109,8 @@ export function AppLayout() {
             <span className="font-semibold text-surface-100">Mirsklada</span>
           </div>
           <button
+            type="button"
+            title="Close sidebar"
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden p-1 text-surface-400 hover:text-surface-100"
           >
@@ -120,20 +129,51 @@ export function AppLayout() {
                 </span>
               )}
             </label>
-            <div className="relative">
-              <select
-                value={currentTenantId || ""}
-                onChange={(e) => setTenant(e.target.value)}
-                className="w-full appearance-none bg-surface-800 border border-surface-700 rounded-lg px-3 py-2 text-sm text-surface-100 focus:outline-none focus:border-primary-500"
-              >
-                {tenants.map((tenant) => (
-                  <option key={tenant.id} value={tenant.id}>
-                    {tenant.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500 pointer-events-none" />
-            </div>
+            <Listbox
+              value={currentTenantId || ""}
+              onChange={(val) => setTenant(val)}
+            >
+              <div className="relative">
+                <ListboxButton className="w-full flex items-center justify-between bg-surface-800 border border-surface-700 rounded-lg px-3 py-2 text-sm text-surface-100 focus:outline-none focus:border-primary-500">
+                  <span className="truncate">
+                    {currentTenant?.name || "Select workspace"}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-surface-500 flex-shrink-0" />
+                </ListboxButton>
+                <ListboxOptions className="absolute z-50 mt-1 w-full max-h-48 overflow-auto rounded-lg bg-surface-800 border border-surface-700 py-1 shadow-xl focus:outline-none">
+                  {tenants.map((tenant) => (
+                    <ListboxOption
+                      key={tenant.id}
+                      value={tenant.id}
+                      className={({ focus }) =>
+                        clsx(
+                          "relative cursor-pointer select-none px-3 py-2 text-sm",
+                          focus
+                            ? "bg-primary-600/20 text-primary-300"
+                            : "text-surface-200",
+                        )
+                      }
+                    >
+                      {({ selected }) => (
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={clsx(
+                              "truncate",
+                              selected && "font-medium text-primary-400",
+                            )}
+                          >
+                            {tenant.name}
+                          </span>
+                          {selected && (
+                            <Check className="h-4 w-4 text-primary-400 flex-shrink-0" />
+                          )}
+                        </div>
+                      )}
+                    </ListboxOption>
+                  ))}
+                </ListboxOptions>
+              </div>
+            </Listbox>
           </div>
         )}
 
@@ -190,6 +230,8 @@ export function AppLayout() {
         <header className="sticky top-0 z-30 h-16 bg-surface-950/80 backdrop-blur-sm border-b border-surface-800">
           <div className="flex items-center justify-between h-full px-4">
             <button
+              type="button"
+              title="Open sidebar"
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 text-surface-400 hover:text-surface-100"
             >
@@ -217,6 +259,8 @@ export function AppLayout() {
                   {newWorkspaceNotification}
                 </span>
                 <button
+                  type="button"
+                  title="Dismiss notification"
                   onClick={() => setNewWorkspaceNotification(null)}
                   className="ml-2 p-0.5 hover:bg-primary-500/20 rounded"
                 >
