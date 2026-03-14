@@ -1,0 +1,371 @@
+/**
+ * Prisma Seed Script
+ * Populates development database with sample data
+ */
+
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log("🌱 Starting database seed...");
+
+  // Create demo tenant
+  const tenant = await prisma.tenant.upsert({
+    where: { slug: "demo-company" },
+    update: {},
+    create: {
+      name: "Demo Fish & Meat Co.",
+      slug: "demo-company",
+      subscriptionTier: "pro",
+      status: "active",
+    },
+  });
+  console.log(`✅ Created tenant: ${tenant.name}`);
+
+  // Create demo user
+  const user = await prisma.user.upsert({
+    where: { email: "admin@demo.com" },
+    update: {},
+    create: {
+      email: "admin@demo.com",
+      name: "Demo Admin",
+    },
+  });
+  console.log(`✅ Created user: ${user.email}`);
+
+  // Link user to tenant as admin
+  await prisma.tenantMember.upsert({
+    where: {
+      tenantId_userId: {
+        tenantId: tenant.id,
+        userId: user.id,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      userId: user.id,
+      role: "admin",
+      status: "active",
+    },
+  });
+  console.log(`✅ Linked user to tenant as admin`);
+
+  // Create categories
+  const categories = await Promise.all([
+    prisma.category.upsert({
+      where: { id: "cat-fish" },
+      update: {},
+      create: {
+        id: "cat-fish",
+        tenantId: tenant.id,
+        name: "Fish",
+        sortOrder: 1,
+      },
+    }),
+    prisma.category.upsert({
+      where: { id: "cat-meat" },
+      update: {},
+      create: {
+        id: "cat-meat",
+        tenantId: tenant.id,
+        name: "Meat",
+        sortOrder: 2,
+      },
+    }),
+    prisma.category.upsert({
+      where: { id: "cat-cheese" },
+      update: {},
+      create: {
+        id: "cat-cheese",
+        tenantId: tenant.id,
+        name: "Cheese & Dairy",
+        sortOrder: 3,
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${categories.length} categories`);
+
+  // Product data with base prices
+  const productData = [
+    {
+      id: "prod-salmon",
+      categoryId: "cat-fish",
+      name: "Salmon (Fresh)",
+      description: "Fresh Atlantic salmon, perfect for sushi and grilling",
+      basePricePerKg: 180000,
+      currentStockKg: 50.5,
+      minStockKg: 10,
+    },
+    {
+      id: "prod-tilapia",
+      categoryId: "cat-fish",
+      name: "Tilapia (Frozen)",
+      description: "Frozen tilapia fillets",
+      basePricePerKg: 65000,
+      currentStockKg: 120,
+      minStockKg: 20,
+    },
+    {
+      id: "prod-beef",
+      categoryId: "cat-meat",
+      name: "Beef Tenderloin",
+      description: "Premium beef tenderloin",
+      basePricePerKg: 150000,
+      currentStockKg: 35.75,
+      minStockKg: 15,
+    },
+    {
+      id: "prod-chicken",
+      categoryId: "cat-meat",
+      name: "Chicken Breast",
+      description: "Boneless skinless chicken breast",
+      basePricePerKg: 48000,
+      currentStockKg: 200,
+      minStockKg: 50,
+    },
+    {
+      id: "prod-mozzarella",
+      categoryId: "cat-cheese",
+      name: "Mozzarella",
+      description: "Fresh mozzarella for pizza",
+      basePricePerKg: 95000,
+      currentStockKg: 80,
+      minStockKg: 25,
+    },
+  ];
+
+  // Create products
+  const products = await Promise.all(
+    productData.map((p) =>
+      prisma.product.upsert({
+        where: { id: p.id },
+        update: {},
+        create: {
+          id: p.id,
+          tenantId: tenant.id,
+          categoryId: p.categoryId,
+          name: p.name,
+          description: p.description,
+          unit: "kg",
+          basePricePerKg: p.basePricePerKg,
+          currentStockKg: p.currentStockKg,
+          minStockKg: p.minStockKg,
+        },
+      }),
+    ),
+  );
+  console.log(`✅ Created ${products.length} products`);
+
+  // Create price matrix for VIP clients
+  const vipMatrix = await prisma.priceMatrix.upsert({
+    where: { id: "pm-vip" },
+    update: {},
+    create: {
+      id: "pm-vip",
+      tenantId: tenant.id,
+      name: "VIP Clients",
+      description: "10% discount on all products",
+    },
+  });
+
+  // Add VIP prices (10% discount)
+  await Promise.all(
+    productData.map((p) =>
+      prisma.priceMatrixItem.upsert({
+        where: {
+          priceMatrixId_productId: {
+            priceMatrixId: vipMatrix.id,
+            productId: p.id,
+          },
+        },
+        update: {},
+        create: {
+          priceMatrixId: vipMatrix.id,
+          productId: p.id,
+          customPriceKg: p.basePricePerKg * 0.9, // 10% discount
+        },
+      }),
+    ),
+  );
+  console.log(`✅ Created VIP price matrix with discounts`);
+
+  // Create demo clients
+  const clients = await Promise.all([
+    prisma.client.upsert({
+      where: { id: "client-pizzeria" },
+      update: {},
+      create: {
+        id: "client-pizzeria",
+        tenantId: tenant.id,
+        name: "Mario's Pizzeria",
+        contactPerson: "Mario Rossi",
+        phone: "+998901234567",
+        address: "Tashkent, Mirzo Ulugbek district, Buyuk Ipak Yoli 15",
+        priceMatrixId: vipMatrix.id,
+        notes: "VIP client - bulk orders every week",
+      },
+    }),
+    prisma.client.upsert({
+      where: { id: "client-restaurant" },
+      update: {},
+      create: {
+        id: "client-restaurant",
+        tenantId: tenant.id,
+        name: "Silk Road Restaurant",
+        contactPerson: "Akbar Karimov",
+        phone: "+998907654321",
+        address: "Tashkent, Yunusabad district, Amir Temur 42",
+        notes: "Orders twice a month",
+      },
+    }),
+    prisma.client.upsert({
+      where: { id: "client-hotel" },
+      update: {},
+      create: {
+        id: "client-hotel",
+        tenantId: tenant.id,
+        name: "Grand Hotel Tashkent",
+        contactPerson: "Dilshod Umarov",
+        phone: "+998911112233",
+        address: "Tashkent, Mirabad district, Navoi 1",
+        priceMatrixId: vipMatrix.id,
+        notes: "Daily fresh deliveries required",
+      },
+    }),
+  ]);
+  console.log(`✅ Created ${clients.length} clients`);
+
+  // Create a sample order
+  const order = await prisma.order.create({
+    data: {
+      tenantId: tenant.id,
+      clientId: "client-pizzeria",
+      createdById: user.id,
+      orderNumber: "ORD-2026-0001",
+      status: "COMPLETED",
+      paymentStatus: "PARTIAL",
+      totalKg: 17.5,
+      totalAmount: 1215000,
+      paidAmount: 1000000,
+      notes: "Please deliver before 10 AM",
+      deliveryDate: new Date("2026-01-20"),
+      deliveredAt: new Date("2026-01-20T09:30:00Z"),
+      items: {
+        create: [
+          {
+            tenantId: tenant.id,
+            productId: "prod-mozzarella",
+            quantityKg: 10,
+            pricePerKg: 85500, // VIP price
+            lineTotal: 855000,
+          },
+          {
+            tenantId: tenant.id,
+            productId: "prod-chicken",
+            quantityKg: 7.5,
+            pricePerKg: 48000,
+            lineTotal: 360000,
+          },
+        ],
+      },
+    },
+  });
+  console.log(`✅ Created sample order: ${order.orderNumber}`);
+
+  // Create debt ledger entry for the order
+  await prisma.debtLedger.create({
+    data: {
+      tenantId: tenant.id,
+      clientId: "client-pizzeria",
+      changeAmount: 1215000,
+      balanceAfter: 1215000,
+      orderId: order.id,
+      description: `Order ${order.orderNumber}`,
+    },
+  });
+
+  // Create a partial payment
+  const payment = await prisma.payment.create({
+    data: {
+      tenantId: tenant.id,
+      clientId: "client-pizzeria",
+      orderId: order.id,
+      amount: 1000000,
+      method: "TRANSFER",
+      reference: "TXN-2026-01-20-001",
+      notes: "Partial payment via bank transfer",
+      receivedById: user.id,
+    },
+  });
+
+  // Create credit entry for payment
+  await prisma.debtLedger.create({
+    data: {
+      tenantId: tenant.id,
+      clientId: "client-pizzeria",
+      changeAmount: -1000000,
+      balanceAfter: 215000,
+      paymentId: payment.id,
+      description: "Payment received",
+    },
+  });
+
+  // Update client debt balance
+  await prisma.client.update({
+    where: { id: "client-pizzeria" },
+    data: {
+      currentDebt: 215000, // 1,215,000 - 1,000,000
+    },
+  });
+  console.log(`✅ Created payment and debt ledger entries`);
+
+  // Create stock movements for the order
+  await prisma.stockMovement.createMany({
+    data: [
+      {
+        tenantId: tenant.id,
+        productId: "prod-mozzarella",
+        type: "OUT",
+        quantityKg: -10,
+        balanceAfterKg: 40, // Assuming 50kg initial stock
+        reason: "Order fulfillment",
+        reference: order.id,
+        performedById: user.id,
+      },
+      {
+        tenantId: tenant.id,
+        productId: "prod-chicken",
+        type: "OUT",
+        quantityKg: -7.5,
+        balanceAfterKg: 17.5, // Assuming 25kg initial stock
+        reason: "Order fulfillment",
+        reference: order.id,
+        performedById: user.id,
+      },
+    ],
+  });
+  console.log(`✅ Created stock movements`);
+
+  console.log("\n🎉 Seed completed successfully!");
+  console.log("\n📊 Summary:");
+  console.log(`   - 1 Tenant: ${tenant.name}`);
+  console.log(`   - 1 User: ${user.email}`);
+  console.log(`   - ${categories.length} Categories`);
+  console.log(`   - ${products.length} Products`);
+  console.log(`   - 1 Price Matrix with VIP discounts`);
+  console.log(`   - ${clients.length} Clients`);
+  console.log(`   - 1 Sample Order with items`);
+  console.log(`   - Payment and debt tracking entries`);
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error("❌ Seed failed:", e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

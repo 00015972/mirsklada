@@ -1,0 +1,10 @@
+export { LoginPage, SignupPage } from "./auth";
+export { DashboardPage } from "./dashboard";
+export { OnboardingPage } from "./onboarding";
+export { CategoriesPage } from "./categories";
+export { ProductsPage } from "./products";
+export { ClientsPage } from "./clients";
+export { OrdersPage } from "./orders";
+export { StockPage } from "./stock";
+export { PaymentsPage } from "./payments";
+export { SettingsPage } from "./settings";
