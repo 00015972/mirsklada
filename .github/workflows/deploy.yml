@@ -39,7 +39,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
   deploy-web:
-    name: Deploy Frontend (Vercel)
+    name: Deploy Frontend (Railway)
     runs-on: ubuntu-latest
     needs: migrate
     environment: production
@@ -48,34 +48,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build shared packages
-        run: |
-          pnpm db:generate
-          pnpm --filter @mirsklada/shared build
-          pnpm --filter @mirsklada/database build
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: apps/web
-          vercel-args: "--prod"
+      - name: Deploy web to Railway
+        run: railway up --service web --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   deploy-api:
     name: Deploy API (Railway)
