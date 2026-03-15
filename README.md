@@ -110,9 +110,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Author:** Mirsodiq Akramov  
-**Email:** akramov.mirsodiq@gmail.com
-=======
-# mirsklada
-Inventory Management App for Wholesale Business
->>>>>>> e2b1e7e8fa150d4f656ff86149b7f74464f48f2b
+***Author:*** Mirsodiq Akramov  
