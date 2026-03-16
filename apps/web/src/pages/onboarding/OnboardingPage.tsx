@@ -89,7 +89,7 @@ export function OnboardingPage() {
             Welcome to Mirsklada
           </h1>
           <p className="text-surface-400 mt-2">
-            Let's set up your first workspace to get started
+            Let&apos;s set up your first workspace to get started
           </p>
         </div>
 
@@ -97,7 +97,7 @@ export function OnboardingPage() {
           <CardHeader>
             <CardTitle>Create Your Workspace</CardTitle>
             <p className="text-sm text-surface-400 mt-1">
-              A workspace is where you'll manage your inventory, clients, and
+              A workspace is where you&apos;ll manage your inventory, clients, and
               orders. You can invite team members later.
             </p>
           </CardHeader>

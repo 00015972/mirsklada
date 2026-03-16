@@ -288,6 +288,7 @@ export const useHasHydrated = () => {
 
     // Check if already hydrated
     if (useAuthStore.persist.hasHydrated()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasHydrated(true);
     }
 

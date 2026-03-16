@@ -84,7 +84,7 @@ export function SignupPage() {
               Check your email
             </h2>
             <p className="text-surface-400 mb-6">
-              We've sent a confirmation link to your email address. Please click
+              We&apos;ve sent a confirmation link to your email address. Please click
               the link to verify your account.
             </p>
             <Link to="/login">

@@ -4,7 +4,7 @@
 import { HTMLAttributes, forwardRef } from "react";
 import { clsx } from "clsx";
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {}
+type CardProps = HTMLAttributes<HTMLDivElement>
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className, children, ...props }, ref) => {

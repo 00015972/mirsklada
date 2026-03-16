@@ -427,7 +427,7 @@ export function PaymentsPage() {
     }
   };
 
-  // Get selected client's debt
+  // Get selected client&apos;s debt
   const selectedRecordClient = clients.find((c) => c.id === recordClientId);
 
   if (isLoading && payments.length === 0) {
@@ -1015,7 +1015,7 @@ export function PaymentsPage() {
                     </span>
                   </div>
                   <p className="text-xs text-surface-500 mt-2">
-                    This will reverse the payment and restore the client's debt.
+                    This will reverse the payment and restore the client&apos;s debt.
                   </p>
                 </div>
 

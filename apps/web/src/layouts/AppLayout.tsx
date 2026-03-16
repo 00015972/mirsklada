@@ -68,6 +68,7 @@ export function AppLayout() {
     if (newWorkspaces.length > 0 && knownWorkspaces.length > 0) {
       // User has been invited to new workspace(s)
       const newest = newWorkspaces[newWorkspaces.length - 1];
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNewWorkspaceNotification(`You've been invited to "${newest.name}"`);
 
       // Auto-dismiss after 10 seconds
