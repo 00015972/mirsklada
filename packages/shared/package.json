@@ -30,7 +30,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "lint": "eslint src/",
+    "lint": "eslint src/ --ext .ts",
     "test": "vitest run",
     "clean": "rimraf dist .turbo"
   },
