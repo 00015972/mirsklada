@@ -85,8 +85,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/shared
       axios:
-        specifier: ^1.7.7
-        version: 1.13.2
+        specifier: ^1.13.5
+        version: 1.13.6
       grammy:
         specifier: ^1.30.0
         version: 1.39.3
@@ -122,8 +122,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/shared
       axios:
-        specifier: ^1.7.7
-        version: 1.13.2
+        specifier: ^1.13.5
+        version: 1.13.6
       grammy:
         specifier: ^1.30.0
         version: 1.39.3
@@ -165,8 +165,8 @@ importers:
         specifier: ^5.59.0
         version: 5.90.19(react@18.3.1)
       axios:
-        specifier: ^1.7.7
-        version: 1.13.2
+        specifier: ^1.13.5
+        version: 1.13.6
       chart.js:
         specifier: ^4.5.1
         version: 4.5.1
@@ -1215,8 +1215,8 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
-  axios@1.13.2:
-    resolution: {integrity: sha512-VPk9ebNqPcy5lRGuSlKx752IlDatOjT9paPlm8A7yOuW2Fbvp4X3JznJtT4f0GzGLLiWE9W8onz51SqLYwzGaA==}
+  axios@1.13.6:
+    resolution: {integrity: sha512-ChTCHMouEe2kn713WHbQGcuYrr6fXTBiu460OTwWrWob16g1bXn4vtz07Ope7ewMozJAnEquLk5lWQWtBig9DQ==}
 
   baseline-browser-mapping@2.9.16:
     resolution: {integrity: sha512-KeUZdBuxngy825i8xvzaK1Ncnkx0tBmb3k8DkEuqjKRkmtvNTjey2ZsNeh8Dw4lfKvbCOu9oeNx2TKm2vHqcRw==}
@@ -3153,7 +3153,7 @@ snapshots:
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
 
-  axios@1.13.2:
+  axios@1.13.6:
     dependencies:
       follow-redirects: 1.15.11
       form-data: 4.0.5
