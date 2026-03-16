@@ -299,9 +299,6 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.7
-      eslint:
-        specifier: ^8.57.0
-        version: 8.57.1
       rimraf:
         specifier: ^6.0.0
         version: 6.1.2
