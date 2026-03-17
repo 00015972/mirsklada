@@ -33,7 +33,6 @@
 
 ## 📁 Project Structure
 
-```
 mirsklada/
 ├── apps/
 │   ├── api/              # Express REST API
@@ -47,7 +46,6 @@ mirsklada/
 └── .github/
     ├── prompts/          # Reusable Copilot prompts
     └── skills/           # Copilot coding patterns
-```
 
 ## 🚀 Quick Start
 

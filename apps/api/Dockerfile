@@ -7,6 +7,8 @@ RUN corepack enable
 FROM base AS build
 WORKDIR /app
 
+ENV CI=true
+
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm db:generate
