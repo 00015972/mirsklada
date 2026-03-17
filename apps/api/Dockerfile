@@ -14,12 +14,12 @@ RUN pnpm --filter @mirsklada/shared build
 RUN pnpm --filter @mirsklada/database build
 RUN pnpm --filter @mirsklada/api build
 
-# Extract self-contained production bundle
-# RUN pnpm deploy --filter @mirsklada/api --prod /prod/api
-RUN pnpm deploy --legacy --filter @mirsklada/api --prod /prod/api
+# ---- Prepare runtime ----
+RUN mkdir -p /prod/api
 
-# ensure prisma client exists in final bundle
-RUN cp -r node_modules/.pnpm/@prisma* /prod/api/node_modules/.pnpm/ 2>/dev/null || true
+RUN cp -r apps/api/dist /prod/api/dist && \
+    cp apps/api/package.json /prod/api/package.json && \
+    cp -r node_modules /prod/api/node_modules
 
 # ---- Runner stage ----
 FROM node:20-alpine AS runner
