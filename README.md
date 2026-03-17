@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🏗️ Mirsklada
 
 > Multi-tenant SaaS Inventory Management System for Uzbekistan's Wholesale Food Market
