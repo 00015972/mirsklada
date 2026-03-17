@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 RUN corepack enable
 
 # ---- Build stage ----
@@ -18,16 +18,16 @@ RUN pnpm --filter @mirsklada/shared build
 RUN pnpm --filter @mirsklada/database build
 RUN pnpm --filter @mirsklada/api build
 
+# production bundle
+RUN pnpm deploy --filter @mirsklada/api --prod /prod/api
+
 # ---- Runner stage ----
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# copy ONLY what is needed
-COPY --from=build /app/apps/api/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/api/package.json .
+COPY --from=build /prod/api ./
 
 EXPOSE 3000
 CMD ["node", "dist/index.js"]
