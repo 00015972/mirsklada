@@ -18,10 +18,6 @@ RUN pnpm --filter @mirsklada/shared build
 RUN pnpm --filter @mirsklada/database build
 RUN pnpm --filter @mirsklada/api build
 
-# switch to clean npm runtime deps
-RUN rm -rf node_modules
-RUN npm install --omit=dev
-
 # ---- Runner stage ----
 FROM node:20-alpine AS runner
 WORKDIR /app
