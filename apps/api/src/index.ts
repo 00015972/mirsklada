@@ -2,7 +2,6 @@
  * API Server Entry Point
  * Starts the Express server with graceful shutdown
  */
-import "dotenv/config";
 import { createApp } from "./app";
 import { env } from "./config/env";
 import { logger } from "./utils/logger";
