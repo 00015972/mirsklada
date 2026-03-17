@@ -19,13 +19,15 @@ RUN pnpm --filter @mirsklada/database build
 RUN pnpm --filter @mirsklada/api build
 
 # production bundle
-RUN pnpm deploy --filter @mirsklada/api --prod /prod/api
+RUN pnpm deploy --legacy --filter @mirsklada/api --prod /prod/api
 
 # ---- Runner stage ----
 FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+
+RUN apt-get update -y && apt-get install -y openssl
 
 COPY --from=build /prod/api ./
 
