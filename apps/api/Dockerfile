@@ -21,6 +21,8 @@ RUN pnpm --filter @mirsklada/api build
 # production bundle
 RUN pnpm deploy --legacy --filter @mirsklada/api --prod /prod/api
 
+RUN cp -r node_modules/.prisma /prod/api/node_modules/.prisma
+
 # ---- Runner stage ----
 FROM node:20-slim AS runner
 WORKDIR /app
