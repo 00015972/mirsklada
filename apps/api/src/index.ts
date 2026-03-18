@@ -9,18 +9,16 @@ import { disconnect } from "@mirsklada/database";
 
 // Create Express app
 const app = createApp();
+const HOST = "0.0.0.0";
 
 // Start server
-const server = app.listen(env.PORT, () => {
-  logger.info(`🚀 Mirsklada API running on http://localhost:${env.PORT}`);
+const server = app.listen(env.PORT, HOST, () => {
+  logger.info(`Mirsklada API running on http://${HOST}:${env.PORT}`);
   logger.info(`   Environment: ${env.NODE_ENV}`);
-  logger.info(`   Health check: http://localhost:${env.PORT}/health`);
+  logger.info(`   Health check: http://${HOST}:${env.PORT}/health`);
 });
 
-// ─────────────────────────────────────────────────────────────────
 // Graceful Shutdown
-// ─────────────────────────────────────────────────────────────────
-
 const shutdown = async (signal: string) => {
   logger.info(`${signal} received, starting graceful shutdown...`);
 
