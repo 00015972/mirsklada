@@ -13,7 +13,8 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 
 # build everything
-RUN pnpm --filter @mirsklada/database db:generate
+# RUN pnpm --filter @mirsklada/database db:generate
+RUN pnpm exec prisma generate --schema=packages/database/prisma/schema.prisma
 RUN pnpm --filter @mirsklada/shared build
 RUN pnpm --filter @mirsklada/database build
 RUN pnpm --filter @mirsklada/api build
