@@ -72,6 +72,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.2
         version: 6.0.3
+      prisma:
+        specifier: ^5.0.0
+        version: 5.22.0
       rimraf:
         specifier: ^6.0.0
         version: 6.1.2

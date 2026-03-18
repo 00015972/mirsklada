@@ -14,15 +14,13 @@ RUN pnpm install --frozen-lockfile
 
 # build everything
 # RUN pnpm --filter @mirsklada/database db:generate
-RUN pnpm exec prisma generate --schema=packages/database/prisma/schema.prisma
+RUN pnpm dlx prisma generate --schema=packages/database/prisma/schema.prisma
 RUN pnpm --filter @mirsklada/shared build
 RUN pnpm --filter @mirsklada/database build
 RUN pnpm --filter @mirsklada/api build
 
 # production bundle
 RUN pnpm deploy --legacy --filter @mirsklada/api --prod /prod/api
-
-RUN cd /prod/api && npx prisma generate
 
 # ---- Runner stage ----
 FROM node:20-slim AS runner
