@@ -35,6 +35,9 @@ import { logger } from "./utils/logger";
 export function createApp(): Express {
   const app = express();
 
+  // Trust Railway's reverse proxy (required for correct IP detection, rate limiting, etc.)
+  app.set("trust proxy", 1);
+
   // ─────────────────────────────────────────────────────────────────
   // Security Middleware
   // ─────────────────────────────────────────────────────────────────
