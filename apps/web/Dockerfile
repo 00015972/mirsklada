@@ -20,7 +20,8 @@ FROM nginx:alpine AS runner
 # Copy built static files
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 
-# nginx config template: PORT will be injected at runtime
-COPY apps/web/nginx.conf /etc/nginx/templates/default.conf.template
+# Copy nginx config directly (not as template to avoid entrypoint corruption)
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
-CMD ["/bin/sh", "-c", "envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# At runtime: replace port 80 with Railway's PORT, then start nginx
+CMD ["/bin/sh", "-c", "sed -i \"s/listen 80/listen ${PORT:-80}/\" /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]
