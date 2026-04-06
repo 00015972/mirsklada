@@ -2,7 +2,7 @@
  * Settings Page
  * Manage tenant settings, user profile, and team members
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Building2,
   User,
@@ -95,7 +95,7 @@ export function SettingsPage() {
   const [isRemoving, setIsRemoving] = useState(false);
 
   // Fetch tenant details
-  const fetchTenantDetails = async () => {
+  const fetchTenantDetails = useCallback(async () => {
     if (!currentTenantId) return;
     try {
       setIsLoadingTenant(true);
@@ -108,10 +108,10 @@ export function SettingsPage() {
     } finally {
       setIsLoadingTenant(false);
     }
-  };
+  }, [currentTenantId]);
 
   // Fetch team members
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     if (!currentTenantId) return;
     try {
       setIsLoadingMembers(true);
@@ -124,20 +124,20 @@ export function SettingsPage() {
     } finally {
       setIsLoadingMembers(false);
     }
-  };
+  }, [currentTenantId]);
 
   useEffect(() => {
     fetchTenantDetails();
     if (user) {
       setProfileName(user.name || "");
     }
-  }, [currentTenantId, user]);
+  }, [fetchTenantDetails, user]);
 
   useEffect(() => {
     if (activeTab === "team") {
       fetchMembers();
     }
-  }, [activeTab, currentTenantId]);
+  }, [activeTab, fetchMembers]);
 
   // Save business settings
   const handleSaveBusiness = async (e: React.FormEvent) => {

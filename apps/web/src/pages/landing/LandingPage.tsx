@@ -185,8 +185,8 @@ function HeroSection() {
 
             <p className="mt-6 text-lg text-surface-600 dark:text-surface-400 max-w-xl mx-auto lg:mx-0">
               Manage products, sales, inventory, clients, and payments — all
-              from a single platform. Built for small and medium businesses
-              that need simplicity and power.
+              from a single platform. Built for small and medium businesses that
+              need simplicity and power.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -281,15 +281,21 @@ function HeroSection() {
                   Weekly Revenue
                 </p>
                 <div className="flex items-end gap-2 h-24">
-                  {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
+                  {[
+                    { outer: "h-[40%]", inner: "h-[28%]" },
+                    { outer: "h-[65%]", inner: "h-[45.5%]" },
+                    { outer: "h-[45%]", inner: "h-[31.5%]" },
+                    { outer: "h-[80%]", inner: "h-[56%]" },
+                    { outer: "h-[55%]", inner: "h-[38.5%]" },
+                    { outer: "h-[90%]", inner: "h-[63%]" },
+                    { outer: "h-[70%]", inner: "h-[49%]" },
+                  ].map((bar, i) => (
                     <div
                       key={i}
-                      className="flex-1 bg-primary-500/20 dark:bg-primary-500/30 rounded-t-md relative"
-                      style={{ height: `${h}%` }}
+                      className={`flex-1 bg-primary-500/20 dark:bg-primary-500/30 rounded-t-md relative ${bar.outer}`}
                     >
                       <div
-                        className="absolute bottom-0 inset-x-0 bg-primary-500 rounded-t-md"
-                        style={{ height: `${h * 0.7}%` }}
+                        className={`absolute bottom-0 inset-x-0 bg-primary-500 rounded-t-md ${bar.inner}`}
                       />
                     </div>
                   ))}
@@ -452,8 +458,7 @@ const plans = [
     name: "Professional",
     price: "99,000",
     period: "UZS / mo",
-    description:
-      "For growing businesses that need more power and flexibility.",
+    description: "For growing businesses that need more power and flexibility.",
     features: [
       "Unlimited products",
       "3 workspaces",
@@ -499,7 +504,7 @@ function PlansSection() {
           </h2>
           <p className="mt-4 text-lg text-surface-600 dark:text-surface-400">
             Choose the plan that fits your business. Start free, upgrade when
-            you're ready.
+            you&apos;re ready.
           </p>
         </div>
 
@@ -526,7 +531,9 @@ function PlansSection() {
                   {plan.price}
                 </span>
                 {plan.period && (
-                  <span className="text-sm text-surface-500">{plan.period}</span>
+                  <span className="text-sm text-surface-500">
+                    {plan.period}
+                  </span>
                 )}
               </div>
               <p className="mt-3 text-sm text-surface-600 dark:text-surface-400">
@@ -579,8 +586,8 @@ function AboutSection() {
             <p className="mt-6 text-lg text-surface-600 dark:text-surface-400 leading-relaxed">
               Mirsklada is a modern cloud-based ERP system designed specifically
               for small and medium businesses. We understand the unique
-              challenges of running a business in Uzbekistan, and we've built
-              our platform to address them.
+              challenges of running a business in Uzbekistan, and we&apos;ve
+              built our platform to address them.
             </p>
             <p className="mt-4 text-surface-600 dark:text-surface-400 leading-relaxed">
               From managing inventory across multiple warehouses to tracking
@@ -667,8 +674,8 @@ function ContactSection() {
             </span>
           </h2>
           <p className="mt-4 text-lg text-surface-600 dark:text-surface-400">
-            Have questions? We'd love to hear from you. Send us a message and
-            we'll respond as soon as possible.
+            Have questions? We&apos;d love to hear from you. Send us a message
+            and we&apos;ll respond as soon as possible.
           </p>
         </div>
 

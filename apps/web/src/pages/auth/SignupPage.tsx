@@ -32,6 +32,16 @@ const signupSchema = z
 
 type SignupForm = z.infer<typeof signupSchema>;
 
+interface ApiErrorShape {
+  response?: {
+    data?: {
+      error?: {
+        message?: string;
+      };
+    };
+  };
+}
+
 export function SignupPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -65,9 +75,10 @@ export function SignupPage() {
         await setAuth(user, session, []);
         navigate("/onboarding");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiErrorShape;
       const message =
-        err.response?.data?.error?.message ||
+        apiError.response?.data?.error?.message ||
         "Signup failed. Please try again.";
       setError(message);
     }

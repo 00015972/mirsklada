@@ -25,6 +25,16 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+interface ApiErrorShape {
+  response?: {
+    data?: {
+      error?: {
+        message?: string;
+      };
+    };
+  };
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -54,9 +64,11 @@ export function LoginPage() {
       } else {
         navigate("/dashboard");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiError = err as ApiErrorShape;
       const message =
-        err.response?.data?.error?.message || "Login failed. Please try again.";
+        apiError.response?.data?.error?.message ||
+        "Login failed. Please try again.";
       setError(message);
     }
   };

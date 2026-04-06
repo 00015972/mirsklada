@@ -4,6 +4,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/stores/auth.store";
 
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 
 export const api = axios.create({
@@ -40,15 +44,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
 
     // If 401 and we haven't already tried to refresh
     if (
       error.response?.status === 401 &&
       originalRequest &&
-      !(originalRequest as any)._retry
+      !originalRequest._retry
     ) {
-      (originalRequest as any)._retry = true;
+      originalRequest._retry = true;
 
       try {
         const { session, refreshSession, logout } = useAuthStore.getState();
@@ -96,9 +100,9 @@ export const productsApi = {
 
   get: (id: string) => api.get(`/products/${id}`),
 
-  create: (data: any) => api.post("/products", data),
+  create: (data: unknown) => api.post("/products", data),
 
-  update: (id: string, data: any) => api.patch(`/products/${id}`, data),
+  update: (id: string, data: unknown) => api.patch(`/products/${id}`, data),
 
   delete: (id: string) => api.delete(`/products/${id}`),
 };
@@ -116,7 +120,7 @@ export const clientsApi = {
 
   get: (id: string) => api.get(`/clients/${id}`),
 
-  create: (data: any) => api.post("/clients", data),
+  create: (data: unknown) => api.post("/clients", data),
 };
 
 export const ordersApi = {
@@ -125,5 +129,5 @@ export const ordersApi = {
 
   get: (id: string) => api.get(`/orders/${id}`),
 
-  create: (data: any) => api.post("/orders", data),
+  create: (data: unknown) => api.post("/orders", data),
 };

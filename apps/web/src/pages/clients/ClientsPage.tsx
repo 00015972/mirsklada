@@ -2,7 +2,7 @@
  * Clients Page
  * List and manage clients
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   Pencil,
@@ -154,7 +154,7 @@ export function ClientsPage() {
   };
 
   // Fetch clients
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
@@ -170,11 +170,11 @@ export function ClientsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchQuery, showWithDebt]);
 
   useEffect(() => {
     fetchClients();
-  }, [searchQuery, showWithDebt]);
+  }, [fetchClients]);
 
   // Reset form
   const resetForm = () => {
@@ -395,7 +395,9 @@ export function ClientsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Clients</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+            Clients
+          </h1>
           <p className="text-surface-400 mt-1">
             Manage your customers and track their orders
           </p>

@@ -2,7 +2,7 @@
  * Payments Page
  * List and manage payments with filtering and recording
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   Loader2,
@@ -168,6 +168,38 @@ export function PaymentsPage() {
   const [voidReason, setVoidReason] = useState("");
   const [voidError, setVoidError] = useState<string | null>(null);
 
+  // Get date range for API
+  const getDateParams = useCallback(() => {
+    const now = new Date();
+    let startDate: Date | undefined;
+    const endDate = new Date(now);
+    endDate.setHours(23, 59, 59, 999);
+
+    switch (dateRange) {
+      case "today":
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case "week":
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case "month":
+        startDate = new Date(now);
+        startDate.setMonth(now.getMonth() - 1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case "all":
+        return {};
+    }
+
+    return {
+      startDate: startDate?.toISOString(),
+      endDate: endDate.toISOString(),
+    };
+  }, [dateRange]);
+
   const isInActiveDateRange = (dateStr: string): boolean => {
     const parsedDate = new Date(dateStr);
     if (Number.isNaN(parsedDate.getTime())) {
@@ -233,40 +265,8 @@ export function PaymentsPage() {
     });
   };
 
-  // Get date range for API
-  const getDateParams = () => {
-    const now = new Date();
-    let startDate: Date | undefined;
-    const endDate = new Date(now);
-    endDate.setHours(23, 59, 59, 999);
-
-    switch (dateRange) {
-      case "today":
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case "week":
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case "month":
-        startDate = new Date(now);
-        startDate.setMonth(now.getMonth() - 1);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case "all":
-        return {};
-    }
-
-    return {
-      startDate: startDate?.toISOString(),
-      endDate: endDate.toISOString(),
-    };
-  };
-
   // Fetch payments
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
@@ -288,10 +288,10 @@ export function PaymentsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedClientId, selectedMethod, getDateParams]);
 
   // Fetch payment summary
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
       const dateParams = getDateParams();
       const params = new URLSearchParams();
@@ -304,7 +304,7 @@ export function PaymentsPage() {
     } catch (err) {
       console.error("Failed to load summary:", err);
     }
-  };
+  }, [getDateParams]);
 
   // Fetch clients for filter and form
   const fetchClients = async () => {
@@ -340,7 +340,7 @@ export function PaymentsPage() {
   useEffect(() => {
     fetchPayments();
     fetchSummary();
-  }, [selectedClientId, selectedMethod, dateRange]);
+  }, [fetchPayments, fetchSummary]);
 
   // When record client changes, fetch their orders
   useEffect(() => {
@@ -596,7 +596,9 @@ export function PaymentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Payments</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+            Payments
+          </h1>
           <p className="text-surface-400 mt-1">
             Record and manage payment transactions
           </p>

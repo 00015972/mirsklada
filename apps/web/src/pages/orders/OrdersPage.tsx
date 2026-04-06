@@ -2,7 +2,7 @@
  * Orders Page
  * List and manage orders
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   Eye,
@@ -193,35 +193,41 @@ export function OrdersPage() {
     });
   };
 
-  const matchesActiveFilters = (order: Order): boolean => {
-    if (selectedStatus && order.status !== selectedStatus) {
-      return false;
-    }
+  const matchesActiveFilters = useCallback(
+    (order: Order): boolean => {
+      if (selectedStatus && order.status !== selectedStatus) {
+        return false;
+      }
 
-    if (
-      selectedPaymentStatus &&
-      order.paymentStatus !== selectedPaymentStatus
-    ) {
-      return false;
-    }
+      if (
+        selectedPaymentStatus &&
+        order.paymentStatus !== selectedPaymentStatus
+      ) {
+        return false;
+      }
 
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-    if (!normalizedQuery) {
-      return true;
-    }
+      const normalizedQuery = searchQuery.trim().toLowerCase();
+      if (!normalizedQuery) {
+        return true;
+      }
 
-    return (
-      order.orderNumber.toLowerCase().includes(normalizedQuery) ||
-      order.client.name.toLowerCase().includes(normalizedQuery)
-    );
-  };
+      return (
+        order.orderNumber.toLowerCase().includes(normalizedQuery) ||
+        order.client.name.toLowerCase().includes(normalizedQuery)
+      );
+    },
+    [selectedStatus, selectedPaymentStatus, searchQuery],
+  );
 
-  const applyFilters = (items: Order[]): Order[] => {
-    return items.filter(matchesActiveFilters);
-  };
+  const applyFilters = useCallback(
+    (items: Order[]): Order[] => {
+      return items.filter(matchesActiveFilters);
+    },
+    [matchesActiveFilters],
+  );
 
   // Fetch orders
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
@@ -240,7 +246,7 @@ export function OrdersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedStatus, selectedPaymentStatus, applyFilters]);
 
   // Fetch clients and products for order creation
   const fetchClientsAndProducts = async () => {
@@ -258,7 +264,7 @@ export function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [selectedStatus, selectedPaymentStatus, searchQuery]);
+  }, [fetchOrders]);
 
   useEffect(() => {
     fetchClientsAndProducts();
@@ -688,7 +694,9 @@ export function OrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Orders</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+            Orders
+          </h1>
           <p className="text-surface-400 mt-1">
             Create and manage customer orders
           </p>
@@ -1087,13 +1095,17 @@ export function OrdersPage() {
               {/* Client Info */}
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-surface-500 dark:text-surface-400">Client</p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400">
+                    Client
+                  </p>
                   <p className="font-medium text-surface-900 dark:text-surface-100">
                     {viewingOrder.client.name}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-surface-500 dark:text-surface-400">Date</p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400">
+                    Date
+                  </p>
                   <p className="text-surface-300">
                     {formatDate(viewingOrder.createdAt)}
                   </p>
@@ -1102,7 +1114,9 @@ export function OrdersPage() {
 
               {/* Items */}
               <div>
-                <p className="text-sm text-surface-500 dark:text-surface-400 mb-2">Items</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400 mb-2">
+                  Items
+                </p>
                 <div className="space-y-2">
                   {viewingOrder.items?.map((item) => (
                     <div
@@ -1132,7 +1146,9 @@ export function OrdersPage() {
               {/* Total & Payment */}
               <div className="flex justify-between items-center py-3 border-t border-surface-200 dark:border-surface-700">
                 <div>
-                  <p className="text-sm text-surface-500 dark:text-surface-400">Payment Status</p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400">
+                    Payment Status
+                  </p>
                   <p
                     className={`font-medium ${paymentStatusConfig[viewingOrder.paymentStatus].className}`}
                   >
@@ -1145,7 +1161,9 @@ export function OrdersPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-surface-500 dark:text-surface-400">Total</p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400">
+                    Total
+                  </p>
                   <p className="text-xl font-bold text-surface-900 dark:text-surface-100">
                     {formatPrice(viewingOrder.totalAmount)}
                   </p>
@@ -1154,7 +1172,9 @@ export function OrdersPage() {
 
               {viewingOrder.notes && (
                 <div className="p-3 bg-surface-100 dark:bg-surface-800/50 rounded-lg">
-                  <p className="text-sm text-surface-500 dark:text-surface-400">Notes</p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400">
+                    Notes
+                  </p>
                   <p className="text-surface-300">{viewingOrder.notes}</p>
                 </div>
               )}

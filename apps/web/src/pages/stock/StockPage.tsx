@@ -2,7 +2,7 @@
  * Stock Management Page
  * Record stock movements (IN/OUT/ADJUST) and view history
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   Minus,
@@ -159,7 +159,7 @@ export function StockPage() {
   };
 
   // Fetch stock movements
-  const fetchMovements = async () => {
+  const fetchMovements = useCallback(async () => {
     try {
       setIsLoadingMovements(true);
       const params = new URLSearchParams();
@@ -172,7 +172,7 @@ export function StockPage() {
     } finally {
       setIsLoadingMovements(false);
     }
-  };
+  }, [movementFilter]);
 
   useEffect(() => {
     fetchProducts();
@@ -182,7 +182,7 @@ export function StockPage() {
     if (activeTab === "movements") {
       fetchMovements();
     }
-  }, [activeTab, movementFilter]);
+  }, [activeTab, fetchMovements]);
 
   // Filter products by search and low stock
   const filteredProducts = products.filter((product) => {
@@ -424,7 +424,9 @@ export function StockPage() {
                 <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
                   {totalProducts}
                 </p>
-                <p className="text-sm text-surface-500 dark:text-surface-400">Total Products</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400">
+                  Total Products
+                </p>
               </div>
             </div>
           </CardContent>
@@ -439,7 +441,9 @@ export function StockPage() {
                 <p className="text-2xl font-bold text-amber-400">
                   {lowStockCount}
                 </p>
-                <p className="text-sm text-surface-500 dark:text-surface-400">Low Stock</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400">
+                  Low Stock
+                </p>
               </div>
             </div>
           </CardContent>
@@ -454,7 +458,9 @@ export function StockPage() {
                 <p className="text-2xl font-bold text-red-400">
                   {outOfStockCount}
                 </p>
-                <p className="text-sm text-surface-500 dark:text-surface-400">Out of Stock</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400">
+                  Out of Stock
+                </p>
               </div>
             </div>
           </CardContent>
@@ -843,7 +849,9 @@ export function StockPage() {
                 {/* Current Stock Display */}
                 {selectedProduct && (
                   <div className="p-3 rounded-lg bg-surface-800 border border-surface-700">
-                    <p className="text-sm text-surface-500 dark:text-surface-400">Current Stock</p>
+                    <p className="text-sm text-surface-500 dark:text-surface-400">
+                      Current Stock
+                    </p>
                     <p className="text-lg font-semibold text-surface-900 dark:text-surface-100">
                       {formatWeight(selectedProduct.currentStockKg)}
                     </p>
