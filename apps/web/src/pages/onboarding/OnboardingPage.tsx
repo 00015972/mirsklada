@@ -78,14 +78,14 @@ export function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white dark:bg-surface-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 mb-4">
             <Building2 className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-surface-100">
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-900 dark:text-surface-100">
             Welcome to Mirsklada
           </h1>
           <p className="text-surface-400 mt-2">

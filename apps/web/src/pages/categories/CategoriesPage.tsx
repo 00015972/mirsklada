@@ -31,6 +31,19 @@ interface Category {
   };
 }
 
+interface CategoryPayload {
+  name: string;
+}
+
+interface CategoryApiResponse {
+  id: string;
+  name: string;
+  sortOrder?: number;
+  _count?: {
+    products?: number;
+  };
+}
+
 export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +60,44 @@ export function CategoriesPage() {
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(
     null,
   );
+
+  const sortCategories = (items: Category[]) => {
+    return [...items].sort((a, b) => {
+      if (a.sortOrder !== b.sortOrder) {
+        return a.sortOrder - b.sortOrder;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  };
+
+  const toOptimisticCategory = (
+    payload: CategoryPayload,
+    id: string,
+    existingCategory?: Category,
+  ): Category => {
+    return {
+      id,
+      name: payload.name,
+      sortOrder: existingCategory?.sortOrder ?? 0,
+      _count: {
+        products: existingCategory?._count.products ?? 0,
+      },
+    };
+  };
+
+  const normalizeCategory = (
+    category: CategoryApiResponse,
+    fallbackCategory: Category,
+  ): Category => {
+    return {
+      id: category.id,
+      name: category.name,
+      sortOrder: category.sortOrder ?? fallbackCategory.sortOrder,
+      _count: {
+        products: category._count?.products ?? fallbackCategory._count.products,
+      },
+    };
+  };
 
   // Fetch categories
   const fetchCategories = async () => {
@@ -95,30 +146,77 @@ export function CategoriesPage() {
     setIsSubmitting(true);
     setFormError(null);
 
+    const payload: CategoryPayload = { name: formName.trim() };
+    const previousCategories = categories;
+    const optimisticId = editingCategory
+      ? editingCategory.id
+      : `temp-category-${Date.now()}`;
+    const optimisticCategory = toOptimisticCategory(
+      payload,
+      optimisticId,
+      editingCategory ?? undefined,
+    );
+
+    setCategories((prevCategories) => {
+      const nextCategories = editingCategory
+        ? prevCategories.map((category) =>
+            category.id === editingCategory.id ? optimisticCategory : category,
+          )
+        : [optimisticCategory, ...prevCategories];
+
+      return sortCategories(nextCategories);
+    });
+
     try {
-      if (editingCategory) {
-        // Update
-        await api.patch(`/categories/${editingCategory.id}`, {
-          name: formName.trim(),
+      const response = editingCategory
+        ? await api.patch(`/categories/${editingCategory.id}`, payload)
+        : await api.post("/categories", payload);
+
+      const serverCategory = response?.data?.data as
+        | CategoryApiResponse
+        | undefined;
+
+      if (serverCategory) {
+        const normalizedCategory = normalizeCategory(
+          serverCategory,
+          optimisticCategory,
+        );
+
+        setCategories((prevCategories) => {
+          const nextCategories = editingCategory
+            ? prevCategories.map((category) =>
+                category.id === editingCategory.id
+                  ? normalizedCategory
+                  : category,
+              )
+            : prevCategories.map((category) =>
+                category.id === optimisticId ? normalizedCategory : category,
+              );
+
+          return sortCategories(nextCategories);
         });
       } else {
-        // Create
-        await api.post("/categories", { name: formName.trim() });
+        await fetchCategories();
       }
 
+      setEditingCategory(null);
+      setFormName("");
       setIsModalOpen(false);
       toast.success(editingCategory ? "Category updated" : "Category created");
-      fetchCategories();
     } catch (err: unknown) {
+      setCategories(previousCategories);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setFormError(
-          axiosError.response?.data?.message || "Failed to save category",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to save category";
+        setFormError(message);
+        toast.error(message);
       } else {
         setFormError("Failed to save category");
+        toast.error("Failed to save category");
       }
     } finally {
       setIsSubmitting(false);
@@ -129,20 +227,32 @@ export function CategoriesPage() {
   const handleDelete = async () => {
     if (!deletingCategory) return;
 
+    const categoryToDelete = deletingCategory;
+    const previousCategories = categories;
+
     setIsSubmitting(true);
+    setDeletingCategory(null);
+    setCategories((prevCategories) =>
+      prevCategories.filter((category) => category.id !== categoryToDelete.id),
+    );
+
     try {
-      await api.delete(`/categories/${deletingCategory.id}`);
-      setDeletingCategory(null);
+      await api.delete(`/categories/${categoryToDelete.id}`);
       toast.success("Category deleted");
-      fetchCategories();
     } catch (err: unknown) {
+      setCategories(previousCategories);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setError(
-          axiosError.response?.data?.message || "Failed to delete category",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to delete category";
+        setError(message);
+        toast.error(message);
+      } else {
+        setError("Failed to delete category");
+        toast.error("Failed to delete category");
       }
     } finally {
       setIsSubmitting(false);
@@ -162,8 +272,8 @@ export function CategoriesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Categories</h1>
-          <p className="text-surface-400 mt-1">
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Categories</h1>
+          <p className="text-surface-500 dark:text-surface-400 mt-1">
             Organize your products into categories
           </p>
         </div>
@@ -185,11 +295,11 @@ export function CategoriesPage() {
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
-              <FolderOpen className="h-12 w-12 text-surface-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-surface-200 mb-2">
+              <FolderOpen className="h-12 w-12 text-surface-400 dark:text-surface-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-surface-700 dark:text-surface-200 mb-2">
                 No categories yet
               </h3>
-              <p className="text-surface-400 mb-4">
+              <p className="text-surface-500 dark:text-surface-400 mb-4">
                 Create your first category to start organizing products
               </p>
               <Button onClick={handleCreate}>
@@ -207,34 +317,28 @@ export function CategoriesPage() {
           <CardContent className="p-0">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-surface-800">
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Name
-                  </th>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Products
-                  </th>
-                  <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Actions
-                  </th>
+                <tr className="border-b border-surface-200 dark:border-surface-800">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Name</th>
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Products</th>
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-800">
+              <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
                 {categories.map((category) => (
                   <tr
                     key={category.id}
-                    className="hover:bg-surface-800/50 transition-colors"
+                    className="hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <GripVertical className="h-4 w-4 text-surface-600 cursor-grab" />
-                        <span className="font-medium text-surface-100">
+                        <GripVertical className="h-4 w-4 text-surface-400 dark:text-surface-600 cursor-grab" />
+                        <span className="font-medium text-surface-900 dark:text-surface-100">
                           {category.name}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-surface-400">
+                      <span className="text-surface-500 dark:text-surface-400">
                         {category._count.products} products
                       </span>
                     </td>
@@ -244,7 +348,7 @@ export function CategoriesPage() {
                           type="button"
                           title="Edit category"
                           onClick={() => handleEdit(category)}
-                          className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
+                          className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -333,9 +437,9 @@ export function CategoriesPage() {
               <CardTitle>Delete Category</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-surface-300">
+              <p className="text-surface-600 dark:text-surface-300">
                 Are you sure you want to delete{" "}
-                <span className="font-medium text-surface-100">
+                <span className="font-medium text-surface-900 dark:text-surface-100">
                   {deletingCategory.name}
                 </span>
                 ? This action cannot be undone.

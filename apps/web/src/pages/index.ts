@@ -8,3 +8,4 @@ export { OrdersPage } from "./orders";
 export { StockPage } from "./stock";
 export { PaymentsPage } from "./payments";
 export { SettingsPage } from "./settings";
+export { LandingPage } from "./landing";

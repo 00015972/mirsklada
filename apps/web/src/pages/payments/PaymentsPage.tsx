@@ -67,6 +67,8 @@ interface PaymentSummary {
   byMethod: Record<string, number>;
 }
 
+type PaymentMethod = Payment["method"];
+
 /**
  * Format price with thousand separators (Uzbek format)
  */
@@ -165,6 +167,71 @@ export function PaymentsPage() {
   // Void form
   const [voidReason, setVoidReason] = useState("");
   const [voidError, setVoidError] = useState<string | null>(null);
+
+  const isInActiveDateRange = (dateStr: string): boolean => {
+    const parsedDate = new Date(dateStr);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return false;
+    }
+
+    const dateParams = getDateParams();
+    if (dateParams.startDate) {
+      const startDate = new Date(dateParams.startDate);
+      if (parsedDate < startDate) {
+        return false;
+      }
+    }
+
+    if (dateParams.endDate) {
+      const endDate = new Date(dateParams.endDate);
+      if (parsedDate > endDate) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const matchesActiveFilters = (payment: Payment): boolean => {
+    if (selectedClientId && payment.client.id !== selectedClientId) {
+      return false;
+    }
+
+    if (selectedMethod && payment.method !== selectedMethod) {
+      return false;
+    }
+
+    return isInActiveDateRange(payment.createdAt);
+  };
+
+  const applyFilters = (items: Payment[]): Payment[] => {
+    return items.filter(matchesActiveFilters);
+  };
+
+  const adjustSummaryOptimistically = (
+    amountDelta: number,
+    method: PaymentMethod,
+    createdAt: string,
+  ) => {
+    if (!isInActiveDateRange(createdAt)) {
+      return;
+    }
+
+    setSummary((prevSummary) => {
+      if (!prevSummary) {
+        return prevSummary;
+      }
+
+      return {
+        total: prevSummary.total + amountDelta,
+        count: prevSummary.count + 1,
+        byMethod: {
+          ...prevSummary.byMethod,
+          [method]: (prevSummary.byMethod[method] || 0) + amountDelta,
+        },
+      };
+    });
+  };
 
   // Get date range for API
   const getDateParams = () => {
@@ -346,33 +413,89 @@ export function PaymentsPage() {
       return;
     }
 
+    const normalizedMethod = recordMethod as PaymentMethod;
+    const selectedClient = clients.find(
+      (client) => client.id === recordClientId,
+    );
+    const selectedOrder = clientOrders.find(
+      (order) => order.id === recordOrderId,
+    );
+    const optimisticCreatedAt = new Date().toISOString();
+    const optimisticId = `temp-payment-${Date.now()}`;
+    const optimisticPayment: Payment = {
+      id: optimisticId,
+      amount,
+      method: normalizedMethod,
+      reference: recordReference.trim() || null,
+      notes: recordNotes.trim() || null,
+      createdAt: optimisticCreatedAt,
+      client: {
+        id: recordClientId,
+        name: selectedClient?.name || "Unknown client",
+      },
+      order: recordOrderId
+        ? {
+            id: recordOrderId,
+            orderNumber: selectedOrder?.orderNumber || "Order",
+          }
+        : null,
+      receivedBy: null,
+    };
+    const previousPayments = payments;
+    const previousSummary = summary;
+
     setIsSubmitting(true);
     setFormError(null);
+    setPayments((prevPayments) =>
+      applyFilters([optimisticPayment, ...prevPayments]),
+    );
+    adjustSummaryOptimistically(
+      amount,
+      optimisticPayment.method,
+      optimisticCreatedAt,
+    );
 
     try {
-      await api.post("/payments", {
+      const response = await api.post("/payments", {
         clientId: recordClientId,
         orderId: recordOrderId || undefined,
         amount,
-        method: recordMethod,
+        method: normalizedMethod,
         reference: recordReference.trim() || undefined,
         notes: recordNotes.trim() || undefined,
       });
 
+      const serverPayment = response?.data?.data as Payment | undefined;
+
+      if (serverPayment) {
+        setPayments((prevPayments) => {
+          const nextPayments = prevPayments.map((payment) =>
+            payment.id === optimisticId ? serverPayment : payment,
+          );
+          return applyFilters(nextPayments);
+        });
+      } else {
+        await fetchPayments();
+      }
+
       setIsRecordModalOpen(false);
+      resetRecordForm();
       toast.success("Payment recorded");
-      fetchPayments();
-      fetchSummary();
     } catch (err: unknown) {
+      setPayments(previousPayments);
+      setSummary(previousSummary);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setFormError(
-          axiosError.response?.data?.message || "Failed to record payment",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to record payment";
+        setFormError(message);
+        toast.error(message);
       } else {
         setFormError("Failed to record payment");
+        toast.error("Failed to record payment");
       }
     } finally {
       setIsSubmitting(false);
@@ -398,29 +521,59 @@ export function PaymentsPage() {
       return;
     }
 
+    const paymentToVoid = viewingPayment;
+    const amountToReverse =
+      typeof paymentToVoid.amount === "string"
+        ? Math.abs(parseFloat(paymentToVoid.amount))
+        : Math.abs(paymentToVoid.amount);
+    const optimisticCreatedAt = new Date().toISOString();
+    const optimisticVoid: Payment = {
+      ...paymentToVoid,
+      id: `temp-void-${Date.now()}`,
+      amount: -amountToReverse,
+      reference: `VOID:${paymentToVoid.id}`,
+      notes: `Voided: ${voidReason.trim()}`,
+      createdAt: optimisticCreatedAt,
+    };
+    const previousPayments = payments;
+    const previousSummary = summary;
+
     setIsSubmitting(true);
     setVoidError(null);
+    setPayments((prevPayments) =>
+      applyFilters([optimisticVoid, ...prevPayments]),
+    );
+    adjustSummaryOptimistically(
+      -amountToReverse,
+      paymentToVoid.method,
+      optimisticCreatedAt,
+    );
 
     try {
-      await api.post(`/payments/${viewingPayment.id}/void`, {
+      await api.post(`/payments/${paymentToVoid.id}/void`, {
         reason: voidReason.trim(),
       });
 
       setIsVoidModalOpen(false);
       setViewingPayment(null);
       toast.success("Payment voided");
-      fetchPayments();
-      fetchSummary();
+      void fetchPayments();
+      void fetchSummary();
     } catch (err: unknown) {
+      setPayments(previousPayments);
+      setSummary(previousSummary);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setVoidError(
-          axiosError.response?.data?.message || "Failed to void payment",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to void payment";
+        setVoidError(message);
+        toast.error(message);
       } else {
         setVoidError("Failed to void payment");
+        toast.error("Failed to void payment");
       }
     } finally {
       setIsSubmitting(false);
@@ -443,7 +596,7 @@ export function PaymentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Payments</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Payments</h1>
           <p className="text-surface-400 mt-1">
             Record and manage payment transactions
           </p>
@@ -502,7 +655,7 @@ export function PaymentsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-surface-400">{config.label}</p>
-                      <p className="text-lg font-bold text-surface-100">
+                      <p className="text-lg font-bold text-surface-900 dark:text-surface-100">
                         {formatPrice(amount)}
                       </p>
                     </div>
@@ -539,7 +692,8 @@ export function PaymentsPage() {
         <select
           value={selectedClientId}
           onChange={(e) => setSelectedClientId(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+          className="select-field"
+          aria-label="Filter by client"
         >
           <option value="">All Clients</option>
           {clients.map((client) => (
@@ -553,7 +707,8 @@ export function PaymentsPage() {
         <select
           value={selectedMethod}
           onChange={(e) => setSelectedMethod(e.target.value)}
-          className="px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+          className="select-field"
+          aria-label="Filter by payment method"
         >
           <option value="">All Methods</option>
           {Object.entries(methodConfig).map(([method, config]) => (
@@ -596,27 +751,27 @@ export function PaymentsPage() {
             <table className="w-full">
               <thead className="border-b border-surface-700">
                 <tr>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Date
                   </th>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Client
                   </th>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Order
                   </th>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Method
                   </th>
-                  <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Amount
                   </th>
-                  <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-800">
+              <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
                 {payments.map((payment) => {
                   const config =
                     methodConfig[payment.method] || methodConfig.CASH;
@@ -630,7 +785,7 @@ export function PaymentsPage() {
                   return (
                     <tr
                       key={payment.id}
-                      className={`hover:bg-surface-800/50 transition-colors ${
+                      className={`hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors ${
                         isVoid ? "opacity-60" : ""
                       }`}
                     >
@@ -685,7 +840,7 @@ export function PaymentsPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setViewingPayment(payment)}
-                            className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
+                            className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
                             title="View Details"
                           >
                             <Eye className="h-4 w-4" />
@@ -766,7 +921,8 @@ export function PaymentsPage() {
                     <select
                       value={recordOrderId}
                       onChange={(e) => handleRecordOrderChange(e.target.value)}
-                      className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+                      className="select-field w-full"
+                      aria-label="Select order for payment"
                     >
                       <option value="">
                         General payment (no specific order)
@@ -854,7 +1010,7 @@ export function PaymentsPage() {
                     onChange={(e) => setRecordNotes(e.target.value)}
                     rows={2}
                     placeholder="Optional notes..."
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
 
@@ -923,7 +1079,7 @@ export function PaymentsPage() {
                       viewingPayment.method}
                   </span>
                 </div>
-                <div className="flex justify-between border-t border-surface-700 pt-3">
+                <div className="flex justify-between border-t border-surface-200 dark:border-surface-700 pt-3">
                   <span className="text-surface-400">Amount</span>
                   <span
                     className={`text-xl font-bold ${
@@ -1002,7 +1158,7 @@ export function PaymentsPage() {
                   </div>
                 )}
 
-                <div className="p-4 bg-surface-800/50 rounded-lg">
+                <div className="p-4 bg-surface-100 dark:bg-surface-800/50 rounded-lg">
                   <p className="text-surface-400 text-sm mb-2">
                     You are about to void this payment:
                   </p>
@@ -1015,7 +1171,8 @@ export function PaymentsPage() {
                     </span>
                   </div>
                   <p className="text-xs text-surface-500 mt-2">
-                    This will reverse the payment and restore the client&apos;s debt.
+                    This will reverse the payment and restore the client&apos;s
+                    debt.
                   </p>
                 </div>
 
@@ -1028,7 +1185,7 @@ export function PaymentsPage() {
                     onChange={(e) => setVoidReason(e.target.value)}
                     rows={3}
                     placeholder="Explain why this payment is being voided..."
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-red-500 resize-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-red-500 resize-none"
                     autoFocus
                   />
                 </div>

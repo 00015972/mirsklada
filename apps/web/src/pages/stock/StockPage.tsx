@@ -57,12 +57,24 @@ interface StockMovement {
   } | null;
 }
 
+interface StockMovementRecordResponse {
+  movement?: StockMovement;
+  product?: {
+    id: string;
+    currentStockKg: number | string;
+  };
+}
+
 /**
  * Format weight with 2 decimal places
  */
 function formatWeight(kg: number | string): string {
   const num = typeof kg === "string" ? parseFloat(kg) : kg;
   return num.toFixed(2) + " kg";
+}
+
+function toNumber(value: number | string): number {
+  return typeof value === "string" ? parseFloat(value) : value;
 }
 
 /**
@@ -126,6 +138,10 @@ export function StockPage() {
 
   // General error
   const [error, setError] = useState<string | null>(null);
+
+  const shouldIncludeMovementForFilter = (type: StockMovement["type"]) => {
+    return !movementFilter || movementFilter === type;
+  };
 
   // Fetch products for stock levels
   const fetchProducts = async () => {
@@ -214,33 +230,126 @@ export function StockPage() {
       return;
     }
 
+    const productToUpdate = products.find(
+      (product) => product.id === selectedProductId,
+    );
+
+    if (!productToUpdate) {
+      setFormError("Selected product not found");
+      return;
+    }
+
+    const currentStock = toNumber(productToUpdate.currentStockKg);
+    let nextStock = currentStock;
+    let movementQuantity = qty;
+
+    if (movementType === "IN") {
+      nextStock = currentStock + qty;
+      movementQuantity = qty;
+    } else if (movementType === "OUT") {
+      if (qty > currentStock) {
+        setFormError(
+          `Insufficient stock. Available: ${formatWeight(currentStock)}`,
+        );
+        return;
+      }
+
+      nextStock = currentStock - qty;
+      movementQuantity = -qty;
+    } else {
+      nextStock = qty;
+      movementQuantity = qty - currentStock;
+    }
+
+    const optimisticMovement: StockMovement = {
+      id: `temp-movement-${Date.now()}`,
+      type: movementType,
+      quantityKg: movementQuantity,
+      balanceAfterKg: nextStock,
+      reason: reason.trim() || null,
+      reference: null,
+      createdAt: new Date().toISOString(),
+      product: {
+        id: productToUpdate.id,
+        name: productToUpdate.name,
+        unit: productToUpdate.unit,
+      },
+      performedBy: null,
+    };
+    const previousProducts = products;
+    const previousMovements = movements;
+
     setIsSubmitting(true);
     setFormError(null);
+    setProducts((prevProducts) =>
+      prevProducts.map((product) =>
+        product.id === selectedProductId
+          ? { ...product, currentStockKg: nextStock }
+          : product,
+      ),
+    );
+
+    if (
+      activeTab === "movements" &&
+      shouldIncludeMovementForFilter(movementType)
+    ) {
+      setMovements((prevMovements) => [optimisticMovement, ...prevMovements]);
+    }
 
     try {
-      await api.post("/stock/movements", {
+      const response = await api.post("/stock/movements", {
         productId: selectedProductId,
         type: movementType,
         quantityKg: qty,
         reason: reason.trim() || undefined,
       });
 
+      const result = response?.data?.data as
+        | StockMovementRecordResponse
+        | undefined;
+
+      if (result?.product) {
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product.id === result.product?.id
+              ? { ...product, currentStockKg: result.product.currentStockKg }
+              : product,
+          ),
+        );
+      }
+
+      if (
+        activeTab === "movements" &&
+        shouldIncludeMovementForFilter(movementType)
+      ) {
+        if (result?.movement) {
+          setMovements((prevMovements) =>
+            prevMovements.map((movement) =>
+              movement.id === optimisticMovement.id
+                ? result.movement!
+                : movement,
+            ),
+          );
+        }
+      }
+
       setIsModalOpen(false);
       toast.success(`Stock ${movementType.toLowerCase()} recorded`);
-      fetchProducts();
-      if (activeTab === "movements") {
-        fetchMovements();
-      }
     } catch (err: unknown) {
+      setProducts(previousProducts);
+      setMovements(previousMovements);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setFormError(
-          axiosError.response?.data?.message || "Failed to record movement",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to record movement";
+        setFormError(message);
+        toast.error(message);
       } else {
         setFormError("Failed to record movement");
+        toast.error("Failed to record movement");
       }
     } finally {
       setIsSubmitting(false);
@@ -284,7 +393,7 @@ export function StockPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
             Stock Management
           </h1>
           <p className="text-surface-400 mt-1">
@@ -312,10 +421,10 @@ export function StockPage() {
                 <Package className="h-5 w-5 text-primary-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-surface-100">
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
                   {totalProducts}
                 </p>
-                <p className="text-sm text-surface-400">Total Products</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400">Total Products</p>
               </div>
             </div>
           </CardContent>
@@ -330,7 +439,7 @@ export function StockPage() {
                 <p className="text-2xl font-bold text-amber-400">
                   {lowStockCount}
                 </p>
-                <p className="text-sm text-surface-400">Low Stock</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400">Low Stock</p>
               </div>
             </div>
           </CardContent>
@@ -345,7 +454,7 @@ export function StockPage() {
                 <p className="text-2xl font-bold text-red-400">
                   {outOfStockCount}
                 </p>
-                <p className="text-sm text-surface-400">Out of Stock</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400">Out of Stock</p>
               </div>
             </div>
           </CardContent>
@@ -397,7 +506,7 @@ export function StockPage() {
                 placeholder="Search products..."
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500"
+                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500"
               />
             </div>
             <Button
@@ -439,25 +548,25 @@ export function StockPage() {
               <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full min-w-[600px]">
                   <thead>
-                    <tr className="border-b border-surface-800">
-                      <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                    <tr className="border-b border-surface-200 dark:border-surface-800">
+                      <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                         Product
                       </th>
-                      <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                      <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                         Category
                       </th>
-                      <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                      <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                         Current Stock
                       </th>
-                      <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                      <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                         Min. Level
                       </th>
-                      <th className="text-center text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                      <th className="text-center text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-surface-800">
+                  <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
                     {filteredProducts.map((product) => {
                       const currentStock =
                         typeof product.currentStockKg === "string"
@@ -473,7 +582,7 @@ export function StockPage() {
                       return (
                         <tr
                           key={product.id}
-                          className="hover:bg-surface-800/50 transition-colors"
+                          className="hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors"
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
@@ -496,7 +605,7 @@ export function StockPage() {
                                   }`}
                                 />
                               </div>
-                              <span className="font-medium text-surface-100">
+                              <span className="font-medium text-surface-900 dark:text-surface-100">
                                 {product.name}
                               </span>
                             </div>
@@ -579,7 +688,8 @@ export function StockPage() {
             <select
               value={movementFilter}
               onChange={(e) => setMovementFilter(e.target.value)}
-              className="px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+              className="select-field"
+              aria-label="Filter stock movements by type"
             >
               <option value="">All Types</option>
               <option value="IN">Stock In</option>
@@ -620,7 +730,7 @@ export function StockPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="divide-y divide-surface-800">
+                <div className="divide-y divide-surface-200 dark:divide-surface-800">
                   {movements.map((movement) => {
                     const config = movementTypeConfig[movement.type];
                     const Icon = config.icon;
@@ -632,14 +742,14 @@ export function StockPage() {
                     return (
                       <div
                         key={movement.id}
-                        className="flex items-center gap-4 px-6 py-4 hover:bg-surface-800/50 transition-colors"
+                        className="flex items-center gap-4 px-6 py-4 hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors"
                       >
                         <div className={`p-2 rounded-lg ${config.className}`}>
                           <Icon className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-surface-100">
+                            <span className="font-medium text-surface-900 dark:text-surface-100">
                               {movement.product.name}
                             </span>
                             <span
@@ -655,7 +765,7 @@ export function StockPage() {
                               {formatWeight(Math.abs(qty))}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-surface-400">
+                          <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-400">
                             <span>{config.label}</span>
                             {movement.reason && (
                               <>
@@ -733,8 +843,8 @@ export function StockPage() {
                 {/* Current Stock Display */}
                 {selectedProduct && (
                   <div className="p-3 rounded-lg bg-surface-800 border border-surface-700">
-                    <p className="text-sm text-surface-400">Current Stock</p>
-                    <p className="text-lg font-semibold text-surface-100">
+                    <p className="text-sm text-surface-500 dark:text-surface-400">Current Stock</p>
+                    <p className="text-lg font-semibold text-surface-900 dark:text-surface-100">
                       {formatWeight(selectedProduct.currentStockKg)}
                     </p>
                   </div>
@@ -771,14 +881,14 @@ export function StockPage() {
                           : "e.g., Physical count correction"
                     }
                     rows={2}
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
 
                 {/* Preview */}
                 {selectedProduct && quantity && parseFloat(quantity) > 0 && (
                   <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/20">
-                    <p className="text-sm text-surface-400 mb-1">
+                    <p className="text-sm text-surface-500 dark:text-surface-400 mb-1">
                       After this movement:
                     </p>
                     <p className="text-lg font-semibold text-primary-400">

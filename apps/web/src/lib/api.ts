@@ -26,6 +26,11 @@ api.interceptors.request.use(
       config.headers["x-tenant-id"] = currentTenantId;
     }
 
+    if (config.method?.toUpperCase() === "GET") {
+      config.headers["Cache-Control"] = "no-cache";
+      config.headers.Pragma = "no-cache";
+    }
+
     return config;
   },
   (error) => Promise.reject(error),

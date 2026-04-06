@@ -2,6 +2,7 @@
  * Environment Configuration
  * Validates and exports environment variables with Zod
  */
+import "dotenv/config";
 import { z } from "zod";
 
 const envSchema = z.object({

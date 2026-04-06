@@ -41,6 +41,14 @@ interface Client {
   createdAt: string;
 }
 
+interface ClientPayload {
+  name: string;
+  phone: string | null;
+  telegramId: string | null;
+  address: string | null;
+  notes: string | null;
+}
+
 interface ClientOrder {
   id: string;
   orderNumber: string;
@@ -67,6 +75,10 @@ interface ClientDetail extends Client {
 function formatPrice(amount: number | string): string {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
   return new Intl.NumberFormat("uz-UZ").format(num) + " UZS";
+}
+
+function toDebtNumber(amount: number | string): number {
+  return typeof amount === "string" ? parseFloat(amount) : amount;
 }
 
 export function ClientsPage() {
@@ -99,6 +111,47 @@ export function ClientsPage() {
   // Client detail modal
   const [viewingClient, setViewingClient] = useState<ClientDetail | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+  const matchesActiveFilters = (client: Client): boolean => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !normalizedQuery ||
+      [client.name, client.phone, client.address]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalizedQuery));
+
+    if (!matchesSearch) {
+      return false;
+    }
+
+    if (showWithDebt && toDebtNumber(client.currentDebt) <= 0) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const applyFilters = (items: Client[]): Client[] => {
+    return items.filter(matchesActiveFilters);
+  };
+
+  const toOptimisticClient = (
+    payload: ClientPayload,
+    id: string,
+    existingClient?: Client,
+  ): Client => {
+    return {
+      id,
+      name: payload.name,
+      phone: payload.phone,
+      telegramId: payload.telegramId,
+      address: payload.address,
+      notes: payload.notes,
+      isActive: existingClient?.isActive ?? true,
+      currentDebt: existingClient?.currentDebt ?? 0,
+      createdAt: existingClient?.createdAt ?? new Date().toISOString(),
+    };
+  };
 
   // Fetch clients
   const fetchClients = async () => {
@@ -176,34 +229,99 @@ export function ClientsPage() {
     setIsSubmitting(true);
     setFormError(null);
 
-    try {
-      const payload = {
-        name: formData.name.trim(),
-        phone: formData.phone.trim() || null,
-        telegramId: formData.telegramId.trim() || null,
-        address: formData.address.trim() || null,
-        notes: formData.notes.trim() || null,
-      };
+    const payload: ClientPayload = {
+      name: formData.name.trim(),
+      phone: formData.phone.trim() || null,
+      telegramId: formData.telegramId.trim() || null,
+      address: formData.address.trim() || null,
+      notes: formData.notes.trim() || null,
+    };
 
-      if (editingClient) {
-        await api.patch(`/clients/${editingClient.id}`, payload);
-      } else {
-        await api.post("/clients", payload);
+    const previousClients = clients;
+    const optimisticId = editingClient
+      ? editingClient.id
+      : `temp-client-${Date.now()}`;
+    const optimisticClient = toOptimisticClient(
+      payload,
+      optimisticId,
+      editingClient ?? undefined,
+    );
+
+    setClients((prevClients) => {
+      const nextClients = editingClient
+        ? prevClients.map((client) =>
+            client.id === editingClient.id ? optimisticClient : client,
+          )
+        : [optimisticClient, ...prevClients];
+
+      return applyFilters(nextClients);
+    });
+
+    setViewingClient((prev) => {
+      if (!prev || prev.id !== optimisticClient.id) {
+        return prev;
       }
 
+      return {
+        ...prev,
+        ...optimisticClient,
+        orders: prev.orders,
+      };
+    });
+
+    try {
+      const response = editingClient
+        ? await api.patch(`/clients/${editingClient.id}`, payload)
+        : await api.post("/clients", payload);
+
+      const serverClient = response?.data?.data as Client | undefined;
+
+      if (serverClient) {
+        setClients((prevClients) => {
+          const nextClients = editingClient
+            ? prevClients.map((client) =>
+                client.id === editingClient.id ? serverClient : client,
+              )
+            : prevClients.map((client) =>
+                client.id === optimisticId ? serverClient : client,
+              );
+
+          return applyFilters(nextClients);
+        });
+
+        setViewingClient((prev) => {
+          if (!prev || prev.id !== serverClient.id) {
+            return prev;
+          }
+
+          return {
+            ...prev,
+            ...serverClient,
+            orders: prev.orders,
+          };
+        });
+      } else {
+        await fetchClients();
+      }
+
+      setEditingClient(null);
+      resetForm();
       setIsModalOpen(false);
       toast.success(editingClient ? "Client updated" : "Client created");
-      fetchClients();
     } catch (err: unknown) {
+      setClients(previousClients);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setFormError(
-          axiosError.response?.data?.message || "Failed to save client",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to save client";
+        setFormError(message);
+        toast.error(message);
       } else {
         setFormError("Failed to save client");
+        toast.error("Failed to save client");
       }
     } finally {
       setIsSubmitting(false);
@@ -214,20 +332,33 @@ export function ClientsPage() {
   const handleDelete = async () => {
     if (!deletingClient) return;
 
+    const clientToDelete = deletingClient;
+    const previousClients = clients;
+
     setIsSubmitting(true);
+    setDeletingClient(null);
+    setClients((prevClients) =>
+      prevClients.filter((client) => client.id !== clientToDelete.id),
+    );
+    setViewingClient((prev) => (prev?.id === clientToDelete.id ? null : prev));
+
     try {
-      await api.delete(`/clients/${deletingClient.id}`);
-      setDeletingClient(null);
+      await api.delete(`/clients/${clientToDelete.id}`);
       toast.success("Client deleted");
-      fetchClients();
     } catch (err: unknown) {
+      setClients(previousClients);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setError(
-          axiosError.response?.data?.message || "Failed to delete client",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to delete client";
+        setError(message);
+        toast.error(message);
+      } else {
+        setError("Failed to delete client");
+        toast.error("Failed to delete client");
       }
     } finally {
       setIsSubmitting(false);
@@ -264,7 +395,7 @@ export function ClientsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Clients</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Clients</h1>
           <p className="text-surface-400 mt-1">
             Manage your customers and track their orders
           </p>
@@ -284,7 +415,7 @@ export function ClientsPage() {
             placeholder="Search by name, phone, or Telegram..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500"
+            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500"
           />
         </div>
         <Button
@@ -329,21 +460,26 @@ export function ClientsPage() {
                 {/* Actions */}
                 <div className="absolute top-4 right-4 flex gap-1">
                   <button
+                    type="button"
                     onClick={() => handleViewClient(client)}
                     className="p-2 text-surface-400 hover:text-primary-400 hover:bg-primary-500/10 rounded-lg transition-colors"
-                    title="View details"
+                    title="View client details"
                   >
                     <Eye className="h-4 w-4" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleEdit(client)}
-                    className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
+                    className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                    title="Edit client"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => setDeletingClient(client)}
                     className="p-2 text-surface-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    title="Delete client"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -357,7 +493,7 @@ export function ClientsPage() {
                     </span>
                   </div>
                   <div className="min-w-0 flex-1 pr-16">
-                    <h3 className="font-semibold text-surface-100 truncate">
+                    <h3 className="font-semibold text-surface-900 dark:text-surface-100 truncate">
                       {client.name}
                     </h3>
                     {parseFloat(String(client.currentDebt)) > 0 && (
@@ -371,19 +507,19 @@ export function ClientsPage() {
                 {/* Contact Details */}
                 <div className="space-y-2 text-sm">
                   {client.phone && (
-                    <div className="flex items-center gap-2 text-surface-400">
+                    <div className="flex items-center gap-2 text-surface-500 dark:text-surface-400">
                       <Phone className="h-4 w-4" />
                       <span>{client.phone}</span>
                     </div>
                   )}
                   {client.telegramId && (
-                    <div className="flex items-center gap-2 text-surface-400">
+                    <div className="flex items-center gap-2 text-surface-500 dark:text-surface-400">
                       <MessageCircle className="h-4 w-4" />
                       <span>@{client.telegramId}</span>
                     </div>
                   )}
                   {client.address && (
-                    <div className="flex items-start gap-2 text-surface-400">
+                    <div className="flex items-start gap-2 text-surface-500 dark:text-surface-400">
                       <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                       <span className="line-clamp-2">{client.address}</span>
                     </div>
@@ -453,7 +589,7 @@ export function ClientsPage() {
                     value={formData.address}
                     onChange={handleInputChange}
                     rows={2}
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
 
@@ -467,7 +603,7 @@ export function ClientsPage() {
                     value={formData.notes}
                     onChange={handleInputChange}
                     rows={2}
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
 
@@ -511,7 +647,7 @@ export function ClientsPage() {
             <CardContent className="space-y-4">
               <p className="text-surface-300">
                 Are you sure you want to delete{" "}
-                <span className="font-medium text-surface-100">
+                <span className="font-medium text-surface-900 dark:text-surface-100">
                   {deletingClient.name}
                 </span>
                 ? This will also delete all their order history.
@@ -565,8 +701,10 @@ export function ClientsPage() {
                 {viewingClient.name}
               </CardTitle>
               <button
+                type="button"
                 onClick={() => setViewingClient(null)}
-                className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
+                className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                title="Close client details"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -653,7 +791,7 @@ export function ClientsPage() {
                       return (
                         <div
                           key={order.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-surface-800/50 border border-surface-700"
+                          className="flex items-center justify-between p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50 border border-surface-700"
                         >
                           <div>
                             <div className="flex items-center gap-2">

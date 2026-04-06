@@ -41,6 +41,7 @@ import {
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { useThemeStore } from "@/stores";
 
 // Register Chart.js components
 ChartJS.register(
@@ -56,9 +57,7 @@ ChartJS.register(
   Filler,
 );
 
-// Chart.js default options for dark theme
-ChartJS.defaults.color = "#9ca3af";
-ChartJS.defaults.borderColor = "#374151";
+// Chart.js defaults — will be adjusted dynamically per render
 
 type Period = "today" | "week" | "month" | "year";
 
@@ -202,6 +201,13 @@ const statusColors: Record<string, string> = {
 };
 
 export function DashboardPage() {
+  const { theme } = useThemeStore();
+  const isDark = theme === "dark";
+
+  // Update Chart.js defaults based on theme
+  ChartJS.defaults.color = isDark ? "#9ca3af" : "#6b7280";
+  ChartJS.defaults.borderColor = isDark ? "#374151" : "#e5e7eb";
+
   const [period, setPeriod] = useState<Period>("month");
   const [showUSD, setShowUSD] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -405,8 +411,10 @@ export function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Dashboard</h1>
-          <p className="text-surface-400 mt-1">
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+            Dashboard
+          </h1>
+          <p className="text-surface-500 dark:text-surface-400 mt-1">
             Overview of your business performance
             {lastUpdated && (
               <span className="ml-2 text-xs">
@@ -418,11 +426,12 @@ export function DashboardPage() {
         <div className="flex items-center gap-3">
           {/* Currency Toggle */}
           <button
+            type="button"
             onClick={() => setShowUSD(!showUSD)}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               showUSD
-                ? "bg-green-500/20 text-green-400"
-                : "bg-surface-700 text-surface-300"
+                ? "bg-green-500/20 text-green-500 dark:text-green-400"
+                : "bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-300"
             }`}
           >
             {showUSD ? "USD" : "UZS"}
@@ -432,7 +441,8 @@ export function DashboardPage() {
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as Period)}
-            className="px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 text-sm focus:outline-none focus:border-primary-500"
+            className="select-field text-sm"
+            aria-label="Select dashboard period"
           >
             {Object.entries(periodLabels).map(([value, label]) => (
               <option key={value} value={value}>
@@ -481,13 +491,15 @@ export function DashboardPage() {
               )}
             </div>
             <div className="mt-4">
-              <p className="text-sm text-surface-400">Revenue</p>
-              <p className="text-2xl font-bold text-surface-100">
+              <p className="text-sm text-surface-500 dark:text-surface-400">
+                Revenue
+              </p>
+              <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
                 {showUSD
                   ? formatPrice(metrics?.revenue.amountUSD || 0, "USD")
                   : formatPrice(metrics?.revenue.amount || 0, "UZS")}
               </p>
-              <p className="text-xs text-surface-500 mt-1">
+              <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
                 {periodLabels[period]}
               </p>
             </div>
@@ -506,13 +518,17 @@ export function DashboardPage() {
               )}
             </div>
             <div className="mt-4">
-              <p className="text-sm text-surface-400">Outstanding Debt</p>
+              <p className="text-sm text-surface-500 dark:text-surface-400">
+                Outstanding Debt
+              </p>
               <p className="text-2xl font-bold text-amber-400">
                 {showUSD
                   ? formatPrice(metrics?.debt.amountUSD || 0, "USD")
                   : formatPrice(metrics?.debt.amount || 0, "UZS")}
               </p>
-              <p className="text-xs text-surface-500 mt-1">Total unpaid</p>
+              <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
+                Total unpaid
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -542,11 +558,13 @@ export function DashboardPage() {
               )}
             </div>
             <div className="mt-4">
-              <p className="text-sm text-surface-400">Orders</p>
-              <p className="text-2xl font-bold text-surface-100">
+              <p className="text-sm text-surface-500 dark:text-surface-400">
+                Orders
+              </p>
+              <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
                 {metrics?.orders.count || 0}
               </p>
-              <p className="text-xs text-surface-500 mt-1">
+              <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
                 {periodLabels[period]}
               </p>
             </div>
@@ -571,8 +589,10 @@ export function DashboardPage() {
               )}
             </div>
             <div className="mt-4">
-              <p className="text-sm text-surface-400">Inventory Value</p>
-              <p className="text-2xl font-bold text-surface-100">
+              <p className="text-sm text-surface-500 dark:text-surface-400">
+                Inventory Value
+              </p>
+              <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
                 {showUSD
                   ? formatPrice(metrics?.inventory.stockValueUSD || 0, "USD")
                   : formatPrice(metrics?.inventory.stockValue || 0, "UZS")}
@@ -593,8 +613,10 @@ export function DashboardPage() {
               <Users className="h-5 w-5 text-cyan-400" />
             </div>
             <div>
-              <p className="text-sm text-surface-400">Active Clients</p>
-              <p className="text-xl font-bold text-surface-100">
+              <p className="text-sm text-surface-500 dark:text-surface-400">
+                Active Clients
+              </p>
+              <p className="text-xl font-bold text-surface-900 dark:text-surface-100">
                 {metrics?.clients.active || 0}
               </p>
             </div>
@@ -607,7 +629,9 @@ export function DashboardPage() {
               <AlertTriangle className="h-5 w-5 text-amber-400" />
             </div>
             <div>
-              <p className="text-sm text-surface-400">Low Stock</p>
+              <p className="text-sm text-surface-500 dark:text-surface-400">
+                Low Stock
+              </p>
               <p className="text-xl font-bold text-amber-400">
                 {metrics?.inventory.lowStock || 0}
               </p>
@@ -621,7 +645,9 @@ export function DashboardPage() {
               <Package className="h-5 w-5 text-red-400" />
             </div>
             <div>
-              <p className="text-sm text-surface-400">Out of Stock</p>
+              <p className="text-sm text-surface-500 dark:text-surface-400">
+                Out of Stock
+              </p>
               <p className="text-xl font-bold text-red-400">
                 {metrics?.inventory.outOfStock || 0}
               </p>
@@ -712,8 +738,8 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Top Debtors</CardTitle>
             <Link
-              to="/clients"
-              className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1"
+              to="/dashboard/clients"
+              className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
             >
               View all <ArrowRight className="h-3 w-3" />
             </Link>
@@ -727,10 +753,10 @@ export function DashboardPage() {
                     className="flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-surface-700 flex items-center justify-center text-xs text-surface-400">
+                      <span className="w-6 h-6 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center text-xs text-surface-500 dark:text-surface-400">
                         {index + 1}
                       </span>
-                      <span className="text-surface-200">
+                      <span className="text-surface-700 dark:text-surface-200">
                         {client.clientName}
                       </span>
                     </div>
@@ -762,8 +788,8 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent Orders</CardTitle>
             <Link
-              to="/orders"
-              className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1"
+              to="/dashboard/orders"
+              className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
             >
               View all <ArrowRight className="h-3 w-3" />
             </Link>
@@ -774,18 +800,18 @@ export function DashboardPage() {
                 {recentOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-surface-100 dark:bg-surface-800/50 rounded-lg"
                   >
                     <div>
-                      <p className="font-medium text-surface-100">
+                      <p className="font-medium text-surface-900 dark:text-surface-100">
                         {order.orderNumber}
                       </p>
-                      <p className="text-sm text-surface-400">
+                      <p className="text-sm text-surface-500 dark:text-surface-400">
                         {order.clientName}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-surface-100">
+                      <p className="font-medium text-surface-900 dark:text-surface-100">
                         {showUSD
                           ? formatPrice(
                               order.totalAmount /
@@ -803,7 +829,7 @@ export function DashboardPage() {
                                 ? "bg-blue-500/20 text-blue-400"
                                 : order.status === "CANCELLED"
                                   ? "bg-red-500/20 text-red-400"
-                                  : "bg-surface-700 text-surface-400"
+                                  : "bg-surface-200 dark:bg-surface-700 text-surface-500 dark:text-surface-400"
                           }`}
                         >
                           {order.status}
@@ -826,8 +852,8 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent Payments</CardTitle>
             <Link
-              to="/orders"
-              className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1"
+              to="/dashboard/orders"
+              className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
             >
               View all <ArrowRight className="h-3 w-3" />
             </Link>
@@ -838,13 +864,13 @@ export function DashboardPage() {
                 {recentPayments.map((payment) => (
                   <div
                     key={payment.id}
-                    className="flex items-center justify-between p-3 bg-surface-800/50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-surface-100 dark:bg-surface-800/50 rounded-lg"
                   >
                     <div>
-                      <p className="font-medium text-surface-100">
+                      <p className="font-medium text-surface-900 dark:text-surface-100">
                         {payment.clientName}
                       </p>
-                      <p className="text-sm text-surface-400">
+                      <p className="text-sm text-surface-500 dark:text-surface-400">
                         {payment.orderNumber}
                       </p>
                     </div>
@@ -858,7 +884,7 @@ export function DashboardPage() {
                             )
                           : formatPrice(payment.amount, "UZS")}
                       </p>
-                      <p className="text-xs text-surface-500">
+                      <p className="text-xs text-surface-400 dark:text-surface-500">
                         {payment.method}
                       </p>
                     </div>
@@ -883,8 +909,8 @@ export function DashboardPage() {
               <CardTitle>Low Stock Alerts</CardTitle>
             </div>
             <Link
-              to="/stock"
-              className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1"
+              to="/dashboard/stock"
+              className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
             >
               Manage stock <ArrowRight className="h-3 w-3" />
             </Link>
@@ -896,14 +922,14 @@ export function DashboardPage() {
                   key={product.id}
                   className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg"
                 >
-                  <p className="font-medium text-surface-100 truncate">
+                  <p className="font-medium text-surface-900 dark:text-surface-100 truncate">
                     {product.name}
                   </p>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-amber-400 font-bold">
                       {product.currentStock.toFixed(2)} kg
                     </span>
-                    <span className="text-xs text-surface-500">
+                    <span className="text-xs text-surface-400 dark:text-surface-500">
                       min: {product.minStock} kg
                     </span>
                   </div>
@@ -915,7 +941,7 @@ export function DashboardPage() {
       )}
 
       {/* Exchange Rate Footer */}
-      <div className="text-center text-xs text-surface-500">
+      <div className="text-center text-xs text-surface-400 dark:text-surface-500">
         Exchange rate: 1 USD ={" "}
         {metrics?.exchangeRate?.toLocaleString() || "12,500"} UZS
       </div>

@@ -6,12 +6,17 @@ import { Request, Response, NextFunction } from "express";
 
 /**
  * Sets Cache-Control headers for GET requests
- * @param maxAge - Cache duration in seconds (default: 30s for dynamic data)
+ * @param maxAge - Cache duration in seconds. Use 0 to disable caching.
  */
-export function cacheControl(maxAge: number = 30) {
+export function cacheControl(maxAge: number = 0) {
   return (_req: Request, res: Response, next: NextFunction) => {
-    // Only cache GET requests
-    if (_req.method === "GET") {
+    // Disable caching by default for authenticated API responses.
+    if (maxAge <= 0) {
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+      res.set("Pragma", "no-cache");
+      res.set("Expires", "0");
+      res.set("Surrogate-Control", "no-store");
+    } else if (_req.method === "GET") {
       res.set(
         "Cache-Control",
         `private, max-age=${maxAge}, stale-while-revalidate=${maxAge * 2}`,

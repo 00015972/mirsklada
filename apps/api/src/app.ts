@@ -96,13 +96,13 @@ export function createApp(): Express {
   protectedRoutes.use(authenticate);
   protectedRoutes.use(resolveTenant);
 
-  protectedRoutes.use("/categories", cacheControl(60), categoryRouter);
-  protectedRoutes.use("/products", cacheControl(30), productRouter);
-  protectedRoutes.use("/clients", cacheControl(15), clientRouter);
-  protectedRoutes.use("/stock", cacheControl(15), stockRouter);
-  protectedRoutes.use("/orders", cacheControl(10), orderRouter);
-  protectedRoutes.use("/payments", cacheControl(10), paymentRouter);
-  protectedRoutes.use("/dashboard", cacheControl(30), dashboardRouter);
+  protectedRoutes.use("/categories", cacheControl(0), categoryRouter);
+  protectedRoutes.use("/products", cacheControl(0), productRouter);
+  protectedRoutes.use("/clients", cacheControl(0), clientRouter);
+  protectedRoutes.use("/stock", cacheControl(0), stockRouter);
+  protectedRoutes.use("/orders", cacheControl(0), orderRouter);
+  protectedRoutes.use("/payments", cacheControl(0), paymentRouter);
+  protectedRoutes.use("/dashboard", cacheControl(0), dashboardRouter);
 
   apiV1.use(protectedRoutes);
 

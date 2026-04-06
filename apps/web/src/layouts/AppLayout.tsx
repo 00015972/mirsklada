@@ -20,8 +20,10 @@ import {
   Bell,
   ChevronDown,
   Check,
+  Sun,
+  Moon,
 } from "lucide-react";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useThemeStore } from "@/stores";
 import { clsx } from "clsx";
 import {
   Listbox,
@@ -32,14 +34,14 @@ import {
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Categories", href: "/categories", icon: FolderTree },
-  { name: "Products", href: "/products", icon: Package },
-  { name: "Stock", href: "/stock", icon: Warehouse },
-  { name: "Clients", href: "/clients", icon: Users },
-  { name: "Orders", href: "/orders", icon: ShoppingCart },
-  { name: "Payments", href: "/payments", icon: CreditCard },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Categories", href: "/dashboard/categories", icon: FolderTree },
+  { name: "Products", href: "/dashboard/products", icon: Package },
+  { name: "Stock", href: "/dashboard/stock", icon: Warehouse },
+  { name: "Clients", href: "/dashboard/clients", icon: Users },
+  { name: "Orders", href: "/dashboard/orders", icon: ShoppingCart },
+  { name: "Payments", href: "/dashboard/payments", icon: CreditCard },
+  { name: "Reports", href: "/dashboard/reports", icon: BarChart3 },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function AppLayout() {
@@ -48,6 +50,7 @@ export function AppLayout() {
     string | null
   >(null);
   const { user, tenants, currentTenantId, setTenant, logout } = useAuthStore();
+  const { theme, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
   const currentTenant = tenants.find((t) => t.id === currentTenantId);
 
@@ -85,7 +88,7 @@ export function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-950">
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-950">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -97,23 +100,23 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside
         className={clsx(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-surface-900 border-r border-surface-800 transition-transform lg:translate-x-0",
+          "fixed top-0 left-0 z-50 h-full w-64 bg-white dark:bg-surface-900 border-r border-surface-200 dark:border-surface-800 transition-transform lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-surface-800">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-surface-200 dark:border-surface-800">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
               <span className="text-lg font-bold text-white">M</span>
             </div>
-            <span className="font-semibold text-surface-100">Mirsklada</span>
+            <span className="font-semibold text-surface-900 dark:text-surface-100">Mirsklada</span>
           </div>
           <button
             type="button"
             title="Close sidebar"
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1 text-surface-400 hover:text-surface-100"
+            className="lg:hidden p-1 text-surface-400 hover:text-surface-200"
           >
             <X className="h-5 w-5" />
           </button>
@@ -121,11 +124,11 @@ export function AppLayout() {
 
         {/* Tenant Selector */}
         {tenants.length > 0 && (
-          <div className="p-4 border-b border-surface-800">
+          <div className="p-4 border-b border-surface-200 dark:border-surface-800">
             <label className="text-xs text-surface-500 mb-1 block">
               Workspace{" "}
               {tenants.length > 1 && (
-                <span className="text-primary-400">
+                <span className="text-primary-500 dark:text-primary-400">
                   ({tenants.length} workspaces)
                 </span>
               )}
@@ -135,13 +138,13 @@ export function AppLayout() {
               onChange={(val) => setTenant(val)}
             >
               <div className="relative">
-                <ListboxButton className="w-full flex items-center justify-between bg-surface-800 border border-surface-700 rounded-lg px-3 py-2 text-sm text-surface-100 focus:outline-none focus:border-primary-500">
+                <ListboxButton className="w-full flex items-center justify-between bg-surface-100 dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg px-3 py-2 text-sm text-surface-900 dark:text-surface-100 focus:outline-none focus:border-primary-500">
                   <span className="truncate">
                     {currentTenant?.name || "Select workspace"}
                   </span>
                   <ChevronDown className="h-4 w-4 text-surface-500 flex-shrink-0" />
                 </ListboxButton>
-                <ListboxOptions className="absolute z-50 mt-1 w-full max-h-48 overflow-auto rounded-lg bg-surface-800 border border-surface-700 py-1 shadow-xl focus:outline-none">
+                <ListboxOptions className="absolute z-50 mt-1 w-full max-h-48 overflow-auto rounded-lg bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 py-1 shadow-xl focus:outline-none">
                   {tenants.map((tenant) => (
                     <ListboxOption
                       key={tenant.id}
@@ -150,8 +153,8 @@ export function AppLayout() {
                         clsx(
                           "relative cursor-pointer select-none px-3 py-2 text-sm",
                           focus
-                            ? "bg-primary-600/20 text-primary-300"
-                            : "text-surface-200",
+                            ? "bg-primary-600/20 text-primary-600 dark:text-primary-300"
+                            : "text-surface-700 dark:text-surface-200",
                         )
                       }
                     >
@@ -160,13 +163,13 @@ export function AppLayout() {
                           <span
                             className={clsx(
                               "truncate",
-                              selected && "font-medium text-primary-400",
+                              selected && "font-medium text-primary-600 dark:text-primary-400",
                             )}
                           >
                             {tenant.name}
                           </span>
                           {selected && (
-                            <Check className="h-4 w-4 text-primary-400 flex-shrink-0" />
+                            <Check className="h-4 w-4 text-primary-600 dark:text-primary-400 flex-shrink-0" />
                           )}
                         </div>
                       )}
@@ -190,7 +193,7 @@ export function AppLayout() {
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary-600 text-white"
-                    : "text-surface-400 hover:bg-surface-800 hover:text-surface-100",
+                    : "text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100",
                 )
               }
             >
@@ -201,50 +204,66 @@ export function AppLayout() {
         </nav>
 
         {/* User Menu */}
-        <div className="p-4 border-t border-surface-800">
+        <div className="p-4 border-t border-surface-200 dark:border-surface-800">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-surface-700 flex items-center justify-center">
-              <span className="text-sm font-medium text-surface-300">
+            <div className="w-10 h-10 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center">
+              <span className="text-sm font-medium text-surface-600 dark:text-surface-300">
                 {user?.name?.charAt(0) || user?.email?.charAt(0) || "U"}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-surface-100 truncate">
+              <p className="text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
                 {user?.name || "User"}
               </p>
               <p className="text-xs text-surface-500 truncate">{user?.email}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-surface-400 hover:bg-surface-800 hover:text-surface-100 transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center gap-2 flex-1 px-3 py-2 rounded-lg text-sm text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 transition-colors"
+              title="Toggle theme"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+              {theme === "dark" ? "Light" : "Dark"}
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-2 flex-1 px-3 py-2 rounded-lg text-sm text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
       <div className="lg:pl-64">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 h-16 bg-surface-950/80 backdrop-blur-sm border-b border-surface-800">
+        <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-surface-950/80 backdrop-blur-sm border-b border-surface-200 dark:border-surface-800">
           <div className="flex items-center justify-between h-full px-4">
             <button
               type="button"
               title="Open sidebar"
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 text-surface-400 hover:text-surface-100"
+              className="lg:hidden p-2 text-surface-500 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100"
             >
               <Menu className="h-6 w-6" />
             </button>
 
             {/* Current Workspace Indicator */}
             {currentTenant && (
-              <div className="hidden lg:flex items-center gap-2 text-surface-400">
+              <div className="hidden lg:flex items-center gap-2 text-surface-500 dark:text-surface-400">
                 <Building2 className="h-4 w-4" />
                 <span className="text-sm">{currentTenant.name}</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-surface-800 text-surface-500">
+                <span className="text-xs px-2 py-0.5 rounded bg-surface-100 dark:bg-surface-800 text-surface-500">
                   {currentTenant.subscriptionTier}
                 </span>
               </div>
@@ -255,8 +274,8 @@ export function AppLayout() {
             {/* Notification for new workspace invitation */}
             {newWorkspaceNotification && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-primary-500/20 border border-primary-500/30 rounded-lg mr-4 animate-pulse">
-                <Bell className="h-4 w-4 text-primary-400" />
-                <span className="text-sm text-primary-300">
+                <Bell className="h-4 w-4 text-primary-500 dark:text-primary-400" />
+                <span className="text-sm text-primary-600 dark:text-primary-300">
                   {newWorkspaceNotification}
                 </span>
                 <button
@@ -265,7 +284,7 @@ export function AppLayout() {
                   onClick={() => setNewWorkspaceNotification(null)}
                   className="ml-2 p-0.5 hover:bg-primary-500/20 rounded"
                 >
-                  <X className="h-3 w-3 text-primary-400" />
+                  <X className="h-3 w-3 text-primary-500 dark:text-primary-400" />
                 </button>
               </div>
             )}
@@ -273,7 +292,7 @@ export function AppLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-6">
+        <main className="p-4 lg:p-6 min-h-screen bg-surface-50 dark:bg-surface-950">
           <Outlet />
         </main>
       </div>

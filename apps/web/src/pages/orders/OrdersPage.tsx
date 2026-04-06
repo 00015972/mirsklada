@@ -90,6 +90,11 @@ function formatWeight(kg: number | string | null | undefined): string {
   return num.toFixed(2) + " kg";
 }
 
+function toNumber(value: number | string | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  return typeof value === "string" ? parseFloat(value) : value;
+}
+
 /**
  * Format date
  */
@@ -188,6 +193,33 @@ export function OrdersPage() {
     });
   };
 
+  const matchesActiveFilters = (order: Order): boolean => {
+    if (selectedStatus && order.status !== selectedStatus) {
+      return false;
+    }
+
+    if (
+      selectedPaymentStatus &&
+      order.paymentStatus !== selectedPaymentStatus
+    ) {
+      return false;
+    }
+
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    return (
+      order.orderNumber.toLowerCase().includes(normalizedQuery) ||
+      order.client.name.toLowerCase().includes(normalizedQuery)
+    );
+  };
+
+  const applyFilters = (items: Order[]): Order[] => {
+    return items.filter(matchesActiveFilters);
+  };
+
   // Fetch orders
   const fetchOrders = async () => {
     try {
@@ -198,19 +230,9 @@ export function OrdersPage() {
         params.append("paymentStatus", selectedPaymentStatus);
 
       const response = await api.get(`/orders?${params.toString()}`);
-      let ordersData = response.data.data || [];
+      const ordersData = response.data.data || [];
 
-      // Filter by search locally
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        ordersData = ordersData.filter(
-          (order: Order) =>
-            order.orderNumber.toLowerCase().includes(query) ||
-            order.client.name.toLowerCase().includes(query),
-        );
-      }
-
-      setOrders(ordersData);
+      setOrders(applyFilters(ordersData));
       setError(null);
     } catch (err) {
       setError("Failed to load orders");
@@ -314,34 +336,105 @@ export function OrdersPage() {
       return;
     }
 
+    const payload = {
+      clientId: selectedClientId,
+      items: validItems.map((item) => ({
+        productId: item.productId,
+        quantityKg: parseFloat(item.quantityKg),
+        pricePerKg: parseFloat(item.pricePerKg) || undefined,
+      })),
+      notes: orderNotes.trim() || undefined,
+    };
+    const previousOrders = orders;
+    const selectedClient = clients.find(
+      (client) => client.id === selectedClientId,
+    );
+    const optimisticId = `temp-order-${Date.now()}`;
+    const optimisticItems: OrderItem[] = validItems.map((item, index) => {
+      const product = products.find((p) => p.id === item.productId);
+      const quantityKg = parseFloat(item.quantityKg);
+      const pricePerKg =
+        parseFloat(item.pricePerKg) || product?.basePricePerKg || 0;
+
+      return {
+        id: `${optimisticId}-item-${index}`,
+        quantityKg,
+        pricePerKg,
+        totalPrice: quantityKg * pricePerKg,
+        product: {
+          id: item.productId,
+          name: product?.name || "Product",
+        },
+      };
+    });
+    const optimisticOrder: Order = {
+      id: optimisticId,
+      orderNumber: `NEW-${String(Date.now()).slice(-6)}`,
+      status: "DRAFT",
+      paymentStatus: "UNPAID",
+      totalAmount: optimisticItems.reduce(
+        (sum, item) => sum + item.totalPrice,
+        0,
+      ),
+      paidAmount: 0,
+      notes: orderNotes.trim() || null,
+      createdAt: new Date().toISOString(),
+      client: {
+        id: selectedClientId,
+        name: selectedClient?.name || "Unknown client",
+      },
+      items: optimisticItems,
+      _count: {
+        items: optimisticItems.length,
+      },
+    };
+
     setIsSubmitting(true);
     setFormError(null);
+    setOrders((prevOrders) => applyFilters([optimisticOrder, ...prevOrders]));
 
     try {
-      const payload = {
-        clientId: selectedClientId,
-        items: validItems.map((item) => ({
-          productId: item.productId,
-          quantityKg: parseFloat(item.quantityKg),
-          pricePerKg: parseFloat(item.pricePerKg) || undefined,
-        })),
-        notes: orderNotes.trim() || undefined,
-      };
+      const response = await api.post("/orders", payload);
+      const serverOrder = response?.data?.data as Partial<Order> | undefined;
 
-      await api.post("/orders", payload);
+      if (serverOrder) {
+        const normalizedServerOrder: Order = {
+          ...optimisticOrder,
+          ...serverOrder,
+          client: serverOrder.client || optimisticOrder.client,
+          items: serverOrder.items || optimisticOrder.items,
+          _count: serverOrder._count || {
+            items: serverOrder.items?.length ?? optimisticOrder.items.length,
+          },
+        };
+
+        setOrders((prevOrders) => {
+          const nextOrders = prevOrders.map((order) =>
+            order.id === optimisticId ? normalizedServerOrder : order,
+          );
+          return applyFilters(nextOrders);
+        });
+      } else {
+        await fetchOrders();
+      }
+
       setIsCreateModalOpen(false);
+      resetCreateForm();
       toast.success("Order created");
-      fetchOrders();
     } catch (err: unknown) {
+      setOrders(previousOrders);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setFormError(
-          axiosError.response?.data?.message || "Failed to create order",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to create order";
+        setFormError(message);
+        toast.error(message);
       } else {
         setFormError("Failed to create order");
+        toast.error("Failed to create order");
       }
     } finally {
       setIsSubmitting(false);
@@ -350,42 +443,126 @@ export function OrdersPage() {
 
   // Confirm order
   const handleConfirmOrder = async (orderId: string) => {
+    const previousOrders = orders;
+    const previousViewingOrder = viewingOrder;
+
+    setOrders((prevOrders) => {
+      const nextOrders: Order[] = prevOrders.map((order) => {
+        if (order.id !== orderId) {
+          return order;
+        }
+
+        return {
+          ...order,
+          status: "CONFIRMED",
+        };
+      });
+      return applyFilters(nextOrders);
+    });
+    setViewingOrder((prevOrder) =>
+      prevOrder?.id === orderId
+        ? { ...prevOrder, status: "CONFIRMED" as Order["status"] }
+        : prevOrder,
+    );
+
     try {
-      await api.post(`/orders/${orderId}/confirm`);
-      toast.success("Order confirmed");
-      fetchOrders();
-      if (viewingOrder?.id === orderId) {
-        // Refresh the viewing order
-        const response = await api.get(`/orders/${orderId}`);
-        setViewingOrder(response.data.data || null);
+      const response = await api.post(`/orders/${orderId}/confirm`);
+      const serverOrder = response?.data?.data as Partial<Order> | undefined;
+
+      if (serverOrder) {
+        setOrders((prevOrders) => {
+          const nextOrders = prevOrders.map((order) =>
+            order.id === orderId
+              ? {
+                  ...order,
+                  ...serverOrder,
+                  client: serverOrder.client || order.client,
+                  items: serverOrder.items || order.items,
+                  _count: serverOrder._count || order._count,
+                }
+              : order,
+          );
+          return applyFilters(nextOrders);
+        });
+
+        setViewingOrder((prevOrder) => {
+          if (!prevOrder || prevOrder.id !== orderId) {
+            return prevOrder;
+          }
+
+          return {
+            ...prevOrder,
+            ...serverOrder,
+            client: serverOrder.client || prevOrder.client,
+            items: serverOrder.items || prevOrder.items,
+            _count: serverOrder._count || prevOrder._count,
+          } as Order;
+        });
       }
+
+      toast.success("Order confirmed");
     } catch (err: unknown) {
+      setOrders(previousOrders);
+      setViewingOrder(previousViewingOrder);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setError(
-          axiosError.response?.data?.message || "Failed to confirm order",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to confirm order";
+        setError(message);
+        toast.error(message);
+      } else {
+        setError("Failed to confirm order");
+        toast.error("Failed to confirm order");
       }
     }
   };
 
   // Cancel order
   const handleCancelOrder = async (orderId: string) => {
+    const previousOrders = orders;
+    const previousViewingOrder = viewingOrder;
+
+    setOrders((prevOrders) => {
+      const nextOrders: Order[] = prevOrders.map((order) => {
+        if (order.id !== orderId) {
+          return order;
+        }
+
+        return {
+          ...order,
+          status: "CANCELLED",
+        };
+      });
+      return applyFilters(nextOrders);
+    });
+    setViewingOrder((prevOrder) =>
+      prevOrder?.id === orderId
+        ? { ...prevOrder, status: "CANCELLED" as Order["status"] }
+        : prevOrder,
+    );
+
     try {
       await api.post(`/orders/${orderId}/cancel`);
       toast.success("Order cancelled");
-      fetchOrders();
       setViewingOrder(null);
     } catch (err: unknown) {
+      setOrders(previousOrders);
+      setViewingOrder(previousViewingOrder);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setError(
-          axiosError.response?.data?.message || "Failed to cancel order",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to cancel order";
+        setError(message);
+        toast.error(message);
+      } else {
+        setError("Failed to cancel order");
+        toast.error("Failed to cancel order");
       }
     }
   };
@@ -421,13 +598,53 @@ export function OrdersPage() {
       return;
     }
 
+    const orderToPay = payingOrder;
+    const previousOrders = orders;
+    const previousViewingOrder = viewingOrder;
+    const previousPayingOrder = payingOrder;
+
+    const totalAmount = toNumber(orderToPay.totalAmount);
+    const paidAmount = toNumber(orderToPay.paidAmount);
+    const nextPaidAmount = paidAmount + amount;
+    const nextPaymentStatus: Order["paymentStatus"] =
+      nextPaidAmount >= totalAmount
+        ? "PAID"
+        : nextPaidAmount > 0
+          ? "PARTIAL"
+          : "UNPAID";
+
+    const patchOrderPaymentState = (order: Order): Order => {
+      if (order.id !== orderToPay.id) {
+        return order;
+      }
+
+      return {
+        ...order,
+        paidAmount: nextPaidAmount,
+        paymentStatus: nextPaymentStatus,
+      };
+    };
+
     setIsSubmitting(true);
     setPaymentError(null);
+    setOrders((prevOrders) =>
+      applyFilters(prevOrders.map(patchOrderPaymentState)),
+    );
+    setViewingOrder((prevOrder) =>
+      prevOrder?.id === orderToPay.id
+        ? patchOrderPaymentState(prevOrder)
+        : prevOrder,
+    );
+    setPayingOrder((prevOrder) =>
+      prevOrder?.id === orderToPay.id
+        ? patchOrderPaymentState(prevOrder)
+        : prevOrder,
+    );
 
     try {
       await api.post("/payments", {
-        orderId: payingOrder.id,
-        clientId: payingOrder.client.id,
+        orderId: orderToPay.id,
+        clientId: orderToPay.client.id,
         amount,
         method: paymentMethod,
         notes: paymentNotes.trim() || undefined,
@@ -436,23 +653,22 @@ export function OrdersPage() {
       setIsPaymentModalOpen(false);
       setPayingOrder(null);
       toast.success("Payment recorded");
-      fetchOrders();
-
-      // Refresh viewing order if it's the same one
-      if (viewingOrder?.id === payingOrder.id) {
-        const response = await api.get(`/orders/${payingOrder.id}`);
-        setViewingOrder(response.data.data || null);
-      }
     } catch (err: unknown) {
+      setOrders(previousOrders);
+      setViewingOrder(previousViewingOrder);
+      setPayingOrder(previousPayingOrder);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setPaymentError(
-          axiosError.response?.data?.message || "Failed to record payment",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to record payment";
+        setPaymentError(message);
+        toast.error(message);
       } else {
         setPaymentError("Failed to record payment");
+        toast.error("Failed to record payment");
       }
     } finally {
       setIsSubmitting(false);
@@ -472,7 +688,7 @@ export function OrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Orders</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Orders</h1>
           <p className="text-surface-400 mt-1">
             Create and manage customer orders
           </p>
@@ -492,14 +708,15 @@ export function OrdersPage() {
             placeholder="Search by order # or client..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500"
+            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500"
           />
         </div>
         <div className="flex gap-2">
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+            className="select-field"
+            aria-label="Filter by order status"
           >
             <option value="">All Status</option>
             <option value="DRAFT">Draft</option>
@@ -510,7 +727,8 @@ export function OrdersPage() {
           <select
             value={selectedPaymentStatus}
             onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-            className="px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+            className="select-field"
+            aria-label="Filter by payment status"
           >
             <option value="">All Payments</option>
             <option value="UNPAID">Unpaid</option>
@@ -559,41 +777,41 @@ export function OrdersPage() {
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead>
-                <tr className="border-b border-surface-800">
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                <tr className="border-b border-surface-200 dark:border-surface-800">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Order #
                   </th>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Client
                   </th>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Status
                   </th>
-                  <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Total
                   </th>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Payment
                   </th>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Date
                   </th>
-                  <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-800">
+              <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
                 {orders.map((order) => {
                   const StatusIcon = statusConfig[order.status].icon;
                   return (
                     <tr
                       key={order.id}
-                      className="hover:bg-surface-800/50 transition-colors cursor-pointer"
+                      className="hover:bg-surface-50 dark:hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors cursor-pointer"
                       onClick={() => setViewingOrder(order)}
                     >
                       <td className="px-6 py-4">
-                        <span className="font-medium text-surface-100">
+                        <span className="font-medium text-surface-900 dark:text-surface-100">
                           {order.orderNumber}
                         </span>
                       </td>
@@ -611,7 +829,7 @@ export function OrdersPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <span className="font-medium text-surface-100">
+                        <span className="font-medium text-surface-900 dark:text-surface-100">
                           {formatPrice(order.totalAmount)}
                         </span>
                       </td>
@@ -628,7 +846,7 @@ export function OrdersPage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-surface-400">
+                        <span className="text-sm text-surface-500 dark:text-surface-400">
                           {formatDate(order.createdAt)}
                         </span>
                       </td>
@@ -637,6 +855,7 @@ export function OrdersPage() {
                           {order.paymentStatus !== "PAID" &&
                             order.status !== "CANCELLED" && (
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleOpenPayment(order);
@@ -648,11 +867,13 @@ export function OrdersPage() {
                               </button>
                             )}
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setViewingOrder(order);
                             }}
-                            className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
+                            className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                            title="View Order Details"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -722,7 +943,7 @@ export function OrdersPage() {
                     {orderItems.map((item, index) => (
                       <div
                         key={index}
-                        className="flex gap-2 items-end p-3 bg-surface-800/50 rounded-lg"
+                        className="flex gap-2 items-end p-3 bg-surface-100 dark:bg-surface-800/50 rounded-lg"
                       >
                         <div className="flex-1">
                           <label className="block text-xs text-surface-500 mb-1">
@@ -756,7 +977,7 @@ export function OrdersPage() {
                             min="0"
                             step="0.01"
                             placeholder="0.00"
-                            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 text-sm focus:outline-none focus:border-primary-500"
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 text-sm focus:outline-none focus:border-primary-500"
                           />
                         </div>
                         <div className="w-32">
@@ -772,7 +993,7 @@ export function OrdersPage() {
                             min="0"
                             step="100"
                             placeholder="Price"
-                            className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 text-sm focus:outline-none focus:border-primary-500"
+                            className="w-full px-3 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 text-sm focus:outline-none focus:border-primary-500"
                           />
                         </div>
                         <button
@@ -808,14 +1029,14 @@ export function OrdersPage() {
                     onChange={(e) => setOrderNotes(e.target.value)}
                     rows={2}
                     placeholder="Any special instructions..."
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
 
                 {/* Total */}
-                <div className="flex justify-between items-center py-3 border-t border-surface-700">
+                <div className="flex justify-between items-center py-3 border-t border-surface-200 dark:border-surface-700">
                   <span className="text-surface-400">Total:</span>
-                  <span className="text-xl font-bold text-surface-100">
+                  <span className="text-xl font-bold text-surface-900 dark:text-surface-100">
                     {formatPrice(calculateTotal())}
                   </span>
                 </div>
@@ -866,13 +1087,13 @@ export function OrdersPage() {
               {/* Client Info */}
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-surface-400">Client</p>
-                  <p className="font-medium text-surface-100">
+                  <p className="text-sm text-surface-500 dark:text-surface-400">Client</p>
+                  <p className="font-medium text-surface-900 dark:text-surface-100">
                     {viewingOrder.client.name}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-surface-400">Date</p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400">Date</p>
                   <p className="text-surface-300">
                     {formatDate(viewingOrder.createdAt)}
                   </p>
@@ -881,26 +1102,26 @@ export function OrdersPage() {
 
               {/* Items */}
               <div>
-                <p className="text-sm text-surface-400 mb-2">Items</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400 mb-2">Items</p>
                 <div className="space-y-2">
                   {viewingOrder.items?.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between items-center p-3 bg-surface-800/50 rounded-lg"
+                      className="flex justify-between items-center p-3 bg-surface-100 dark:bg-surface-800/50 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         <Package className="h-5 w-5 text-surface-500" />
                         <div>
-                          <p className="font-medium text-surface-100">
+                          <p className="font-medium text-surface-900 dark:text-surface-100">
                             {item.product.name}
                           </p>
-                          <p className="text-sm text-surface-400">
+                          <p className="text-sm text-surface-500 dark:text-surface-400">
                             {formatWeight(item.quantityKg)} ×{" "}
                             {formatPrice(item.pricePerKg)}/kg
                           </p>
                         </div>
                       </div>
-                      <p className="font-medium text-surface-100">
+                      <p className="font-medium text-surface-900 dark:text-surface-100">
                         {formatPrice(item.totalPrice)}
                       </p>
                     </div>
@@ -909,9 +1130,9 @@ export function OrdersPage() {
               </div>
 
               {/* Total & Payment */}
-              <div className="flex justify-between items-center py-3 border-t border-surface-700">
+              <div className="flex justify-between items-center py-3 border-t border-surface-200 dark:border-surface-700">
                 <div>
-                  <p className="text-sm text-surface-400">Payment Status</p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400">Payment Status</p>
                   <p
                     className={`font-medium ${paymentStatusConfig[viewingOrder.paymentStatus].className}`}
                   >
@@ -924,16 +1145,16 @@ export function OrdersPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-surface-400">Total</p>
-                  <p className="text-xl font-bold text-surface-100">
+                  <p className="text-sm text-surface-500 dark:text-surface-400">Total</p>
+                  <p className="text-xl font-bold text-surface-900 dark:text-surface-100">
                     {formatPrice(viewingOrder.totalAmount)}
                   </p>
                 </div>
               </div>
 
               {viewingOrder.notes && (
-                <div className="p-3 bg-surface-800/50 rounded-lg">
-                  <p className="text-sm text-surface-400">Notes</p>
+                <div className="p-3 bg-surface-100 dark:bg-surface-800/50 rounded-lg">
+                  <p className="text-sm text-surface-500 dark:text-surface-400">Notes</p>
                   <p className="text-surface-300">{viewingOrder.notes}</p>
                 </div>
               )}
@@ -992,7 +1213,7 @@ export function OrdersPage() {
                 )}
 
                 {/* Order Info */}
-                <div className="p-3 bg-surface-800/50 rounded-lg space-y-2">
+                <div className="p-3 bg-surface-100 dark:bg-surface-800/50 rounded-lg space-y-2">
                   <div className="flex justify-between">
                     <span className="text-surface-400">Order</span>
                     <span className="text-surface-100 font-medium">
@@ -1017,7 +1238,7 @@ export function OrdersPage() {
                       {formatPrice(payingOrder.paidAmount)}
                     </span>
                   </div>
-                  <div className="flex justify-between border-t border-surface-700 pt-2">
+                  <div className="flex justify-between border-t border-surface-200 dark:border-surface-700 pt-2">
                     <span className="text-surface-400">Remaining</span>
                     <span className="text-amber-400 font-medium">
                       {formatPrice(
@@ -1050,7 +1271,8 @@ export function OrdersPage() {
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+                    className="select-field w-full"
+                    aria-label="Select payment method"
                   >
                     <option value="CASH">Cash</option>
                     <option value="CARD">Card</option>
@@ -1069,7 +1291,7 @@ export function OrdersPage() {
                     onChange={(e) => setPaymentNotes(e.target.value)}
                     rows={2}
                     placeholder="Optional payment notes..."
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
 

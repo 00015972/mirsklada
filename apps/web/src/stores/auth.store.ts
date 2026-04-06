@@ -7,6 +7,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { supabase } from "@/lib/supabase";
 
+export const AUTH_INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+export const AUTH_INACTIVITY_STORAGE_KEY = "mirsklada-last-activity-at";
+
 interface User {
   id: string;
   email: string;
@@ -37,14 +40,14 @@ interface AuthState {
   isAuthenticated: boolean;
 
   // Actions
-  setAuth: (user: User, session: Session, tenants: Tenant[]) => void;
+  setAuth: (user: User, session: Session, tenants: Tenant[]) => Promise<void>;
   setSession: (
     supabaseSession: {
       access_token: string;
       refresh_token: string;
       expires_at?: number;
     } | null,
-  ) => void;
+  ) => Promise<void>;
   setLoading: (loading: boolean) => void;
   setTenant: (tenantId: string) => void;
   updateTenantName: (tenantId: string, name: string) => void;
@@ -63,12 +66,36 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       isAuthenticated: false,
 
-      setAuth: (user, session, tenants) => {
+      setAuth: async (user, session, tenants) => {
+        // Keep Supabase client session in sync with backend-issued tokens.
+        // This prevents losing auth state on full page refresh.
+        try {
+          await supabase.auth.setSession({
+            access_token: session.accessToken,
+            refresh_token: session.refreshToken,
+          });
+        } catch (error) {
+          console.warn(
+            "Failed to sync Supabase session from backend login",
+            error,
+          );
+        }
+
+        localStorage.setItem(
+          AUTH_INACTIVITY_STORAGE_KEY,
+          Date.now().toString(),
+        );
+
+        const previousTenantId = get().currentTenantId;
+        const resolvedTenantId = tenants.some((t) => t.id === previousTenantId)
+          ? previousTenantId
+          : tenants[0]?.id || null;
+
         set({
           user,
           session,
           tenants,
-          currentTenantId: tenants[0]?.id || null,
+          currentTenantId: resolvedTenantId,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -76,6 +103,7 @@ export const useAuthStore = create<AuthState>()(
 
       setSession: async (supabaseSession) => {
         if (!supabaseSession) {
+          localStorage.removeItem(AUTH_INACTIVITY_STORAGE_KEY);
           set({
             user: null,
             session: null,
@@ -87,11 +115,28 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
+        localStorage.setItem(
+          AUTH_INACTIVITY_STORAGE_KEY,
+          Date.now().toString(),
+        );
+
+        // Keep the user authenticated while profile/tenant data is revalidated.
+        set({
+          session: {
+            accessToken: supabaseSession.access_token,
+            refreshToken: supabaseSession.refresh_token,
+            expiresAt: supabaseSession.expires_at,
+          },
+          isAuthenticated: true,
+          isLoading: true,
+        });
+
         // Fetch user data from our API
         try {
           const response = await fetch("/api/v1/auth/me", {
             headers: {
               Authorization: `Bearer ${supabaseSession.access_token}`,
+              "Cache-Control": "no-cache",
             },
           });
 
@@ -105,10 +150,13 @@ export const useAuthStore = create<AuthState>()(
                 expiresAt: supabaseSession.expires_at,
               },
               tenants: result.tenants || [],
-              currentTenantId: result.tenants?.[0]?.id || null,
+              currentTenantId:
+                result.tenants?.[0]?.id || get().currentTenantId || null,
               isAuthenticated: true,
               isLoading: false,
             });
+          } else {
+            set({ isLoading: false });
           }
         } catch (error) {
           console.error("Failed to fetch user data:", error);
@@ -166,6 +214,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         supabase.auth.signOut();
+        localStorage.removeItem(AUTH_INACTIVITY_STORAGE_KEY);
         set({
           user: null,
           session: null,
@@ -191,37 +240,40 @@ export const useAuthStore = create<AuthState>()(
           } = await supabase.auth.getSession();
 
           if (session) {
-            // Session exists - validate with our API
-            const { data } = await supabase.auth.getUser();
-            if (data.user) {
-              // Fetch user data from our API
-              const response = await fetch("/api/v1/auth/me", {
-                headers: {
-                  Authorization: `Bearer ${session.access_token}`,
-                },
+            await get().setSession(session);
+            return;
+          }
+
+          // Fallback: restore Supabase client session from persisted Zustand auth.
+          // This covers backend-first login flows that don't directly call supabase.auth.signIn* on the web client.
+          if (
+            currentState.session?.accessToken &&
+            currentState.session.refreshToken
+          ) {
+            try {
+              const { data, error } = await supabase.auth.setSession({
+                access_token: currentState.session.accessToken,
+                refresh_token: currentState.session.refreshToken,
               });
 
-              if (response.ok) {
-                const result = await response.json();
-                set({
-                  user: result.user,
-                  session: {
-                    accessToken: session.access_token,
-                    refreshToken: session.refresh_token,
-                    expiresAt: session.expires_at,
-                  },
-                  tenants: result.tenants || [],
-                  currentTenantId:
-                    result.tenants?.[0]?.id || get().currentTenantId || null,
-                  isAuthenticated: true,
-                  isLoading: false,
-                });
+              if (error) {
+                throw error;
+              }
+
+              if (data.session) {
+                await get().setSession(data.session);
                 return;
               }
+            } catch (restoreError) {
+              console.warn(
+                "Failed to restore Supabase session from persisted auth",
+                restoreError,
+              );
             }
           }
 
           // No valid session - clear auth state
+          localStorage.removeItem(AUTH_INACTIVITY_STORAGE_KEY);
           set({
             user: null,
             session: null,

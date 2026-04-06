@@ -12,7 +12,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={clsx(
-          "rounded-xl border border-surface-800 bg-surface-900 p-6",
+          "rounded-xl border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 p-6",
           className,
         )}
         {...props}
@@ -44,7 +44,7 @@ export const CardTitle = forwardRef<
   return (
     <h3
       ref={ref}
-      className={clsx("text-lg font-semibold text-surface-100", className)}
+      className={clsx("text-lg font-semibold text-surface-900 dark:text-surface-100", className)}
       {...props}
     >
       {children}

@@ -2,7 +2,7 @@
  * Products Page
  * List and manage products with weight-based pricing
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   Pencil,
@@ -42,6 +42,16 @@ interface Product {
   category: Category | null;
 }
 
+interface ProductPayload {
+  categoryId?: string;
+  name: string;
+  description?: string;
+  unit: string;
+  basePricePerKg: number;
+  currentStockKg: number;
+  minStockKg: number;
+}
+
 /**
  * Format price with thousand separators (Uzbek format)
  */
@@ -60,6 +70,10 @@ function formatStock(amount: number | string, unit: string): string {
     return num.toFixed(0) + " pcs";
   }
   return num.toFixed(2) + " " + unit;
+}
+
+function toNumber(value: number | string): number {
+  return typeof value === "string" ? parseFloat(value) : value;
 }
 
 export function ProductsPage() {
@@ -93,8 +107,79 @@ export function ProductsPage() {
   // Delete confirmation
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
+  const getCategoryById = (categoryId?: string): Category | null => {
+    if (!categoryId) return null;
+    return categories.find((category) => category.id === categoryId) ?? null;
+  };
+
+  const matchesActiveFilters = (product: Product): boolean => {
+    if (selectedCategory && product.category?.id !== selectedCategory) {
+      return false;
+    }
+
+    if (showLowStock) {
+      const currentStock = toNumber(product.currentStockKg);
+      const minStock = toNumber(product.minStockKg);
+      if (!(currentStock <= minStock && minStock > 0)) {
+        return false;
+      }
+    }
+
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    const searchableValue = `${product.name} ${product.description ?? ""}`
+      .trim()
+      .toLowerCase();
+    return searchableValue.includes(normalizedQuery);
+  };
+
+  const applyFilters = (items: Product[]): Product[] => {
+    return items.filter(matchesActiveFilters);
+  };
+
+  const buildPayload = (): ProductPayload => {
+    const payload: ProductPayload = {
+      name: formData.name.trim(),
+      unit: formData.unit,
+      basePricePerKg: parseFloat(formData.basePricePerKg),
+      currentStockKg: parseFloat(formData.currentStockKg) || 0,
+      minStockKg: parseFloat(formData.minStockKg) || 0,
+    };
+
+    if (formData.description.trim()) {
+      payload.description = formData.description.trim();
+    }
+
+    if (formData.categoryId) {
+      payload.categoryId = formData.categoryId;
+    }
+
+    return payload;
+  };
+
+  const toOptimisticProduct = (
+    payload: ProductPayload,
+    id: string,
+    currentStockKgOverride?: number | string,
+  ): Product => {
+    return {
+      id,
+      name: payload.name,
+      description: payload.description ?? null,
+      unit: payload.unit,
+      basePricePerKg: payload.basePricePerKg,
+      currentStockKg: currentStockKgOverride ?? payload.currentStockKg,
+      minStockKg: payload.minStockKg,
+      isActive: true,
+      category: getCategoryById(payload.categoryId),
+    };
+  };
+
   // Fetch products
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
@@ -111,7 +196,7 @@ export function ProductsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchQuery, selectedCategory, showLowStock]);
 
   // Fetch categories for filter and form
   const fetchCategories = async () => {
@@ -129,7 +214,7 @@ export function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [searchQuery, selectedCategory, showLowStock]);
+  }, [fetchProducts]);
 
   // Reset form
   const resetForm = () => {
@@ -195,42 +280,70 @@ export function ProductsPage() {
     setIsSubmitting(true);
     setFormError(null);
 
+    const payload = buildPayload();
+    const previousProducts = products;
+
+    const optimisticId = editingProduct
+      ? editingProduct.id
+      : `temp-product-${Date.now()}`;
+
+    const optimisticProduct = toOptimisticProduct(
+      payload,
+      optimisticId,
+      editingProduct?.currentStockKg,
+    );
+
+    setProducts((prevProducts) => {
+      const nextProducts = editingProduct
+        ? prevProducts.map((product) =>
+            product.id === editingProduct.id ? optimisticProduct : product,
+          )
+        : [optimisticProduct, ...prevProducts];
+
+      return applyFilters(nextProducts);
+    });
+
     try {
-      const payload: Record<string, unknown> = {
-        name: formData.name.trim(),
-        unit: formData.unit,
-        basePricePerKg: parseFloat(formData.basePricePerKg),
-        currentStockKg: parseFloat(formData.currentStockKg) || 0,
-        minStockKg: parseFloat(formData.minStockKg) || 0,
-      };
+      const response = editingProduct
+        ? await api.patch(`/products/${editingProduct.id}`, payload)
+        : await api.post("/products", payload);
 
-      // Only include optional fields if they have values
-      if (formData.description.trim()) {
-        payload.description = formData.description.trim();
-      }
-      if (formData.categoryId) {
-        payload.categoryId = formData.categoryId;
-      }
+      const serverProduct = response?.data?.data as Product | undefined;
 
-      if (editingProduct) {
-        await api.patch(`/products/${editingProduct.id}`, payload);
+      if (serverProduct) {
+        setProducts((prevProducts) => {
+          const nextProducts = editingProduct
+            ? prevProducts.map((product) =>
+                product.id === editingProduct.id ? serverProduct : product,
+              )
+            : prevProducts.map((product) =>
+                product.id === optimisticId ? serverProduct : product,
+              );
+
+          return applyFilters(nextProducts);
+        });
       } else {
-        await api.post("/products", payload);
+        await fetchProducts();
       }
 
+      setEditingProduct(null);
+      resetForm();
       setIsModalOpen(false);
       toast.success(editingProduct ? "Product updated" : "Product created");
-      fetchProducts();
     } catch (err: unknown) {
+      setProducts(previousProducts);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setFormError(
-          axiosError.response?.data?.message || "Failed to save product",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to save product";
+        setFormError(message);
+        toast.error(message);
       } else {
         setFormError("Failed to save product");
+        toast.error("Failed to save product");
       }
     } finally {
       setIsSubmitting(false);
@@ -241,20 +354,32 @@ export function ProductsPage() {
   const handleDelete = async () => {
     if (!deletingProduct) return;
 
+    const productToDelete = deletingProduct;
+    const previousProducts = products;
+
     setIsSubmitting(true);
+    setDeletingProduct(null);
+    setProducts((prevProducts) =>
+      prevProducts.filter((product) => product.id !== productToDelete.id),
+    );
+
     try {
-      await api.delete(`/products/${deletingProduct.id}`);
-      setDeletingProduct(null);
+      await api.delete(`/products/${productToDelete.id}`);
       toast.success("Product deleted");
-      fetchProducts();
     } catch (err: unknown) {
+      setProducts(previousProducts);
+
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
-        setError(
-          axiosError.response?.data?.message || "Failed to delete product",
-        );
+        const message =
+          axiosError.response?.data?.message || "Failed to delete product";
+        setError(message);
+        toast.error(message);
+      } else {
+        setError("Failed to delete product");
+        toast.error("Failed to delete product");
       }
     } finally {
       setIsSubmitting(false);
@@ -274,8 +399,8 @@ export function ProductsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-100">Products</h1>
-          <p className="text-surface-400 mt-1">
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Products</h1>
+          <p className="text-surface-500 dark:text-surface-400 mt-1">
             Manage your inventory products with weight-based pricing
           </p>
         </div>
@@ -294,14 +419,15 @@ export function ProductsPage() {
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500"
+            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500"
           />
         </div>
         <div className="flex gap-2">
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+            className="select-field"
+            aria-label="Filter by category"
           >
             <option value="">All Categories</option>
             {categories.map((cat) => (
@@ -332,11 +458,11 @@ export function ProductsPage() {
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
-              <Package className="h-12 w-12 text-surface-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-surface-200 mb-2">
+              <Package className="h-12 w-12 text-surface-400 dark:text-surface-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-surface-700 dark:text-surface-200 mb-2">
                 No products yet
               </h3>
-              <p className="text-surface-400 mb-4">
+              <p className="text-surface-500 dark:text-surface-400 mb-4">
                 Add your first product to start managing inventory
               </p>
               <Button onClick={handleCreate}>
@@ -359,25 +485,15 @@ export function ProductsPage() {
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full min-w-[700px]">
               <thead>
-                <tr className="border-b border-surface-800">
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Product
-                  </th>
-                  <th className="text-left text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Category
-                  </th>
-                  <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Price
-                  </th>
-                  <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Stock
-                  </th>
-                  <th className="text-right text-xs font-medium text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Actions
-                  </th>
+                <tr className="border-b border-surface-200 dark:border-surface-800">
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Product</th>
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Category</th>
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Price</th>
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Stock</th>
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-800">
+              <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
                 {products.map((product) => {
                   const currentStock =
                     typeof product.currentStockKg === "string"
@@ -391,19 +507,19 @@ export function ProductsPage() {
                   return (
                     <tr
                       key={product.id}
-                      className="hover:bg-surface-800/50 transition-colors"
+                      className="hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-surface-700 flex items-center justify-center">
-                            <Package className="h-5 w-5 text-surface-400" />
+                          <div className="w-10 h-10 rounded-lg bg-surface-100 dark:bg-surface-700 flex items-center justify-center">
+                            <Package className="h-5 w-5 text-surface-500 dark:text-surface-400" />
                           </div>
                           <div>
-                            <p className="font-medium text-surface-100">
+                            <p className="font-medium text-surface-900 dark:text-surface-100">
                               {product.name}
                             </p>
                             {product.description && (
-                              <p className="text-sm text-surface-500 truncate max-w-[200px]">
+                              <p className="text-sm text-surface-400 dark:text-surface-500 truncate max-w-[200px]">
                                 {product.description}
                               </p>
                             )}
@@ -412,15 +528,15 @@ export function ProductsPage() {
                       </td>
                       <td className="px-6 py-4">
                         {product.category ? (
-                          <span className="px-2 py-1 text-xs font-medium bg-surface-700 text-surface-300 rounded">
+                          <span className="px-2 py-1 text-xs font-medium bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 rounded">
                             {product.category.name}
                           </span>
                         ) : (
-                          <span className="text-surface-500">—</span>
+                            <span className="text-surface-400 dark:text-surface-500">—</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <span className="font-medium text-surface-100">
+                        <span className="font-medium text-surface-900 dark:text-surface-100">
                           {formatPrice(product.basePricePerKg, product.unit)}
                         </span>
                       </td>
@@ -433,14 +549,14 @@ export function ProductsPage() {
                             className={
                               isLowStock
                                 ? "text-amber-400 font-medium"
-                                : "text-surface-300"
+                                : "text-surface-700 dark:text-surface-300"
                             }
                           >
                             {formatStock(product.currentStockKg, product.unit)}
                           </span>
                         </div>
                         {minStock > 0 && (
-                          <p className="text-xs text-surface-500 mt-1">
+                          <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
                             Min: {formatStock(product.minStockKg, product.unit)}
                           </p>
                         )}
@@ -448,14 +564,18 @@ export function ProductsPage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            type="button"
                             onClick={() => handleEdit(product)}
-                            className="p-2 text-surface-400 hover:text-surface-100 hover:bg-surface-700 rounded-lg transition-colors"
+                            className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                            title="Edit product"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => setDeletingProduct(product)}
                             className="p-2 text-surface-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Delete product"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -497,7 +617,7 @@ export function ProductsPage() {
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                  <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
                     Description
                   </label>
                   <textarea
@@ -506,7 +626,7 @@ export function ProductsPage() {
                     value={formData.description}
                     onChange={handleInputChange}
                     rows={2}
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
+                    className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
 
@@ -528,14 +648,15 @@ export function ProductsPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-surface-300 mb-1">
+                    <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
                       Unit
                     </label>
                     <select
                       name="unit"
                       value={formData.unit}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+                      className="select-field w-full"
+                      aria-label="Product unit"
                     >
                       <option value="kg">Kilograms (kg)</option>
                       <option value="g">Grams (g)</option>
@@ -558,13 +679,13 @@ export function ProductsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   {editingProduct ? (
                     <div>
-                      <label className="block text-sm font-medium text-surface-300 mb-1">
+                      <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
                         Current Stock ({formData.unit})
                       </label>
-                      <div className="px-3 py-2 bg-surface-700/50 border border-surface-600 rounded-lg text-surface-400">
+                      <div className="px-3 py-2 bg-surface-100 dark:bg-surface-700/50 border border-surface-300 dark:border-surface-600 rounded-lg text-surface-500 dark:text-surface-400">
                         {formData.currentStockKg || "0"} {formData.unit}
                       </div>
-                      <p className="text-xs text-surface-500 mt-1">
+                      <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
                         Use Stock Management to adjust stock
                       </p>
                     </div>
@@ -593,7 +714,7 @@ export function ProductsPage() {
                   />
                 </div>
 
-                <p className="text-xs text-surface-500">
+                <p className="text-xs text-surface-400 dark:text-surface-500">
                   Low stock warning will be shown when current stock falls below
                   minimum stock level.
                 </p>
@@ -636,9 +757,9 @@ export function ProductsPage() {
               <CardTitle>Delete Product</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-surface-300">
+              <p className="text-surface-600 dark:text-surface-300">
                 Are you sure you want to delete{" "}
-                <span className="font-medium text-surface-100">
+                <span className="font-medium text-surface-900 dark:text-surface-100">
                   {deletingProduct.name}
                 </span>
                 ? This action cannot be undone.

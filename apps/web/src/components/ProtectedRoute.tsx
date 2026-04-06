@@ -25,7 +25,7 @@ export function ProtectedRoute({
   // Show loading spinner while hydrating or checking auth state
   if (!hasHydrated || isLoading) {
     return (
-      <div className="min-h-screen bg-surface-950 flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-surface-950 flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-primary-500 animate-spin" />
       </div>
     );

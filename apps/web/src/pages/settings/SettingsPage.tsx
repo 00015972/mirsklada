@@ -285,14 +285,16 @@ export function SettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-surface-100">Settings</h1>
-        <p className="text-surface-400 mt-1">
+        <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+          Settings
+        </h1>
+        <p className="text-surface-500 dark:text-surface-400 mt-1">
           Manage your business and account settings
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 bg-surface-800 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 bg-surface-100 dark:bg-surface-800 p-1 rounded-lg w-fit">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -302,7 +304,7 @@ export function SettingsPage() {
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                 activeTab === tab.id
                   ? "bg-primary-500 text-white"
-                  : "text-surface-400 hover:text-surface-100"
+                  : "text-surface-500 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -341,10 +343,10 @@ export function SettingsPage() {
                   />
 
                   <div>
-                    <label className="block text-sm font-medium text-surface-300 mb-1">
+                    <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
                       Workspace URL
                     </label>
-                    <div className="px-4 py-2 bg-surface-700/50 border border-surface-600 rounded-lg text-surface-400">
+                    <div className="px-4 py-2 bg-surface-100 dark:bg-surface-700/50 border border-surface-300 dark:border-surface-600 rounded-lg text-surface-500 dark:text-surface-400">
                       mirsklada.com/{tenantDetails?.slug || "..."}
                     </div>
                   </div>
@@ -361,7 +363,7 @@ export function SettingsPage() {
                   )}
 
                   {!isAdmin && (
-                    <p className="text-sm text-surface-500">
+                    <p className="text-sm text-surface-400 dark:text-surface-500">
                       Only admins can edit business settings
                     </p>
                   )}
@@ -376,18 +378,20 @@ export function SettingsPage() {
               <CardTitle>Subscription</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-surface-50 dark:bg-surface-800/50 rounded-lg">
                 <div>
-                  <p className="text-surface-100 font-medium">Current Plan</p>
-                  <p className="text-sm text-surface-400 capitalize">
+                  <p className="text-surface-900 dark:text-surface-100 font-medium">
+                    Current Plan
+                  </p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400 capitalize">
                     {tenantDetails?.subscriptionTier || "Basic"} Plan
                   </p>
                 </div>
                 <div
                   className={`px-3 py-1 rounded-full text-sm ${
                     tenantDetails?.subscriptionTier === "pro"
-                      ? "bg-primary-500/20 text-primary-400"
-                      : "bg-surface-700 text-surface-300"
+                      ? "bg-primary-500/20 text-primary-600 dark:text-primary-400"
+                      : "bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-300"
                   }`}
                 >
                   {tenantDetails?.subscriptionTier === "pro" ? "Pro" : "Basic"}
@@ -395,16 +399,16 @@ export function SettingsPage() {
               </div>
 
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-surface-300">
-                  <Check className="h-4 w-4 text-green-400" />
+                <div className="flex items-center gap-2 text-surface-700 dark:text-surface-300">
+                  <Check className="h-4 w-4 text-green-500 dark:text-green-400" />
                   Unlimited products
                 </div>
-                <div className="flex items-center gap-2 text-surface-300">
-                  <Check className="h-4 w-4 text-green-400" />
+                <div className="flex items-center gap-2 text-surface-700 dark:text-surface-300">
+                  <Check className="h-4 w-4 text-green-500 dark:text-green-400" />
                   Unlimited clients
                 </div>
-                <div className="flex items-center gap-2 text-surface-300">
-                  <Check className="h-4 w-4 text-green-400" />
+                <div className="flex items-center gap-2 text-surface-700 dark:text-surface-300">
+                  <Check className="h-4 w-4 text-green-500 dark:text-green-400" />
                   Stock management
                 </div>
                 {tenantDetails?.subscriptionTier === "pro" ? (
@@ -420,11 +424,11 @@ export function SettingsPage() {
                   </>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 text-surface-500">
+                    <div className="flex items-center gap-2 text-surface-400 dark:text-surface-500">
                       <X className="h-4 w-4" />
                       Telegram bot integration
                     </div>
-                    <div className="flex items-center gap-2 text-surface-500">
+                    <div className="flex items-center gap-2 text-surface-400 dark:text-surface-500">
                       <X className="h-4 w-4" />
                       Advanced reports
                     </div>
@@ -465,14 +469,14 @@ export function SettingsPage() {
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                  <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
                     Email Address
                   </label>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-surface-700/50 border border-surface-600 rounded-lg text-surface-400">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-surface-100 dark:bg-surface-700/50 border border-surface-300 dark:border-surface-600 rounded-lg text-surface-500 dark:text-surface-400">
                     <Mail className="h-4 w-4" />
                     {user?.email || "..."}
                   </div>
-                  <p className="text-xs text-surface-500 mt-1">
+                  <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
                     Email cannot be changed
                   </p>
                 </div>
@@ -495,10 +499,12 @@ export function SettingsPage() {
               <CardTitle>Account</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-surface-800/50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-surface-50 dark:bg-surface-800/50 rounded-lg">
                 <div>
-                  <p className="text-surface-100 font-medium">Your Role</p>
-                  <p className="text-sm text-surface-400">
+                  <p className="text-surface-900 dark:text-surface-100 font-medium">
+                    Your Role
+                  </p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400">
                     in {currentTenant?.name}
                   </p>
                 </div>
@@ -537,10 +543,10 @@ export function SettingsPage() {
           {/* Team Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-surface-100">
+              <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">
                 Team Members
               </h2>
-              <p className="text-sm text-surface-400">
+              <p className="text-sm text-surface-500 dark:text-surface-400">
                 Manage who has access to this workspace
               </p>
             </div>
@@ -567,11 +573,11 @@ export function SettingsPage() {
           ) : members.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <Users className="h-12 w-12 text-surface-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-surface-300 mb-2">
+                <Users className="h-12 w-12 text-surface-400 dark:text-surface-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-surface-600 dark:text-surface-300 mb-2">
                   No team members yet
                 </h3>
-                <p className="text-surface-500 mb-4">
+                <p className="text-surface-500 dark:text-surface-500 mb-4">
                   Invite team members to collaborate
                 </p>
                 {isAdmin && (
@@ -584,7 +590,7 @@ export function SettingsPage() {
             </Card>
           ) : (
             <Card>
-              <div className="divide-y divide-surface-700">
+              <div className="divide-y divide-surface-200 dark:divide-surface-700">
                 {members.map((member) => {
                   const isCurrentUser = member.userId === user?.id;
                   const canModify = isAdmin && !isCurrentUser;
@@ -603,18 +609,18 @@ export function SettingsPage() {
                           </span>
                         </div>
                         <div>
-                          <p className="text-surface-100 font-medium">
+                          <p className="text-surface-900 dark:text-surface-100 font-medium">
                             {member.name || member.email}
                             {isCurrentUser && (
-                              <span className="text-xs text-surface-500 ml-2">
+                              <span className="text-xs text-surface-400 dark:text-surface-500 ml-2">
                                 (you)
                               </span>
                             )}
                           </p>
-                          <p className="text-sm text-surface-400">
+                          <p className="text-sm text-surface-500 dark:text-surface-400">
                             {member.email}
                           </p>
-                          <p className="text-xs text-surface-500 mt-0.5">
+                          <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">
                             Joined{" "}
                             {new Date(member.joinedAt).toLocaleDateString(
                               "en-US",
@@ -639,7 +645,8 @@ export function SettingsPage() {
                                 e.target.value as "admin" | "staff",
                               )
                             }
-                            className="px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 text-sm focus:outline-none focus:border-primary-500"
+                            className="select-field py-1.5 text-sm"
+                            aria-label="Team member role"
                           >
                             <option value="admin">Admin</option>
                             <option value="staff">Staff</option>
@@ -680,7 +687,7 @@ export function SettingsPage() {
           )}
 
           {!isAdmin && (
-            <p className="text-sm text-surface-500 text-center">
+            <p className="text-sm text-surface-400 dark:text-surface-500 text-center">
               Only admins can invite or remove team members
             </p>
           )}
@@ -712,7 +719,7 @@ export function SettingsPage() {
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-surface-300 mb-1">
+                  <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
                     Role
                   </label>
                   <select
@@ -720,7 +727,8 @@ export function SettingsPage() {
                     onChange={(e) =>
                       setInviteRole(e.target.value as "admin" | "staff")
                     }
-                    className="w-full px-4 py-2 bg-surface-800 border border-surface-700 rounded-lg text-surface-100 focus:outline-none focus:border-primary-500"
+                    className="select-field w-full"
+                    aria-label="Invite role"
                   >
                     <option value="staff">
                       Staff - Can view and edit data
@@ -771,7 +779,7 @@ export function SettingsPage() {
               <CardTitle className="text-red-400">Remove Team Member</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-surface-800/50 rounded-lg">
+              <div className="flex items-center gap-3 p-4 bg-surface-50 dark:bg-surface-800/50 rounded-lg">
                 <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center">
                   <span className="text-primary-400 font-medium">
                     {(removingMember.name || removingMember.email)
@@ -780,10 +788,10 @@ export function SettingsPage() {
                   </span>
                 </div>
                 <div>
-                  <p className="text-surface-100 font-medium">
+                  <p className="text-surface-900 dark:text-surface-100 font-medium">
                     {removingMember.name || removingMember.email}
                   </p>
-                  <p className="text-sm text-surface-400">
+                  <p className="text-sm text-surface-500 dark:text-surface-400">
                     {removingMember.email}
                   </p>
                 </div>

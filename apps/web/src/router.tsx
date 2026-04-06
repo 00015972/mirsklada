@@ -20,10 +20,17 @@ import {
   StockPage,
   PaymentsPage,
   SettingsPage,
+  LandingPage,
 } from "@/pages";
 
 const routes: RouteObject[] = [
-  // Public Routes
+  // Public Landing Page
+  {
+    path: "/",
+    element: <LandingPage />,
+  },
+
+  // Auth Routes
   {
     path: "/login",
     element: <LoginPage />,
@@ -45,7 +52,7 @@ const routes: RouteObject[] = [
 
   // Protected Routes (require auth + tenant)
   {
-    path: "/",
+    path: "/dashboard",
     element: (
       <ProtectedRoute requireTenant={true}>
         <AppLayout />
@@ -54,10 +61,6 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <Navigate to="/dashboard" replace />,
-      },
-      {
-        path: "dashboard",
         element: <DashboardPage />,
       },
       {
@@ -88,7 +91,6 @@ const routes: RouteObject[] = [
         path: "settings",
         element: <SettingsPage />,
       },
-      // Placeholder routes - will be implemented later
       {
         path: "reports",
         element: <PlaceholderPage title="Reports" />,
@@ -99,7 +101,7 @@ const routes: RouteObject[] = [
   // Catch all
   {
     path: "*",
-    element: <Navigate to="/dashboard" replace />,
+    element: <Navigate to="/" replace />,
   },
 ];
 
@@ -110,8 +112,12 @@ export const router: any = createBrowserRouter(routes);
 function PlaceholderPage({ title }: { title: string }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <h1 className="text-2xl font-bold text-surface-100 mb-2">{title}</h1>
-      <p className="text-surface-400">This page is coming soon</p>
+      <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100 mb-2">
+        {title}
+      </h1>
+      <p className="text-surface-500 dark:text-surface-400">
+        This page is coming soon
+      </p>
     </div>
   );
 }

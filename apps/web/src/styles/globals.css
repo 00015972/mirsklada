@@ -9,31 +9,53 @@
   }
 
   body {
-    @apply min-h-screen;
+    @apply min-h-screen transition-colors duration-200;
   }
 
-  /* Custom scrollbar for dark mode */
+  /* Dark mode scrollbar */
+  .dark ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  .dark ::-webkit-scrollbar-track {
+    @apply bg-surface-900;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    @apply bg-surface-700 rounded-full;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-600;
+  }
+
+  /* Light mode scrollbar */
   ::-webkit-scrollbar {
     @apply w-2;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-surface-900;
+    @apply bg-surface-100;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-surface-700 rounded-full;
+    @apply bg-surface-300 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-surface-600;
+    @apply bg-surface-400;
   }
 }
 
 /* Component styles */
 @layer components {
+  /* ── Buttons ── */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-950 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .dark .btn {
+    @apply focus:ring-offset-surface-950;
   }
 
   .btn-primary {
@@ -41,19 +63,48 @@
   }
 
   .btn-secondary {
-    @apply btn bg-surface-700 text-surface-100 hover:bg-surface-600 focus:ring-surface-500;
+    @apply btn bg-surface-200 text-surface-700 hover:bg-surface-300 focus:ring-surface-400;
+  }
+
+  .dark .btn-secondary {
+    @apply bg-surface-700 text-surface-100 hover:bg-surface-600 focus:ring-surface-500;
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-surface-300 hover:bg-surface-800 hover:text-surface-100;
+    @apply btn bg-transparent text-surface-600 hover:bg-surface-100 hover:text-surface-900;
+  }
+
+  .dark .btn-ghost {
+    @apply text-surface-300 hover:bg-surface-800 hover:text-surface-100;
   }
 
   .btn-danger {
     @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
   }
 
+  /* ── Inputs ── */
   .input {
-    @apply w-full rounded-lg border border-surface-700 bg-surface-800 px-4 py-2.5 text-surface-100 placeholder-surface-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors;
+    @apply w-full rounded-lg border border-surface-300 bg-white px-4 py-2.5 text-surface-900 placeholder-surface-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors;
+  }
+
+  .dark .input {
+    @apply border-surface-700 bg-surface-800 text-surface-100 placeholder-surface-500;
+  }
+
+  .select-field {
+    @apply rounded-lg border border-surface-300 bg-white px-3 py-2 text-surface-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors;
+  }
+
+  .dark .select-field {
+    @apply border-surface-700 bg-surface-800 text-surface-100;
+  }
+
+  .select-field option {
+    @apply bg-white text-surface-900;
+  }
+
+  .dark .select-field option {
+    @apply bg-surface-800 text-surface-100;
   }
 
   .input-error {
@@ -61,14 +112,27 @@
   }
 
   .label {
-    @apply block text-sm font-medium text-surface-300 mb-1.5;
+    @apply block text-sm font-medium text-surface-600 mb-1.5;
   }
 
+  .dark .label {
+    @apply text-surface-300;
+  }
+
+  /* ── Cards ── */
   .card {
-    @apply rounded-xl border border-surface-800 bg-surface-900 p-6;
+    @apply rounded-xl border border-surface-200 bg-white p-6;
+  }
+
+  .dark .card {
+    @apply border-surface-800 bg-surface-900;
   }
 
   .link {
-    @apply text-primary-400 hover:text-primary-300 transition-colors;
+    @apply text-primary-600 hover:text-primary-500 transition-colors;
+  }
+
+  .dark .link {
+    @apply text-primary-400 hover:text-primary-300;
   }
 }
