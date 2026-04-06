@@ -2,7 +2,7 @@
  * Stock Service
  * Business logic for stock movements with transactions
  */
-import { prisma } from "@mirsklada/database";
+import { prisma, Prisma } from "@mirsklada/database";
 import { AppError } from "../../utils/app-error";
 
 // Simple weight rounding utility - avoids Decimal type issues
@@ -27,15 +27,16 @@ export interface StockMovementFilters {
 
 class StockService {
   async getMovements(tenantId: string, filters: StockMovementFilters = {}) {
-    const where: any = { tenantId };
+    const where: Prisma.StockMovementWhereInput = { tenantId };
 
     if (filters.productId) where.productId = filters.productId;
     if (filters.type) where.type = filters.type;
 
     if (filters.startDate || filters.endDate) {
-      where.createdAt = {};
-      if (filters.startDate) where.createdAt.gte = filters.startDate;
-      if (filters.endDate) where.createdAt.lte = filters.endDate;
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (filters.startDate) createdAt.gte = filters.startDate;
+      if (filters.endDate) createdAt.lte = filters.endDate;
+      where.createdAt = createdAt;
     }
 
     return prisma.stockMovement.findMany({
@@ -158,7 +159,7 @@ class StockService {
   }
 
   async getCurrentStockLevels(tenantId: string, categoryId?: string) {
-    const where: any = { tenantId, isActive: true };
+    const where: Prisma.ProductWhereInput = { tenantId, isActive: true };
     if (categoryId) where.categoryId = categoryId;
 
     return prisma.product.findMany({
@@ -181,12 +182,13 @@ class StockService {
     startDate?: Date,
     endDate?: Date,
   ) {
-    const where: any = { tenantId, productId };
+    const where: Prisma.StockMovementWhereInput = { tenantId, productId };
 
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (startDate) createdAt.gte = startDate;
+      if (endDate) createdAt.lte = endDate;
+      where.createdAt = createdAt;
     }
 
     const movements = await prisma.stockMovement.findMany({

@@ -2,7 +2,7 @@
  * Payment Service
  * Business logic for payments and debt management
  */
-import { prisma } from "@mirsklada/database";
+import { prisma, Prisma } from "@mirsklada/database";
 import { AppError } from "../../utils/app-error";
 
 export type PaymentMethod = "CASH" | "CARD" | "TRANSFER" | "CLICK" | "PAYME";
@@ -26,16 +26,17 @@ export interface PaymentFilters {
 
 class PaymentService {
   async findAll(tenantId: string, filters: PaymentFilters = {}) {
-    const where: any = { tenantId };
+    const where: Prisma.PaymentWhereInput = { tenantId };
 
     if (filters.clientId) where.clientId = filters.clientId;
     if (filters.orderId) where.orderId = filters.orderId;
     if (filters.method) where.method = filters.method;
 
     if (filters.startDate || filters.endDate) {
-      where.createdAt = {};
-      if (filters.startDate) where.createdAt.gte = filters.startDate;
-      if (filters.endDate) where.createdAt.lte = filters.endDate;
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (filters.startDate) createdAt.gte = filters.startDate;
+      if (filters.endDate) createdAt.lte = filters.endDate;
+      where.createdAt = createdAt;
     }
 
     return prisma.payment.findMany({
@@ -168,12 +169,13 @@ class PaymentService {
     startDate?: Date,
     endDate?: Date,
   ) {
-    const where: any = { tenantId, clientId };
+    const where: Prisma.DebtLedgerWhereInput = { tenantId, clientId };
 
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (startDate) createdAt.gte = startDate;
+      if (endDate) createdAt.lte = endDate;
+      where.createdAt = createdAt;
     }
 
     return prisma.debtLedger.findMany({
@@ -187,12 +189,13 @@ class PaymentService {
   }
 
   async getPaymentSummary(tenantId: string, startDate?: Date, endDate?: Date) {
-    const where: any = { tenantId };
+    const where: Prisma.PaymentWhereInput = { tenantId };
 
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = startDate;
-      if (endDate) where.createdAt.lte = endDate;
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (startDate) createdAt.gte = startDate;
+      if (endDate) createdAt.lte = endDate;
+      where.createdAt = createdAt;
     }
 
     const payments = await prisma.payment.findMany({
