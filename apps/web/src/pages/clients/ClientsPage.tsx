@@ -28,6 +28,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 interface Client {
   id: string;
@@ -82,6 +83,7 @@ function toDebtNumber(amount: number | string): number {
 }
 
 export function ClientsPage() {
+  const { t } = useTranslation();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -165,12 +167,12 @@ export function ClientsPage() {
       setClients(response.data.data || []);
       setError(null);
     } catch (err) {
-      setError("Failed to load clients");
+      setError(t("clients.errorLoad"));
       console.error(err);
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, showWithDebt]);
+  }, [searchQuery, showWithDebt, t]);
 
   useEffect(() => {
     fetchClients();
@@ -222,7 +224,7 @@ export function ClientsPage() {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      setFormError("Client name is required");
+      setFormError(t("clients.nameRequired"));
       return;
     }
 
@@ -307,7 +309,7 @@ export function ClientsPage() {
       setEditingClient(null);
       resetForm();
       setIsModalOpen(false);
-      toast.success(editingClient ? "Client updated" : "Client created");
+      toast.success(editingClient ? t("clients.updated") : t("clients.created"));
     } catch (err: unknown) {
       setClients(previousClients);
 
@@ -316,12 +318,12 @@ export function ClientsPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to save client";
+          axiosError.response?.data?.message || t("clients.errorSave");
         setFormError(message);
         toast.error(message);
       } else {
-        setFormError("Failed to save client");
-        toast.error("Failed to save client");
+        setFormError(t("clients.errorSave"));
+        toast.error(t("clients.errorSave"));
       }
     } finally {
       setIsSubmitting(false);
@@ -344,7 +346,7 @@ export function ClientsPage() {
 
     try {
       await api.delete(`/clients/${clientToDelete.id}`);
-      toast.success("Client deleted");
+      toast.success(t("clients.deleted"));
     } catch (err: unknown) {
       setClients(previousClients);
 
@@ -353,12 +355,12 @@ export function ClientsPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to delete client";
+          axiosError.response?.data?.message || t("clients.errorDelete");
         setError(message);
         toast.error(message);
       } else {
-        setError("Failed to delete client");
-        toast.error("Failed to delete client");
+        setError(t("clients.errorDelete"));
+        toast.error(t("clients.errorDelete"));
       }
     } finally {
       setIsSubmitting(false);
@@ -376,7 +378,7 @@ export function ClientsPage() {
       setViewingClient(response.data.data);
     } catch (err) {
       console.error("Failed to load client details:", err);
-      toast.error("Failed to load client details");
+      toast.error(t("clients.errorLoadDetail"));
     } finally {
       setIsLoadingDetail(false);
     }
@@ -396,15 +398,15 @@ export function ClientsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
-            Clients
+            {t("clients.title")}
           </h1>
           <p className="text-surface-400 mt-1">
-            Manage your customers and track their orders
+            {t("clients.subtitle")}
           </p>
         </div>
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Client
+          {t("clients.addClient")}
         </Button>
       </div>
 
@@ -414,7 +416,7 @@ export function ClientsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500" />
           <input
             type="text"
-            placeholder="Search by name, phone, or Telegram..."
+            placeholder={t("clients.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500"
@@ -424,7 +426,7 @@ export function ClientsPage() {
           variant={showWithDebt ? "primary" : "secondary"}
           onClick={() => setShowWithDebt(!showWithDebt)}
         >
-          With Debt
+          {t("clients.withDebt")}
         </Button>
       </div>
 
@@ -442,14 +444,14 @@ export function ClientsPage() {
             <div className="text-center">
               <Users className="h-12 w-12 text-surface-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-surface-200 mb-2">
-                No clients yet
+                {t("clients.noClients")}
               </h3>
               <p className="text-surface-400 mb-4">
-                Add your first client to start tracking orders
+                {t("clients.noClientsDesc")}
               </p>
               <Button onClick={handleCreate}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Client
+                {t("clients.addClient")}
               </Button>
             </div>
           </CardContent>
@@ -465,7 +467,7 @@ export function ClientsPage() {
                     type="button"
                     onClick={() => handleViewClient(client)}
                     className="p-2 text-surface-400 hover:text-primary-400 hover:bg-primary-500/10 rounded-lg transition-colors"
-                    title="View client details"
+                    title={t("clients.viewDetails")}
                   >
                     <Eye className="h-4 w-4" />
                   </button>
@@ -473,7 +475,7 @@ export function ClientsPage() {
                     type="button"
                     onClick={() => handleEdit(client)}
                     className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
-                    title="Edit client"
+                    title={t("clients.editClient")}
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
@@ -481,7 +483,7 @@ export function ClientsPage() {
                     type="button"
                     onClick={() => setDeletingClient(client)}
                     className="p-2 text-surface-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                    title="Delete client"
+                    title={t("clients.deleteTitle")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -500,7 +502,7 @@ export function ClientsPage() {
                     </h3>
                     {parseFloat(String(client.currentDebt)) > 0 && (
                       <p className="text-sm text-amber-400">
-                        Debt: {formatPrice(client.currentDebt)}
+                        {t("clients.debt", { amount: formatPrice(client.currentDebt) })}
                       </p>
                     )}
                   </div>
@@ -545,7 +547,7 @@ export function ClientsPage() {
           <Card className="w-full max-w-lg my-8">
             <CardHeader>
               <CardTitle>
-                {editingClient ? "Edit Client" : "Add Client"}
+                {editingClient ? t("clients.editClient") : t("clients.addClient")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -557,37 +559,37 @@ export function ClientsPage() {
                 )}
 
                 <Input
-                  label="Client Name *"
+                  label={t("clients.nameLabel")}
                   name="name"
-                  placeholder="e.g., John's Restaurant"
+                  placeholder={t("clients.namePlaceholder")}
                   value={formData.name}
                   onChange={handleInputChange}
                   autoFocus
                 />
 
                 <Input
-                  label="Phone Number"
+                  label={t("clients.phoneLabel")}
                   name="phone"
-                  placeholder="+998 90 123 4567"
+                  placeholder={t("clients.phonePlaceholder")}
                   value={formData.phone}
                   onChange={handleInputChange}
                 />
 
                 <Input
-                  label="Telegram Username"
+                  label={t("clients.telegramLabel")}
                   name="telegramId"
-                  placeholder="username (without @)"
+                  placeholder={t("clients.telegramPlaceholder")}
                   value={formData.telegramId}
                   onChange={handleInputChange}
                 />
 
                 <div>
                   <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Address
+                    {t("clients.addressLabel")}
                   </label>
                   <textarea
                     name="address"
-                    placeholder="Delivery address"
+                    placeholder={t("clients.addressPlaceholder")}
                     value={formData.address}
                     onChange={handleInputChange}
                     rows={2}
@@ -597,11 +599,11 @@ export function ClientsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Notes
+                    {t("clients.notesLabel")}
                   </label>
                   <textarea
                     name="notes"
-                    placeholder="Any additional notes about this client"
+                    placeholder={t("clients.notesPlaceholder")}
                     value={formData.notes}
                     onChange={handleInputChange}
                     rows={2}
@@ -617,7 +619,7 @@ export function ClientsPage() {
                     onClick={() => setIsModalOpen(false)}
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -627,9 +629,9 @@ export function ClientsPage() {
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : editingClient ? (
-                      "Save Changes"
+                      t("clients.saveChanges")
                     ) : (
-                      "Add Client"
+                      t("clients.addClient")
                     )}
                   </Button>
                 </div>
@@ -644,21 +646,20 @@ export function ClientsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Delete Client</CardTitle>
+              <CardTitle>{t("clients.deleteTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-surface-300">
-                Are you sure you want to delete{" "}
+                {t("clients.deleteConfirmText")}{" "}
                 <span className="font-medium text-surface-900 dark:text-surface-100">
                   {deletingClient.name}
                 </span>
-                ? This will also delete all their order history.
+                {t("clients.deleteHistoryWarning")}
               </p>
 
               {parseFloat(String(deletingClient.currentDebt)) > 0 && (
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
-                  This client has an outstanding debt of{" "}
-                  {formatPrice(deletingClient.currentDebt)}
+                  {t("clients.outstandingDebtWarning", { amount: formatPrice(deletingClient.currentDebt) })}
                 </div>
               )}
 
@@ -669,7 +670,7 @@ export function ClientsPage() {
                   onClick={() => setDeletingClient(null)}
                   disabled={isSubmitting}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   variant="danger"
@@ -680,7 +681,7 @@ export function ClientsPage() {
                   {isSubmitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Delete"
+                    t("common.delete")
                   )}
                 </Button>
               </div>
@@ -706,7 +707,7 @@ export function ClientsPage() {
                 type="button"
                 onClick={() => setViewingClient(null)}
                 className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
-                title="Close client details"
+                title={t("common.close")}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -735,15 +736,7 @@ export function ClientsPage() {
                 <div className="flex items-center gap-2 text-surface-300">
                   <Calendar className="h-4 w-4 text-surface-500" />
                   <span className="text-sm">
-                    Client since{" "}
-                    {new Date(viewingClient.createdAt).toLocaleDateString(
-                      "en-US",
-                      {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      },
-                    )}
+                    {t("clients.clientSince", { date: new Date(viewingClient.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) })}
                   </span>
                 </div>
               </div>
@@ -753,7 +746,7 @@ export function ClientsPage() {
                 <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-amber-400">
-                      Outstanding Debt
+                      {t("clients.outstandingDebt")}
                     </span>
                     <span className="text-lg font-bold text-amber-300">
                       {formatPrice(viewingClient.currentDebt)}
@@ -764,7 +757,7 @@ export function ClientsPage() {
 
               {viewingClient.notes && (
                 <div className="p-3 rounded-lg bg-surface-800 text-surface-400 text-sm">
-                  <span className="font-medium text-surface-300">Notes:</span>{" "}
+                  <span className="font-medium text-surface-300">{t("clients.notes")}</span>{" "}
                   {viewingClient.notes}
                 </div>
               )}
@@ -773,7 +766,7 @@ export function ClientsPage() {
               <div>
                 <h3 className="text-sm font-semibold text-surface-200 mb-3 flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4" />
-                  Recent Orders
+                  {t("clients.recentOrders")}
                 </h3>
                 {isLoadingDetail ? (
                   <div className="flex justify-center py-4">
@@ -815,7 +808,7 @@ export function ClientsPage() {
                               </span>
                             </div>
                             <p className="text-xs text-surface-500 mt-1">
-                              {order.items?.length || 0} items &middot;{" "}
+                              {t("clients.items", { count: order.items?.length || 0 })} &middot;{" "}
                               {new Date(order.createdAt).toLocaleDateString(
                                 "en-US",
                                 { month: "short", day: "numeric" },
@@ -828,7 +821,7 @@ export function ClientsPage() {
                             </p>
                             {paid < total && (
                               <p className="text-xs text-amber-400">
-                                Unpaid: {formatPrice(total - paid)}
+                                {t("clients.unpaid", { amount: formatPrice(total - paid) })}
                               </p>
                             )}
                           </div>
@@ -838,7 +831,7 @@ export function ClientsPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-surface-500 text-center py-4">
-                    No orders yet
+                    {t("clients.noOrders")}
                   </p>
                 )}
               </div>
@@ -849,7 +842,7 @@ export function ClientsPage() {
                   className="flex-1"
                   onClick={() => setViewingClient(null)}
                 >
-                  Close
+                  {t("common.close")}
                 </Button>
                 <Button
                   className="flex-1"
@@ -860,7 +853,7 @@ export function ClientsPage() {
                   }}
                 >
                   <Pencil className="h-4 w-4 mr-2" />
-                  Edit Client
+                  {t("clients.editClient")}
                 </Button>
               </div>
             </CardContent>

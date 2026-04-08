@@ -27,6 +27,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 interface OrderItem {
   id: string;
@@ -108,45 +109,46 @@ function formatDate(dateStr: string): string {
   });
 }
 
-const statusConfig = {
-  DRAFT: {
-    label: "Draft",
-    icon: Clock,
-    className: "bg-surface-700 text-surface-300",
-  },
-  CONFIRMED: {
-    label: "Confirmed",
-    icon: CheckCircle,
-    className: "bg-blue-500/20 text-blue-400",
-  },
-  COMPLETED: {
-    label: "Completed",
-    icon: CheckCircle,
-    className: "bg-green-500/20 text-green-400",
-  },
-  CANCELLED: {
-    label: "Cancelled",
-    icon: XCircle,
-    className: "bg-red-500/20 text-red-400",
-  },
-};
-
-const paymentStatusConfig = {
-  UNPAID: {
-    label: "Unpaid",
-    className: "text-red-400",
-  },
-  PARTIAL: {
-    label: "Partial",
-    className: "text-amber-400",
-  },
-  PAID: {
-    label: "Paid",
-    className: "text-green-400",
-  },
-};
-
 export function OrdersPage() {
+  const { t } = useTranslation();
+
+  const statusConfig = {
+    DRAFT: {
+      label: t("orders.status.DRAFT"),
+      icon: Clock,
+      className: "bg-surface-700 text-surface-300",
+    },
+    CONFIRMED: {
+      label: t("orders.status.CONFIRMED"),
+      icon: CheckCircle,
+      className: "bg-blue-500/20 text-blue-400",
+    },
+    COMPLETED: {
+      label: t("orders.status.COMPLETED"),
+      icon: CheckCircle,
+      className: "bg-green-500/20 text-green-400",
+    },
+    CANCELLED: {
+      label: t("orders.status.CANCELLED"),
+      icon: XCircle,
+      className: "bg-red-500/20 text-red-400",
+    },
+  };
+
+  const paymentStatusConfig = {
+    UNPAID: {
+      label: t("orders.paymentStatus.UNPAID"),
+      className: "text-red-400",
+    },
+    PARTIAL: {
+      label: t("orders.paymentStatus.PARTIAL"),
+      className: "text-amber-400",
+    },
+    PAID: {
+      label: t("orders.paymentStatus.PAID"),
+      className: "text-green-400",
+    },
+  };
   const [orders, setOrders] = useState<Order[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -241,7 +243,7 @@ export function OrdersPage() {
       setOrders(applyFilters(ordersData));
       setError(null);
     } catch (err) {
-      setError("Failed to load orders");
+      setError(t("orders.errorLoad"));
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -329,7 +331,7 @@ export function OrdersPage() {
     e.preventDefault();
 
     if (!selectedClientId) {
-      setFormError("Please select a client");
+      setFormError(t("orders.selectClient"));
       return;
     }
 
@@ -338,7 +340,7 @@ export function OrdersPage() {
     );
 
     if (validItems.length === 0) {
-      setFormError("Please add at least one product with quantity");
+      setFormError(t("orders.addProductRequired"));
       return;
     }
 
@@ -426,7 +428,7 @@ export function OrdersPage() {
 
       setIsCreateModalOpen(false);
       resetCreateForm();
-      toast.success("Order created");
+      toast.success(t("orders.created"));
     } catch (err: unknown) {
       setOrders(previousOrders);
 
@@ -435,12 +437,12 @@ export function OrdersPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to create order";
+          axiosError.response?.data?.message || t("orders.errorCreate");
         setFormError(message);
         toast.error(message);
       } else {
-        setFormError("Failed to create order");
-        toast.error("Failed to create order");
+        setFormError(t("orders.errorCreate"));
+        toast.error(t("orders.errorCreate"));
       }
     } finally {
       setIsSubmitting(false);
@@ -506,7 +508,7 @@ export function OrdersPage() {
         });
       }
 
-      toast.success("Order confirmed");
+      toast.success(t("orders.confirmed"));
     } catch (err: unknown) {
       setOrders(previousOrders);
       setViewingOrder(previousViewingOrder);
@@ -516,12 +518,12 @@ export function OrdersPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to confirm order";
+          axiosError.response?.data?.message || t("orders.errorConfirm");
         setError(message);
         toast.error(message);
       } else {
-        setError("Failed to confirm order");
-        toast.error("Failed to confirm order");
+        setError(t("orders.errorConfirm"));
+        toast.error(t("orders.errorConfirm"));
       }
     }
   };
@@ -552,7 +554,7 @@ export function OrdersPage() {
 
     try {
       await api.post(`/orders/${orderId}/cancel`);
-      toast.success("Order cancelled");
+      toast.success(t("orders.cancelled"));
       setViewingOrder(null);
     } catch (err: unknown) {
       setOrders(previousOrders);
@@ -563,12 +565,12 @@ export function OrdersPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to cancel order";
+          axiosError.response?.data?.message || t("orders.errorCancel");
         setError(message);
         toast.error(message);
       } else {
-        setError("Failed to cancel order");
-        toast.error("Failed to cancel order");
+        setError(t("orders.errorCancel"));
+        toast.error(t("orders.errorCancel"));
       }
     }
   };
@@ -600,7 +602,7 @@ export function OrdersPage() {
 
     const amount = parseFloat(paymentAmount);
     if (!amount || amount <= 0) {
-      setPaymentError("Please enter a valid amount");
+      setPaymentError(t("orders.invalidAmount"));
       return;
     }
 
@@ -658,7 +660,7 @@ export function OrdersPage() {
 
       setIsPaymentModalOpen(false);
       setPayingOrder(null);
-      toast.success("Payment recorded");
+      toast.success(t("orders.paymentRecorded"));
     } catch (err: unknown) {
       setOrders(previousOrders);
       setViewingOrder(previousViewingOrder);
@@ -669,12 +671,12 @@ export function OrdersPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to record payment";
+          axiosError.response?.data?.message || t("orders.errorPayment");
         setPaymentError(message);
         toast.error(message);
       } else {
-        setPaymentError("Failed to record payment");
-        toast.error("Failed to record payment");
+        setPaymentError(t("orders.errorPayment"));
+        toast.error(t("orders.errorPayment"));
       }
     } finally {
       setIsSubmitting(false);
@@ -695,15 +697,15 @@ export function OrdersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
-            Orders
+            {t("orders.title")}
           </h1>
           <p className="text-surface-400 mt-1">
-            Create and manage customer orders
+            {t("orders.subtitle")}
           </p>
         </div>
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
-          New Order
+          {t("orders.newOrder")}
         </Button>
       </div>
 
@@ -713,7 +715,7 @@ export function OrdersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500" />
           <input
             type="text"
-            placeholder="Search by order # or client..."
+            placeholder={t("orders.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500"
@@ -726,11 +728,11 @@ export function OrdersPage() {
             className="select-field"
             aria-label="Filter by order status"
           >
-            <option value="">All Status</option>
-            <option value="DRAFT">Draft</option>
-            <option value="CONFIRMED">Confirmed</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED">Cancelled</option>
+            <option value="">{t("orders.allStatus")}</option>
+            <option value="DRAFT">{t("orders.status.DRAFT")}</option>
+            <option value="CONFIRMED">{t("orders.status.CONFIRMED")}</option>
+            <option value="COMPLETED">{t("orders.status.COMPLETED")}</option>
+            <option value="CANCELLED">{t("orders.status.CANCELLED")}</option>
           </select>
           <select
             value={selectedPaymentStatus}
@@ -738,10 +740,10 @@ export function OrdersPage() {
             className="select-field"
             aria-label="Filter by payment status"
           >
-            <option value="">All Payments</option>
-            <option value="UNPAID">Unpaid</option>
-            <option value="PARTIAL">Partial</option>
-            <option value="PAID">Paid</option>
+            <option value="">{t("orders.allPayments")}</option>
+            <option value="UNPAID">{t("orders.paymentStatus.UNPAID")}</option>
+            <option value="PARTIAL">{t("orders.paymentStatus.PARTIAL")}</option>
+            <option value="PAID">{t("orders.paymentStatus.PAID")}</option>
           </select>
         </div>
       </div>
@@ -760,14 +762,14 @@ export function OrdersPage() {
             <div className="text-center">
               <ShoppingCart className="h-12 w-12 text-surface-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-surface-200 mb-2">
-                No orders yet
+                {t("orders.noOrders")}
               </h3>
               <p className="text-surface-400 mb-4">
-                Create your first order to start tracking sales
+                {t("orders.noOrdersDesc")}
               </p>
               <Button onClick={handleCreate}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Order
+                {t("orders.createOrder")}
               </Button>
             </div>
           </CardContent>
@@ -776,7 +778,7 @@ export function OrdersPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              All Orders ({orders.length})
+              {t("orders.allOrders", { count: orders.length })}
               {isLoading && (
                 <Loader2 className="inline ml-2 h-4 w-4 animate-spin" />
               )}
@@ -787,25 +789,25 @@ export function OrdersPage() {
               <thead>
                 <tr className="border-b border-surface-200 dark:border-surface-800">
                   <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Order #
+                    {t("orders.orderColumn")}
                   </th>
                   <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Client
+                    {t("orders.clientColumn")}
                   </th>
                   <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Status
+                    {t("orders.statusColumn")}
                   </th>
                   <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Total
+                    {t("orders.totalColumn")}
                   </th>
                   <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Payment
+                    {t("orders.paymentColumn")}
                   </th>
                   <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Date
+                    {t("orders.dateColumn")}
                   </th>
                   <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Actions
+                    {t("orders.actionsColumn")}
                   </th>
                 </tr>
               </thead>
@@ -849,7 +851,7 @@ export function OrdersPage() {
                         </span>
                         {order.paymentStatus === "PARTIAL" && (
                           <p className="text-xs text-surface-500">
-                            Paid: {formatPrice(order.paidAmount)}
+                            {t("orders.paid")}: {formatPrice(order.paidAmount)}
                           </p>
                         )}
                       </td>
@@ -869,7 +871,7 @@ export function OrdersPage() {
                                   handleOpenPayment(order);
                                 }}
                                 className="p-2 text-surface-400 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
-                                title="Record Payment"
+                                title={t("orders.recordPayment")}
                               >
                                 <CreditCard className="h-4 w-4" />
                               </button>
@@ -881,7 +883,7 @@ export function OrdersPage() {
                               setViewingOrder(order);
                             }}
                             className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
-                            title="View Order Details"
+                            title={t("orders.viewDetails")}
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -901,7 +903,7 @@ export function OrdersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <Card className="w-full max-w-2xl my-8">
             <CardHeader>
-              <CardTitle>Create New Order</CardTitle>
+              <CardTitle>{t("orders.createOrder")}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmitOrder} className="space-y-4">
@@ -913,8 +915,8 @@ export function OrdersPage() {
 
                 {/* Client Selection */}
                 <SearchableSelect
-                  label="Client *"
-                  placeholder="Search clients..."
+                  label={t("orders.clientLabel")}
+                  placeholder={t("orders.selectClientPlaceholder")}
                   value={selectedClientId}
                   onChange={(val) => setSelectedClientId(val)}
                   options={clients.map((c) => ({
@@ -927,24 +929,20 @@ export function OrdersPage() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-surface-300">
-                      Products *
+                      {t("orders.productsLabel")}
                     </label>
                     <button
                       type="button"
                       onClick={toggleStockVisibility}
                       className="flex items-center gap-1.5 text-xs text-surface-500 hover:text-surface-300 transition-colors"
-                      title={
-                        showStockInOrders
-                          ? "Hide stock levels"
-                          : "Show stock levels"
-                      }
+                      title={showStockInOrders ? t("orders.hideStock") : t("orders.showStock")}
                     >
                       {showStockInOrders ? (
                         <Eye className="h-3.5 w-3.5" />
                       ) : (
                         <EyeOff className="h-3.5 w-3.5" />
                       )}
-                      {showStockInOrders ? "Hide stock" : "Show stock"}
+                      {showStockInOrders ? t("orders.hideStock") : t("orders.showStock")}
                     </button>
                   </div>
                   <div className="space-y-2">
@@ -955,7 +953,7 @@ export function OrdersPage() {
                       >
                         <div className="flex-1">
                           <label className="block text-xs text-surface-500 mb-1">
-                            Product
+                            {t("orders.productLabel")}
                           </label>
                           <SearchableSelect
                             placeholder="Search products..."
@@ -967,14 +965,14 @@ export function OrdersPage() {
                               value: product.id,
                               label: product.name,
                               description: showStockInOrders
-                                ? `${formatWeight(product.currentStockKg)} in stock`
+                                ? t("orders.inStock", { amount: formatWeight(product.currentStockKg) })
                                 : undefined,
                             }))}
                           />
                         </div>
                         <div className="w-28">
                           <label className="block text-xs text-surface-500 mb-1">
-                            Qty (kg)
+                            {t("orders.qtyLabel")}
                           </label>
                           <input
                             type="number"
@@ -990,7 +988,7 @@ export function OrdersPage() {
                         </div>
                         <div className="w-32">
                           <label className="block text-xs text-surface-500 mb-1">
-                            Price/kg
+                            {t("orders.priceLabel")}
                           </label>
                           <input
                             type="number"
@@ -1023,27 +1021,27 @@ export function OrdersPage() {
                     className="mt-2"
                   >
                     <Plus className="h-4 w-4 mr-1" />
-                    Add Product
+                    {t("orders.addProduct")}
                   </Button>
                 </div>
 
                 {/* Notes */}
                 <div>
                   <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Notes
+                    {t("orders.notesLabel")}
                   </label>
                   <textarea
                     value={orderNotes}
                     onChange={(e) => setOrderNotes(e.target.value)}
                     rows={2}
-                    placeholder="Any special instructions..."
+                    placeholder={t("orders.notesPlaceholder")}
                     className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
 
                 {/* Total */}
                 <div className="flex justify-between items-center py-3 border-t border-surface-200 dark:border-surface-700">
-                  <span className="text-surface-400">Total:</span>
+                  <span className="text-surface-400">{t("orders.totalLabel")}</span>
                   <span className="text-xl font-bold text-surface-900 dark:text-surface-100">
                     {formatPrice(calculateTotal())}
                   </span>
@@ -1057,7 +1055,7 @@ export function OrdersPage() {
                     onClick={() => setIsCreateModalOpen(false)}
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -1067,7 +1065,7 @@ export function OrdersPage() {
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Create Order"
+                      t("orders.createOrder")
                     )}
                   </Button>
                 </div>
@@ -1083,7 +1081,7 @@ export function OrdersPage() {
           <Card className="w-full max-w-2xl my-8">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Order {viewingOrder.orderNumber}</CardTitle>
+                <CardTitle>{t("orders.orderLabel")} {viewingOrder.orderNumber}</CardTitle>
                 <span
                   className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded ${statusConfig[viewingOrder.status].className}`}
                 >
@@ -1096,7 +1094,7 @@ export function OrdersPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm text-surface-500 dark:text-surface-400">
-                    Client
+                    {t("orders.clientColumn")}
                   </p>
                   <p className="font-medium text-surface-900 dark:text-surface-100">
                     {viewingOrder.client.name}
@@ -1104,7 +1102,7 @@ export function OrdersPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-surface-500 dark:text-surface-400">
-                    Date
+                    {t("orders.dateColumn")}
                   </p>
                   <p className="text-surface-300">
                     {formatDate(viewingOrder.createdAt)}
@@ -1115,7 +1113,7 @@ export function OrdersPage() {
               {/* Items */}
               <div>
                 <p className="text-sm text-surface-500 dark:text-surface-400 mb-2">
-                  Items
+                  {t("orders.orderDetailItems")}
                 </p>
                 <div className="space-y-2">
                   {viewingOrder.items?.map((item) => (
@@ -1147,7 +1145,7 @@ export function OrdersPage() {
               <div className="flex justify-between items-center py-3 border-t border-surface-200 dark:border-surface-700">
                 <div>
                   <p className="text-sm text-surface-500 dark:text-surface-400">
-                    Payment Status
+                    {t("orders.orderDetailPayStatus")}
                   </p>
                   <p
                     className={`font-medium ${paymentStatusConfig[viewingOrder.paymentStatus].className}`}
@@ -1155,14 +1153,14 @@ export function OrdersPage() {
                     {paymentStatusConfig[viewingOrder.paymentStatus].label}
                     {viewingOrder.paymentStatus !== "PAID" && (
                       <span className="text-surface-500 ml-2">
-                        (Paid: {formatPrice(viewingOrder.paidAmount)})
+                        ({t("orders.paid")}: {formatPrice(viewingOrder.paidAmount)})
                       </span>
                     )}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-surface-500 dark:text-surface-400">
-                    Total
+                    {t("orders.orderDetailTotal")}
                   </p>
                   <p className="text-xl font-bold text-surface-900 dark:text-surface-100">
                     {formatPrice(viewingOrder.totalAmount)}
@@ -1173,7 +1171,7 @@ export function OrdersPage() {
               {viewingOrder.notes && (
                 <div className="p-3 bg-surface-100 dark:bg-surface-800/50 rounded-lg">
                   <p className="text-sm text-surface-500 dark:text-surface-400">
-                    Notes
+                    {t("orders.orderDetailNotes")}
                   </p>
                   <p className="text-surface-300">{viewingOrder.notes}</p>
                 </div>
@@ -1186,7 +1184,7 @@ export function OrdersPage() {
                   className="flex-1"
                   onClick={() => setViewingOrder(null)}
                 >
-                  Close
+                  {t("common.close")}
                 </Button>
                 {viewingOrder.paymentStatus !== "PAID" &&
                   viewingOrder.status !== "CANCELLED" && (
@@ -1195,7 +1193,7 @@ export function OrdersPage() {
                       onClick={() => handleOpenPayment(viewingOrder)}
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Record Payment
+                      {t("orders.recordPayment")}
                     </Button>
                   )}
                 {viewingOrder.status === "DRAFT" && (
@@ -1204,10 +1202,10 @@ export function OrdersPage() {
                       variant="danger"
                       onClick={() => handleCancelOrder(viewingOrder.id)}
                     >
-                      Cancel Order
+                      {t("orders.cancelOrder")}
                     </Button>
                     <Button onClick={() => handleConfirmOrder(viewingOrder.id)}>
-                      Confirm Order
+                      {t("orders.confirmOrder")}
                     </Button>
                   </>
                 )}
@@ -1222,7 +1220,7 @@ export function OrdersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Record Payment</CardTitle>
+              <CardTitle>{t("orders.recordPayment")}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleRecordPayment} className="space-y-4">
@@ -1235,31 +1233,31 @@ export function OrdersPage() {
                 {/* Order Info */}
                 <div className="p-3 bg-surface-100 dark:bg-surface-800/50 rounded-lg space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Order</span>
+                    <span className="text-surface-400">{t("orders.paymentOrderLabel")}</span>
                     <span className="text-surface-100 font-medium">
                       {payingOrder.orderNumber}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Client</span>
+                    <span className="text-surface-400">{t("orders.paymentClientLabel")}</span>
                     <span className="text-surface-100">
                       {payingOrder.client.name}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Total</span>
+                    <span className="text-surface-400">{t("orders.paymentTotalLabel")}</span>
                     <span className="text-surface-100">
                       {formatPrice(payingOrder.totalAmount)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Paid</span>
+                    <span className="text-surface-400">{t("orders.paymentPaidLabel")}</span>
                     <span className="text-green-400">
                       {formatPrice(payingOrder.paidAmount)}
                     </span>
                   </div>
                   <div className="flex justify-between border-t border-surface-200 dark:border-surface-700 pt-2">
-                    <span className="text-surface-400">Remaining</span>
+                    <span className="text-surface-400">{t("orders.paymentRemainingLabel")}</span>
                     <span className="text-amber-400 font-medium">
                       {formatPrice(
                         (typeof payingOrder.totalAmount === "string"
@@ -1274,19 +1272,19 @@ export function OrdersPage() {
                 </div>
 
                 <Input
-                  label="Amount (UZS) *"
+                  label={t("orders.amountLabel")}
                   type="number"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
                   min="0"
                   step="100"
-                  placeholder="Enter payment amount"
+                  placeholder={t("orders.amountPlaceholder")}
                   autoFocus
                 />
 
                 <div>
                   <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Payment Method *
+                    {t("orders.methodLabel")}
                   </label>
                   <select
                     value={paymentMethod}
@@ -1294,23 +1292,23 @@ export function OrdersPage() {
                     className="select-field w-full"
                     aria-label="Select payment method"
                   >
-                    <option value="CASH">Cash</option>
-                    <option value="CARD">Card</option>
-                    <option value="TRANSFER">Bank Transfer</option>
-                    <option value="CLICK">Click</option>
-                    <option value="PAYME">Payme</option>
+                    <option value="CASH">{t("payments.methods.CASH")}</option>
+                    <option value="CARD">{t("payments.methods.CARD")}</option>
+                    <option value="TRANSFER">{t("payments.methods.TRANSFER")}</option>
+                    <option value="CLICK">{t("payments.methods.CLICK")}</option>
+                    <option value="PAYME">{t("payments.methods.PAYME")}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Notes
+                    {t("orders.paymentNotesLabel")}
                   </label>
                   <textarea
                     value={paymentNotes}
                     onChange={(e) => setPaymentNotes(e.target.value)}
                     rows={2}
-                    placeholder="Optional payment notes..."
+                    placeholder={t("orders.paymentNotesPlaceholder")}
                     className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
@@ -1326,7 +1324,7 @@ export function OrdersPage() {
                     }}
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -1336,7 +1334,7 @@ export function OrdersPage() {
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Record Payment"
+                      t("orders.recordPayment")
                     )}
                   </Button>
                 </div>

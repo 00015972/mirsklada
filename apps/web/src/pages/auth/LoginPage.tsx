@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { LogIn, Mail, Lock, Sun, Moon } from "lucide-react";
 import {
   Button,
@@ -14,13 +15,14 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
+  LanguageSwitcher,
 } from "@/components/ui";
 import { authApi } from "@/lib/api";
 import { useAuthStore, useThemeStore } from "@/stores";
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("auth.login.errorInvalidEmail"),
+  password: z.string().min(1, "auth.login.errorPasswordRequired"),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -36,6 +38,7 @@ interface ApiErrorShape {
 }
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
   const { theme, toggleTheme } = useThemeStore();
@@ -67,27 +70,29 @@ export function LoginPage() {
     } catch (err: unknown) {
       const apiError = err as ApiErrorShape;
       const message =
-        apiError.response?.data?.error?.message ||
-        "Login failed. Please try again.";
+        apiError.response?.data?.error?.message || t("auth.login.errorGeneric");
       setError(message);
     }
   };
 
   return (
     <div className="min-h-screen bg-surface-50 dark:bg-surface-950 flex items-center justify-center p-4">
-      {/* Theme toggle */}
-      <button
-        type="button"
-        onClick={toggleTheme}
-        className="fixed top-4 right-4 p-2.5 rounded-xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-500 hover:text-surface-900 dark:hover:text-surface-100 transition-colors shadow-sm"
-        title="Toggle theme"
-      >
-        {theme === "dark" ? (
-          <Sun className="h-5 w-5" />
-        ) : (
-          <Moon className="h-5 w-5" />
-        )}
-      </button>
+      {/* Top-right controls */}
+      <div className="fixed top-4 right-4 flex items-center gap-2">
+        <LanguageSwitcher variant="compact" />
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-500 hover:text-surface-900 dark:hover:text-surface-100 transition-colors shadow-sm"
+          title={t("common.theme")}
+        >
+          {theme === "dark" ? (
+            <Sun className="h-5 w-5" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
+        </button>
+      </div>
 
       <div className="w-full max-w-md">
         {/* Logo */}
@@ -96,10 +101,10 @@ export function LoginPage() {
             <span className="text-3xl font-bold text-white">M</span>
           </div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
-            Mirsklada
+            {t("auth.appName")}
           </h1>
           <p className="text-surface-500 dark:text-surface-400 mt-1">
-            Inventory Management System
+            {t("auth.tagline")}
           </p>
         </div>
 
@@ -108,7 +113,7 @@ export function LoginPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LogIn className="h-5 w-5" />
-              Sign In
+              {t("auth.login.title")}
             </CardTitle>
           </CardHeader>
 
@@ -125,8 +130,10 @@ export function LoginPage() {
                 <Input
                   {...register("email")}
                   type="email"
-                  placeholder="Email address"
-                  error={errors.email?.message}
+                  placeholder={t("auth.login.emailPlaceholder")}
+                  error={
+                    errors.email?.message ? t(errors.email.message) : undefined
+                  }
                   className="pl-10"
                   autoComplete="email"
                 />
@@ -137,8 +144,12 @@ export function LoginPage() {
                 <Input
                   {...register("password")}
                   type="password"
-                  placeholder="Password"
-                  error={errors.password?.message}
+                  placeholder={t("auth.login.passwordPlaceholder")}
+                  error={
+                    errors.password?.message
+                      ? t(errors.password.message)
+                      : undefined
+                  }
                   className="pl-10"
                   autoComplete="current-password"
                 />
@@ -150,28 +161,28 @@ export function LoginPage() {
                     type="checkbox"
                     className="rounded border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-800"
                   />
-                  Remember me
+                  {t("auth.login.rememberMe")}
                 </label>
                 <Link
                   to="/forgot-password"
                   className="text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300"
                 >
-                  Forgot password?
+                  {t("auth.login.forgotPassword")}
                 </Link>
               </div>
 
               <Button type="submit" className="w-full" isLoading={isSubmitting}>
-                Sign In
+                {t("auth.login.submit")}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm text-surface-500 dark:text-surface-400">
-              Don&apos;t have an account?{" "}
+              {t("auth.login.noAccount")}{" "}
               <Link
                 to="/signup"
                 className="text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 font-medium"
               >
-                Sign up
+                {t("auth.login.signUp")}
               </Link>
             </div>
           </CardContent>
@@ -179,7 +190,7 @@ export function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-sm text-surface-500 mt-8">
-          &copy; 2026 Mirsklada. All rights reserved.
+          {t("auth.footer")}
         </p>
       </div>
     </div>

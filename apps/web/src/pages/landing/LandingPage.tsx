@@ -3,6 +3,7 @@
  */
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Package,
   BarChart3,
@@ -25,17 +26,19 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useThemeStore } from "@/stores";
+import { LanguageSwitcher } from "@/components/ui";
 
 /* ─── Navbar ─── */
 function Navbar() {
+  const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useThemeStore();
 
   const navLinks = [
-    { label: "Features", href: "#features" },
-    { label: "Plans", href: "#plans" },
-    { label: "About", href: "#about" },
-    { label: "Contact", href: "#contact" },
+    { label: t("landing.nav.features"), href: "#features" },
+    { label: t("landing.nav.plans"), href: "#plans" },
+    { label: t("landing.nav.about"), href: "#about" },
+    { label: t("landing.nav.contact"), href: "#contact" },
   ];
 
   return (
@@ -67,11 +70,12 @@ function Navbar() {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher variant="compact" />
             <button
               type="button"
               onClick={toggleTheme}
               className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
-              title="Toggle theme"
+              title={t("landing.nav.toggleTheme")}
             >
               {theme === "dark" ? (
                 <Sun className="h-5 w-5" />
@@ -83,23 +87,24 @@ function Navbar() {
               to="/login"
               className="text-sm font-medium text-surface-700 dark:text-surface-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors px-4 py-2"
             >
-              Sign in
+              {t("landing.nav.signIn")}
             </Link>
             <Link
               to="/signup"
               className="text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 px-5 py-2.5 rounded-lg transition-colors"
             >
-              Get Started
+              {t("landing.nav.getStarted")}
             </Link>
           </div>
 
           {/* Mobile menu button */}
           <div className="flex items-center gap-2 md:hidden">
+            <LanguageSwitcher variant="compact" />
             <button
               type="button"
               onClick={toggleTheme}
               className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
-              title="Toggle theme"
+              title={t("landing.nav.toggleTheme")}
             >
               {theme === "dark" ? (
                 <Sun className="h-5 w-5" />
@@ -140,13 +145,13 @@ function Navbar() {
                   to="/login"
                   className="flex-1 text-center text-sm font-medium border border-surface-300 dark:border-surface-700 text-surface-700 dark:text-surface-300 py-2.5 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
                 >
-                  Sign in
+                  {t("landing.nav.signIn")}
                 </Link>
                 <Link
                   to="/signup"
                   className="flex-1 text-center text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 py-2.5 rounded-lg transition-colors"
                 >
-                  Get Started
+                  {t("landing.nav.getStarted")}
                 </Link>
               </div>
             </nav>
@@ -159,6 +164,7 @@ function Navbar() {
 
 /* ─── Hero Section ─── */
 function HeroSection() {
+  const { t } = useTranslation();
   return (
     <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
       {/* Background gradient */}
@@ -172,21 +178,19 @@ function HeroSection() {
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-500/10 text-primary-700 dark:text-primary-400 px-4 py-1.5 rounded-full text-sm font-medium mb-6">
               <Zap className="h-4 w-4" />
-              Smart Inventory Management
+              {t("landing.hero.badge")}
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-surface-900 dark:text-surface-50 leading-tight">
-              All-in-one{" "}
+              {t("landing.hero.titleStart")}{" "}
               <span className="text-primary-600 dark:text-primary-400">
-                ERP system
+                {t("landing.hero.titleHighlight")}
               </span>{" "}
-              for your business
+              {t("landing.hero.titleEnd")}
             </h1>
 
             <p className="mt-6 text-lg text-surface-600 dark:text-surface-400 max-w-xl mx-auto lg:mx-0">
-              Manage products, sales, inventory, clients, and payments — all
-              from a single platform. Built for small and medium businesses that
-              need simplicity and power.
+              {t("landing.hero.subtitle")}
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -194,23 +198,23 @@ function HeroSection() {
                 to="/signup"
                 className="inline-flex items-center justify-center gap-2 bg-primary-600 text-white hover:bg-primary-700 px-8 py-3.5 rounded-xl text-base font-semibold transition-colors shadow-lg shadow-primary-600/25"
               >
-                Start Free
+                {t("landing.hero.startFree")}
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <a
                 href="#features"
                 className="inline-flex items-center justify-center gap-2 border border-surface-300 dark:border-surface-700 text-surface-700 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 px-8 py-3.5 rounded-xl text-base font-semibold transition-colors"
               >
-                Learn More
+                {t("landing.hero.learnMore")}
               </a>
             </div>
 
             {/* Quick stats */}
             <div className="mt-12 grid grid-cols-3 gap-6 max-w-md mx-auto lg:mx-0">
               {[
-                { value: "99.9%", label: "Uptime" },
-                { value: "500+", label: "Businesses" },
-                { value: "24/7", label: "Support" },
+                { value: "99.9%", label: t("landing.hero.stats.uptime") },
+                { value: "500+", label: t("landing.hero.stats.businesses") },
+                { value: "24/7", label: t("landing.hero.stats.support") },
               ].map((stat) => (
                 <div key={stat.label} className="text-center lg:text-left">
                   <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
@@ -232,9 +236,11 @@ function HeroSection() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-surface-900 dark:text-surface-100">
-                    Dashboard
+                    {t("landing.hero.preview.dashboard")}
                   </p>
-                  <p className="text-xs text-surface-500">My Workspace</p>
+                  <p className="text-xs text-surface-500">
+                    {t("landing.hero.preview.workspace")}
+                  </p>
                 </div>
               </div>
 
@@ -242,19 +248,19 @@ function HeroSection() {
               <div className="grid grid-cols-3 gap-3 mb-6">
                 {[
                   {
-                    label: "Revenue",
+                    label: t("landing.hero.preview.revenue"),
                     value: "12,450,000",
                     color: "text-green-500",
                     trend: "+12%",
                   },
                   {
-                    label: "Orders",
+                    label: t("landing.hero.preview.orders"),
                     value: "1,284",
                     color: "text-primary-500",
                     trend: "+8%",
                   },
                   {
-                    label: "Products",
+                    label: t("landing.hero.preview.products"),
                     value: "356",
                     color: "text-amber-500",
                     trend: "+3%",
@@ -278,7 +284,7 @@ function HeroSection() {
               {/* Chart placeholder */}
               <div className="bg-surface-50 dark:bg-surface-800 rounded-xl p-4 mb-4">
                 <p className="text-xs font-medium text-surface-500 mb-3">
-                  Weekly Revenue
+                  {t("landing.hero.preview.weeklyRevenue")}
                 </p>
                 <div className="flex items-end gap-2 h-24">
                   {[
@@ -305,8 +311,16 @@ function HeroSection() {
               {/* Recent items */}
               <div className="space-y-2">
                 {[
-                  { name: "Order #1284", status: "Completed", amt: "245,000" },
-                  { name: "Order #1283", status: "Pending", amt: "180,500" },
+                  {
+                    name: "Order #1284",
+                    status: t("landing.hero.preview.completed"),
+                    amt: "245,000",
+                  },
+                  {
+                    name: "Order #1283",
+                    status: t("landing.hero.preview.pending"),
+                    amt: "180,500",
+                  },
                 ].map((order) => (
                   <div
                     key={order.name}
@@ -337,64 +351,20 @@ function HeroSection() {
 }
 
 /* ─── Features Section ─── */
-const features = [
-  {
-    icon: Package,
-    title: "Product Management",
-    description:
-      "Organize your products by categories, set pricing for different weight units, and track everything in one place.",
-  },
-  {
-    icon: Warehouse,
-    title: "Inventory Tracking",
-    description:
-      "Real-time stock levels, low-stock alerts, and batch management. Never run out of essential products.",
-  },
-  {
-    icon: ShoppingCart,
-    title: "Order Processing",
-    description:
-      "Create and manage orders efficiently. Track order status from creation to delivery in real-time.",
-  },
-  {
-    icon: Users,
-    title: "Client Management",
-    description:
-      "Keep a detailed database of your customers, track their order history, and manage relationships.",
-  },
-  {
-    icon: CreditCard,
-    title: "Payment Tracking",
-    description:
-      "Monitor incoming and outgoing payments, track debts, and generate financial reports effortlessly.",
-  },
-  {
-    icon: BarChart3,
-    title: "Analytics & Reports",
-    description:
-      "Get insights into your business performance with beautiful dashboards and detailed analytics.",
-  },
-  {
-    icon: Shield,
-    title: "Secure & Reliable",
-    description:
-      "Enterprise-grade security with encrypted data, automatic backups, and role-based access control.",
-  },
-  {
-    icon: Globe,
-    title: "Multi-language",
-    description:
-      "Use the platform in English, Russian, or Uzbek. Perfect for businesses operating in Uzbekistan.",
-  },
-  {
-    icon: Zap,
-    title: "Fast & Modern",
-    description:
-      "Built with the latest technology for speed and reliability. Works on desktop, tablet, and mobile.",
-  },
-];
+const featureItems = [
+  { key: "products", icon: Package },
+  { key: "inventory", icon: Warehouse },
+  { key: "orders", icon: ShoppingCart },
+  { key: "clients", icon: Users },
+  { key: "payments", icon: CreditCard },
+  { key: "analytics", icon: BarChart3 },
+  { key: "secure", icon: Shield },
+  { key: "multilang", icon: Globe },
+  { key: "fast", icon: Zap },
+] as const;
 
 function FeaturesSection() {
+  const { t } = useTranslation();
   return (
     <section
       id="features"
@@ -403,31 +373,30 @@ function FeaturesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold text-surface-900 dark:text-surface-50">
-            Everything you need to{" "}
+            {t("landing.features.titleStart")}{" "}
             <span className="text-primary-600 dark:text-primary-400">
-              run your business
+              {t("landing.features.titleHighlight")}
             </span>
           </h2>
           <p className="mt-4 text-lg text-surface-600 dark:text-surface-400">
-            A complete set of tools designed specifically for small and medium
-            businesses to manage their daily operations.
+            {t("landing.features.subtitle")}
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {features.map((feature) => (
+          {featureItems.map((feature) => (
             <div
-              key={feature.title}
+              key={feature.key}
               className="group bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-2xl p-6 hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-lg hover:shadow-primary-500/5 transition-all duration-300"
             >
               <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center mb-4 group-hover:bg-primary-100 dark:group-hover:bg-primary-500/20 transition-colors">
                 <feature.icon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
               </div>
               <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-2">
-                {feature.title}
+                {t(`landing.features.items.${feature.key}.title`)}
               </h3>
               <p className="text-surface-600 dark:text-surface-400 text-sm leading-relaxed">
-                {feature.description}
+                {t(`landing.features.items.${feature.key}.description`)}
               </p>
             </div>
           ))}
@@ -438,129 +407,111 @@ function FeaturesSection() {
 }
 
 /* ─── Plans Section ─── */
-const plans = [
+const planConfig = [
   {
-    name: "Starter",
-    price: "Free",
-    period: "",
-    description: "Perfect for getting started with basic inventory management.",
-    features: [
-      "Up to 100 products",
-      "1 workspace",
-      "Basic reports",
-      "Email support",
-      "1 user",
-    ],
-    cta: "Start Free",
+    key: "starter" as const,
+    featureKeys: ["products", "workspace", "reports", "support", "users"],
     popular: false,
   },
   {
-    name: "Professional",
-    price: "99,000",
-    period: "UZS / mo",
-    description: "For growing businesses that need more power and flexibility.",
-    features: [
-      "Unlimited products",
-      "3 workspaces",
-      "Advanced analytics",
-      "Priority support",
-      "Up to 5 users",
-      "Export reports",
-      "API access",
+    key: "professional" as const,
+    featureKeys: [
+      "products",
+      "workspaces",
+      "analytics",
+      "support",
+      "users",
+      "export",
+      "api",
     ],
-    cta: "Start Free Trial",
     popular: true,
   },
   {
-    name: "Enterprise",
-    price: "249,000",
-    period: "UZS / mo",
-    description:
-      "For larger businesses with advanced needs and multiple locations.",
-    features: [
-      "Everything in Professional",
-      "Unlimited workspaces",
-      "Unlimited users",
-      "Custom integrations",
-      "Dedicated support",
-      "On-premise option",
-      "SLA guarantee",
+    key: "enterprise" as const,
+    featureKeys: [
+      "everything",
+      "workspaces",
+      "users",
+      "integrations",
+      "support",
+      "onPremise",
+      "sla",
     ],
-    cta: "Contact Sales",
     popular: false,
   },
 ];
 
 function PlansSection() {
+  const { t } = useTranslation();
   return (
     <section id="plans" className="py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold text-surface-900 dark:text-surface-50">
-            Simple, transparent{" "}
+            {t("landing.plans.titleStart")}{" "}
             <span className="text-primary-600 dark:text-primary-400">
-              pricing
+              {t("landing.plans.titleHighlight")}
             </span>
           </h2>
           <p className="mt-4 text-lg text-surface-600 dark:text-surface-400">
-            Choose the plan that fits your business. Start free, upgrade when
-            you&apos;re ready.
+            {t("landing.plans.subtitle")}
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative bg-white dark:bg-surface-900 border rounded-2xl p-8 flex flex-col ${
-                plan.popular
-                  ? "border-primary-500 shadow-xl shadow-primary-500/10 scale-105"
-                  : "border-surface-200 dark:border-surface-800"
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-xs font-semibold px-4 py-1 rounded-full">
-                  Most Popular
-                </div>
-              )}
-              <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100">
-                {plan.name}
-              </h3>
-              <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-surface-900 dark:text-surface-50">
-                  {plan.price}
-                </span>
-                {plan.period && (
-                  <span className="text-sm text-surface-500">
-                    {plan.period}
-                  </span>
-                )}
-              </div>
-              <p className="mt-3 text-sm text-surface-600 dark:text-surface-400">
-                {plan.description}
-              </p>
-              <ul className="mt-6 space-y-3 flex-1">
-                {plan.features.map((feat) => (
-                  <li key={feat} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-primary-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-surface-700 dark:text-surface-300">
-                      {feat}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/signup"
-                className={`mt-8 inline-flex items-center justify-center py-3 rounded-xl text-sm font-semibold transition-colors ${
+          {planConfig.map((plan) => {
+            const period = t(`landing.plans.${plan.key}.period`);
+            return (
+              <div
+                key={plan.key}
+                className={`relative bg-white dark:bg-surface-900 border rounded-2xl p-8 flex flex-col ${
                   plan.popular
-                    ? "bg-primary-600 text-white hover:bg-primary-700"
-                    : "border border-surface-300 dark:border-surface-700 text-surface-700 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800"
+                    ? "border-primary-500 shadow-xl shadow-primary-500/10 scale-105"
+                    : "border-surface-200 dark:border-surface-800"
                 }`}
               >
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
+                {plan.popular && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-xs font-semibold px-4 py-1 rounded-full">
+                    {t("landing.plans.mostPopular")}
+                  </div>
+                )}
+                <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100">
+                  {t(`landing.plans.${plan.key}.name`)}
+                </h3>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-surface-900 dark:text-surface-50">
+                    {t(`landing.plans.${plan.key}.price`)}
+                  </span>
+                  {period && (
+                    <span className="text-sm text-surface-500">{period}</span>
+                  )}
+                </div>
+                <p className="mt-3 text-sm text-surface-600 dark:text-surface-400">
+                  {t(`landing.plans.${plan.key}.description`)}
+                </p>
+                <ul className="mt-6 space-y-3 flex-1">
+                  {plan.featureKeys.map((featKey) => (
+                    <li key={featKey} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-primary-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-surface-700 dark:text-surface-300">
+                        {t(`landing.plans.${plan.key}.features.${featKey}`)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/signup"
+                  className={`mt-8 inline-flex items-center justify-center py-3 rounded-xl text-sm font-semibold transition-colors ${
+                    plan.popular
+                      ? "bg-primary-600 text-white hover:bg-primary-700"
+                      : "border border-surface-300 dark:border-surface-700 text-surface-700 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800"
+                  }`}
+                >
+                  {t(`landing.plans.${plan.key}.cta`)}
+                </Link>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -568,7 +519,10 @@ function PlansSection() {
 }
 
 /* ─── About Section ─── */
+const reasonKeys = ["easy", "cloud", "affordable", "support"] as const;
+
 function AboutSection() {
+  const { t } = useTranslation();
   return (
     <section
       id="about"
@@ -578,30 +532,24 @@ function AboutSection() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <div>
             <h2 className="text-3xl sm:text-4xl font-bold text-surface-900 dark:text-surface-50">
-              Built for businesses in{" "}
+              {t("landing.about.titleStart")}{" "}
               <span className="text-primary-600 dark:text-primary-400">
-                Uzbekistan
+                {t("landing.about.titleHighlight")}
               </span>
             </h2>
             <p className="mt-6 text-lg text-surface-600 dark:text-surface-400 leading-relaxed">
-              Mirsklada is a modern cloud-based ERP system designed specifically
-              for small and medium businesses. We understand the unique
-              challenges of running a business in Uzbekistan, and we&apos;ve
-              built our platform to address them.
+              {t("landing.about.paragraph1")}
             </p>
             <p className="mt-4 text-surface-600 dark:text-surface-400 leading-relaxed">
-              From managing inventory across multiple warehouses to tracking
-              payments in UZS, every feature is designed with local businesses
-              in mind. Our multi-language support (Uzbek, Russian, English)
-              ensures your entire team can use the platform comfortably.
+              {t("landing.about.paragraph2")}
             </p>
 
             <div className="mt-8 grid grid-cols-2 gap-6">
               {[
-                { value: "2024", label: "Founded" },
-                { value: "500+", label: "Active Users" },
-                { value: "3", label: "Languages" },
-                { value: "99.9%", label: "Uptime" },
+                { value: "2024", label: t("landing.about.stats.founded") },
+                { value: "500+", label: t("landing.about.stats.users") },
+                { value: "3", label: t("landing.about.stats.languages") },
+                { value: "99.9%", label: t("landing.about.stats.uptime") },
               ].map((stat) => (
                 <div
                   key={stat.label}
@@ -619,36 +567,19 @@ function AboutSection() {
           <div className="relative">
             <div className="bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-2xl p-8 space-y-6">
               <h3 className="text-xl font-semibold text-surface-900 dark:text-surface-100">
-                Why choose Mirsklada?
+                {t("landing.about.whyTitle")}
               </h3>
-              {[
-                {
-                  title: "Easy to use",
-                  desc: "No technical knowledge required. Get started in minutes with our intuitive interface.",
-                },
-                {
-                  title: "Cloud-based",
-                  desc: "Access your data from anywhere, on any device. No installation needed.",
-                },
-                {
-                  title: "Affordable",
-                  desc: "Start for free and pay only for what you need as your business grows.",
-                },
-                {
-                  title: "Local support",
-                  desc: "Our team is based in Uzbekistan and understands your business needs.",
-                },
-              ].map((item) => (
-                <div key={item.title} className="flex gap-4">
+              {reasonKeys.map((reasonKey) => (
+                <div key={reasonKey} className="flex gap-4">
                   <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <ChevronRight className="h-4 w-4 text-primary-600 dark:text-primary-400" />
                   </div>
                   <div>
                     <h4 className="font-medium text-surface-900 dark:text-surface-100">
-                      {item.title}
+                      {t(`landing.about.reasons.${reasonKey}.title`)}
                     </h4>
                     <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
-                      {item.desc}
+                      {t(`landing.about.reasons.${reasonKey}.desc`)}
                     </p>
                   </div>
                 </div>
@@ -663,19 +594,19 @@ function AboutSection() {
 
 /* ─── Contact Section ─── */
 function ContactSection() {
+  const { t } = useTranslation();
   return (
     <section id="contact" className="py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold text-surface-900 dark:text-surface-50">
-            Get in{" "}
+            {t("landing.contact.titleStart")}{" "}
             <span className="text-primary-600 dark:text-primary-400">
-              touch
+              {t("landing.contact.titleHighlight")}
             </span>
           </h2>
           <p className="mt-4 text-lg text-surface-600 dark:text-surface-400">
-            Have questions? We&apos;d love to hear from you. Send us a message
-            and we&apos;ll respond as soon as possible.
+            {t("landing.contact.subtitle")}
           </p>
         </div>
 
@@ -688,7 +619,7 @@ function ContactSection() {
               </div>
               <div>
                 <h4 className="font-medium text-surface-900 dark:text-surface-100">
-                  Email
+                  {t("landing.contact.email")}
                 </h4>
                 <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
                   support@mirsklada.uz
@@ -702,7 +633,7 @@ function ContactSection() {
               </div>
               <div>
                 <h4 className="font-medium text-surface-900 dark:text-surface-100">
-                  Phone
+                  {t("landing.contact.phone")}
                 </h4>
                 <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
                   +998 90 123 45 67
@@ -716,10 +647,10 @@ function ContactSection() {
               </div>
               <div>
                 <h4 className="font-medium text-surface-900 dark:text-surface-100">
-                  Address
+                  {t("landing.contact.address")}
                 </h4>
                 <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
-                  Tashkent, Uzbekistan
+                  {t("landing.contact.addressValue")}
                 </p>
               </div>
             </div>
@@ -736,32 +667,32 @@ function ContactSection() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">
-                    Name
+                    {t("landing.contact.form.name")}
                   </label>
                   <input
                     type="text"
-                    placeholder="Your name"
+                    placeholder={t("landing.contact.form.namePlaceholder")}
                     className="w-full rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-3 text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">
-                    Email
+                    {t("landing.contact.form.email")}
                   </label>
                   <input
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder={t("landing.contact.form.emailPlaceholder")}
                     className="w-full rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-3 text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
                   />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">
-                  Message
+                  {t("landing.contact.form.message")}
                 </label>
                 <textarea
                   rows={5}
-                  placeholder="Tell us about your business needs..."
+                  placeholder={t("landing.contact.form.messagePlaceholder")}
                   className="w-full rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-3 text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors resize-none"
                 />
               </div>
@@ -769,7 +700,7 @@ function ContactSection() {
                 type="submit"
                 className="w-full sm:w-auto bg-primary-600 text-white hover:bg-primary-700 px-8 py-3 rounded-xl text-sm font-semibold transition-colors"
               >
-                Send Message
+                {t("landing.contact.form.send")}
               </button>
             </form>
           </div>
@@ -780,7 +711,12 @@ function ContactSection() {
 }
 
 /* ─── Footer ─── */
+const productLinks = ["features", "pricing", "integrations", "changelog"] as const;
+const companyLinks = ["about", "contact", "blog", "careers"] as const;
+const legalLinks = ["privacy", "terms", "cookies"] as const;
+
 function Footer() {
+  const { t } = useTranslation();
   return (
     <footer className="border-t border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900/50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -796,44 +732,42 @@ function Footer() {
               </span>
             </div>
             <p className="text-sm text-surface-600 dark:text-surface-400">
-              Modern ERP for small and medium businesses in Uzbekistan.
+              {t("landing.footer.tagline")}
             </p>
           </div>
 
           {/* Product */}
           <div>
             <h4 className="font-semibold text-surface-900 dark:text-surface-100 mb-4">
-              Product
+              {t("landing.footer.product")}
             </h4>
             <ul className="space-y-2">
-              {["Features", "Pricing", "Integrations", "Changelog"].map(
-                (item) => (
-                  <li key={item}>
-                    <a
-                      href="#features"
-                      className="text-sm text-surface-600 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                    >
-                      {item}
-                    </a>
-                  </li>
-                ),
-              )}
+              {productLinks.map((linkKey) => (
+                <li key={linkKey}>
+                  <a
+                    href="#features"
+                    className="text-sm text-surface-600 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                  >
+                    {t(`landing.footer.links.${linkKey}`)}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Company */}
           <div>
             <h4 className="font-semibold text-surface-900 dark:text-surface-100 mb-4">
-              Company
+              {t("landing.footer.company")}
             </h4>
             <ul className="space-y-2">
-              {["About", "Contact", "Blog", "Careers"].map((item) => (
-                <li key={item}>
+              {companyLinks.map((linkKey) => (
+                <li key={linkKey}>
                   <a
                     href="#about"
                     className="text-sm text-surface-600 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                   >
-                    {item}
+                    {t(`landing.footer.links.${linkKey}`)}
                   </a>
                 </li>
               ))}
@@ -843,28 +777,26 @@ function Footer() {
           {/* Legal */}
           <div>
             <h4 className="font-semibold text-surface-900 dark:text-surface-100 mb-4">
-              Legal
+              {t("landing.footer.legal")}
             </h4>
             <ul className="space-y-2">
-              {["Privacy Policy", "Terms of Service", "Cookie Policy"].map(
-                (item) => (
-                  <li key={item}>
-                    <a
-                      href="#"
-                      className="text-sm text-surface-600 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                    >
-                      {item}
-                    </a>
-                  </li>
-                ),
-              )}
+              {legalLinks.map((linkKey) => (
+                <li key={linkKey}>
+                  <a
+                    href="#"
+                    className="text-sm text-surface-600 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                  >
+                    {t(`landing.footer.links.${linkKey}`)}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-surface-200 dark:border-surface-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-surface-500">
-            &copy; 2026 Mirsklada. All rights reserved.
+            {t("landing.footer.rights")}
           </p>
           <div className="flex items-center gap-4">
             <a

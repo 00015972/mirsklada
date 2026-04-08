@@ -21,6 +21,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 interface Category {
   id: string;
@@ -45,6 +46,7 @@ interface CategoryApiResponse {
 }
 
 export function CategoriesPage() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +109,7 @@ export function CategoriesPage() {
       setCategories(response.data.data || []);
       setError(null);
     } catch (err) {
-      setError("Failed to load categories");
+      setError(t("categories.errorLoad"));
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -139,7 +141,7 @@ export function CategoriesPage() {
     e.preventDefault();
 
     if (!formName.trim()) {
-      setFormError("Category name is required");
+      setFormError(t("categories.nameRequired"));
       return;
     }
 
@@ -202,7 +204,7 @@ export function CategoriesPage() {
       setEditingCategory(null);
       setFormName("");
       setIsModalOpen(false);
-      toast.success(editingCategory ? "Category updated" : "Category created");
+      toast.success(editingCategory ? t("categories.updated") : t("categories.created"));
     } catch (err: unknown) {
       setCategories(previousCategories);
 
@@ -211,12 +213,12 @@ export function CategoriesPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to save category";
+          axiosError.response?.data?.message || t("categories.errorSave");
         setFormError(message);
         toast.error(message);
       } else {
-        setFormError("Failed to save category");
-        toast.error("Failed to save category");
+        setFormError(t("categories.errorSave"));
+        toast.error(t("categories.errorSave"));
       }
     } finally {
       setIsSubmitting(false);
@@ -238,7 +240,7 @@ export function CategoriesPage() {
 
     try {
       await api.delete(`/categories/${categoryToDelete.id}`);
-      toast.success("Category deleted");
+      toast.success(t("categories.deleted"));
     } catch (err: unknown) {
       setCategories(previousCategories);
 
@@ -247,12 +249,12 @@ export function CategoriesPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to delete category";
+          axiosError.response?.data?.message || t("categories.errorDelete");
         setError(message);
         toast.error(message);
       } else {
-        setError("Failed to delete category");
-        toast.error("Failed to delete category");
+        setError(t("categories.errorDelete"));
+        toast.error(t("categories.errorDelete"));
       }
     } finally {
       setIsSubmitting(false);
@@ -272,14 +274,14 @@ export function CategoriesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Categories</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">{t("categories.title")}</h1>
           <p className="text-surface-500 dark:text-surface-400 mt-1">
-            Organize your products into categories
+            {t("categories.subtitle")}
           </p>
         </div>
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Category
+          {t("categories.addCategory")}
         </Button>
       </div>
 
@@ -297,14 +299,14 @@ export function CategoriesPage() {
             <div className="text-center">
               <FolderOpen className="h-12 w-12 text-surface-400 dark:text-surface-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-surface-700 dark:text-surface-200 mb-2">
-                No categories yet
+                {t("categories.noCategories")}
               </h3>
               <p className="text-surface-500 dark:text-surface-400 mb-4">
-                Create your first category to start organizing products
+                {t("categories.noCategoriesDesc")}
               </p>
               <Button onClick={handleCreate}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Category
+                {t("categories.createCategory")}
               </Button>
             </div>
           </CardContent>
@@ -312,15 +314,15 @@ export function CategoriesPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>All Categories ({categories.length})</CardTitle>
+            <CardTitle>{t("categories.allCategories", { count: categories.length })}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-surface-200 dark:border-surface-800">
-                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Name</th>
-                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Products</th>
-                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Actions</th>
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">{t("categories.nameColumn")}</th>
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">{t("categories.productsColumn")}</th>
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">{t("categories.actionsColumn")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
@@ -339,14 +341,14 @@ export function CategoriesPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-surface-500 dark:text-surface-400">
-                        {category._count.products} products
+                        {t("categories.productsCount", { count: category._count.products })}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          title="Edit category"
+                          title={t("categories.editCategory")}
                           onClick={() => handleEdit(category)}
                           className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
                         >
@@ -358,8 +360,8 @@ export function CategoriesPage() {
                           disabled={category._count.products > 0}
                           title={
                             category._count.products > 0
-                              ? "Cannot delete category with products"
-                              : "Delete category"
+                              ? t("categories.cannotDelete")
+                              : t("categories.deleteTitle")
                           }
                         >
                           <Trash2 className="h-4 w-4" />
@@ -380,7 +382,7 @@ export function CategoriesPage() {
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle>
-                {editingCategory ? "Edit Category" : "Create Category"}
+                {editingCategory ? t("categories.editCategory") : t("categories.createCategory")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -392,8 +394,8 @@ export function CategoriesPage() {
                 )}
 
                 <Input
-                  label="Category Name"
-                  placeholder="e.g., Fish, Meat, Cheese"
+                  label={t("categories.nameLabelField")}
+                  placeholder={t("categories.namePlaceholder")}
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   autoFocus
@@ -407,7 +409,7 @@ export function CategoriesPage() {
                     onClick={() => setIsModalOpen(false)}
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -417,9 +419,9 @@ export function CategoriesPage() {
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : editingCategory ? (
-                      "Save Changes"
+                      t("categories.saveChanges")
                     ) : (
-                      "Create"
+                      t("common.create")
                     )}
                   </Button>
                 </div>
@@ -434,15 +436,15 @@ export function CategoriesPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Delete Category</CardTitle>
+              <CardTitle>{t("categories.deleteTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-surface-600 dark:text-surface-300">
-                Are you sure you want to delete{" "}
+                {t("categories.deleteConfirmText")}{" "}
                 <span className="font-medium text-surface-900 dark:text-surface-100">
                   {deletingCategory.name}
                 </span>
-                ? This action cannot be undone.
+                ? {t("categories.deleteCannotUndo")}
               </p>
 
               <div className="flex gap-3">
@@ -452,7 +454,7 @@ export function CategoriesPage() {
                   onClick={() => setDeletingCategory(null)}
                   disabled={isSubmitting}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   variant="danger"
@@ -463,7 +465,7 @@ export function CategoriesPage() {
                   {isSubmitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Delete"
+                    t("common.delete")
                   )}
                 </Button>
               </div>

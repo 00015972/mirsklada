@@ -3,6 +3,7 @@
  * List and manage payments with filtering and recording
  */
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   Loader2,
@@ -102,38 +103,38 @@ function formatShortDate(dateStr: string): string {
   });
 }
 
-const methodConfig: Record<
-  string,
-  { label: string; icon: typeof Banknote; className: string }
-> = {
-  CASH: {
-    label: "Cash",
-    icon: Banknote,
-    className: "bg-green-500/10 text-green-400",
-  },
-  CARD: {
-    label: "Card",
-    icon: CreditCard,
-    className: "bg-blue-500/10 text-blue-400",
-  },
-  TRANSFER: {
-    label: "Transfer",
-    icon: Building,
-    className: "bg-purple-500/10 text-purple-400",
-  },
-  CLICK: {
-    label: "Click",
-    icon: Smartphone,
-    className: "bg-cyan-500/10 text-cyan-400",
-  },
-  PAYME: {
-    label: "Payme",
-    icon: Smartphone,
-    className: "bg-amber-500/10 text-amber-400",
-  },
-};
-
 export function PaymentsPage() {
+  const { t } = useTranslation();
+  const methodConfig: Record<
+    string,
+    { label: string; icon: typeof Banknote; className: string }
+  > = {
+    CASH: {
+      label: t("payments.methods.CASH"),
+      icon: Banknote,
+      className: "bg-green-500/10 text-green-400",
+    },
+    CARD: {
+      label: t("payments.methods.CARD"),
+      icon: CreditCard,
+      className: "bg-blue-500/10 text-blue-400",
+    },
+    TRANSFER: {
+      label: t("payments.methods.TRANSFER"),
+      icon: Building,
+      className: "bg-purple-500/10 text-purple-400",
+    },
+    CLICK: {
+      label: t("payments.methods.CLICK"),
+      icon: Smartphone,
+      className: "bg-cyan-500/10 text-cyan-400",
+    },
+    PAYME: {
+      label: t("payments.methods.PAYME"),
+      icon: Smartphone,
+      className: "bg-amber-500/10 text-amber-400",
+    },
+  };
   // Data states
   const [payments, setPayments] = useState<Payment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -283,12 +284,12 @@ export function PaymentsPage() {
       setPayments(response.data.data || []);
       setError(null);
     } catch (err) {
-      setError("Failed to load payments");
+      setError(t("payments.errorLoad"));
       console.error(err);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedClientId, selectedMethod, getDateParams]);
+  }, [selectedClientId, selectedMethod, getDateParams, t]);
 
   // Fetch payment summary
   const fetchSummary = useCallback(async () => {
@@ -403,13 +404,13 @@ export function PaymentsPage() {
     e.preventDefault();
 
     if (!recordClientId) {
-      setFormError("Please select a client");
+      setFormError(t("payments.selectClient"));
       return;
     }
 
     const amount = parseFloat(recordAmount);
     if (!amount || amount <= 0) {
-      setFormError("Please enter a valid amount");
+      setFormError(t("payments.invalidAmount"));
       return;
     }
 
@@ -480,7 +481,7 @@ export function PaymentsPage() {
 
       setIsRecordModalOpen(false);
       resetRecordForm();
-      toast.success("Payment recorded");
+      toast.success(t("payments.recorded"));
     } catch (err: unknown) {
       setPayments(previousPayments);
       setSummary(previousSummary);
@@ -490,12 +491,12 @@ export function PaymentsPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to record payment";
+          axiosError.response?.data?.message || t("payments.errorRecord");
         setFormError(message);
         toast.error(message);
       } else {
-        setFormError("Failed to record payment");
-        toast.error("Failed to record payment");
+        setFormError(t("payments.errorRecord"));
+        toast.error(t("payments.errorRecord"));
       }
     } finally {
       setIsSubmitting(false);
@@ -517,7 +518,7 @@ export function PaymentsPage() {
     if (!viewingPayment) return;
 
     if (!voidReason.trim()) {
-      setVoidError("Please provide a reason for voiding");
+      setVoidError(t("payments.voidReasonRequired"));
       return;
     }
 
@@ -556,7 +557,7 @@ export function PaymentsPage() {
 
       setIsVoidModalOpen(false);
       setViewingPayment(null);
-      toast.success("Payment voided");
+      toast.success(t("payments.voidedSuccess"));
       void fetchPayments();
       void fetchSummary();
     } catch (err: unknown) {
@@ -568,12 +569,12 @@ export function PaymentsPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to void payment";
+          axiosError.response?.data?.message || t("payments.errorVoid");
         setVoidError(message);
         toast.error(message);
       } else {
-        setVoidError("Failed to void payment");
-        toast.error("Failed to void payment");
+        setVoidError(t("payments.errorVoid"));
+        toast.error(t("payments.errorVoid"));
       }
     } finally {
       setIsSubmitting(false);
@@ -597,10 +598,10 @@ export function PaymentsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
-            Payments
+            {t("payments.title")}
           </h1>
           <p className="text-surface-400 mt-1">
-            Record and manage payment transactions
+            {t("payments.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -615,7 +616,7 @@ export function PaymentsPage() {
           </Button>
           <Button onClick={handleOpenRecord}>
             <Plus className="h-4 w-4 mr-2" />
-            Record Payment
+            {t("payments.recordPayment")}
           </Button>
         </div>
       </div>
@@ -631,12 +632,12 @@ export function PaymentsPage() {
                   <TrendingUp className="h-5 w-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-surface-400">Total Received</p>
+                  <p className="text-xs text-surface-400">{t("payments.totalReceived")}</p>
                   <p className="text-lg font-bold text-green-400">
                     {formatPrice(summary.total)}
                   </p>
                   <p className="text-xs text-surface-500">
-                    {summary.count} payments
+                    {t("payments.paymentsCount", { count: summary.count })}
                   </p>
                 </div>
               </div>
@@ -683,9 +684,7 @@ export function PaymentsPage() {
                   : "text-surface-400 hover:text-surface-100"
               }`}
             >
-              {range === "all"
-                ? "All Time"
-                : range.charAt(0).toUpperCase() + range.slice(1)}
+              {range === "today" ? t("payments.today") : range === "week" ? t("payments.week") : range === "month" ? t("payments.month") : t("payments.allTime")}
             </button>
           ))}
         </div>
@@ -697,7 +696,7 @@ export function PaymentsPage() {
           className="select-field"
           aria-label="Filter by client"
         >
-          <option value="">All Clients</option>
+          <option value="">{t("payments.allClients")}</option>
           {clients.map((client) => (
             <option key={client.id} value={client.id}>
               {client.name}
@@ -712,7 +711,7 @@ export function PaymentsPage() {
           className="select-field"
           aria-label="Filter by payment method"
         >
-          <option value="">All Methods</option>
+          <option value="">{t("payments.allMethods")}</option>
           {Object.entries(methodConfig).map(([method, config]) => (
             <option key={method} value={method}>
               {config.label}
@@ -734,16 +733,16 @@ export function PaymentsPage() {
           <CardContent className="py-12 text-center">
             <CreditCard className="h-12 w-12 text-surface-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-surface-300 mb-2">
-              No payments found
+              {t("payments.noPayments")}
             </h3>
             <p className="text-surface-500 mb-4">
               {selectedClientId || selectedMethod || dateRange !== "all"
-                ? "Try adjusting your filters"
-                : "Record your first payment to get started"}
+                ? t("payments.noPaymentsDescFilter")
+                : t("payments.noPaymentsDescEmpty")}
             </p>
             <Button onClick={handleOpenRecord}>
               <Plus className="h-4 w-4 mr-2" />
-              Record Payment
+              {t("payments.recordPayment")}
             </Button>
           </CardContent>
         </Card>
@@ -754,22 +753,22 @@ export function PaymentsPage() {
               <thead className="border-b border-surface-700">
                 <tr>
                   <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Date
+                    {t("payments.dateColumn")}
                   </th>
                   <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Client
+                    {t("payments.clientColumn")}
                   </th>
                   <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Order
+                    {t("payments.orderColumn")}
                   </th>
                   <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Method
+                    {t("payments.methodColumn")}
                   </th>
                   <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Amount
+                    {t("payments.amountColumn")}
                   </th>
                   <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                    Actions
+                    {t("payments.actionsColumn")}
                   </th>
                 </tr>
               </thead>
@@ -835,7 +834,7 @@ export function PaymentsPage() {
                           {formatPrice(amount)}
                         </span>
                         {payment.reference?.startsWith("VOID:") && (
-                          <p className="text-xs text-red-400">Voided</p>
+                          <p className="text-xs text-red-400">{t("payments.voided")}</p>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -843,7 +842,7 @@ export function PaymentsPage() {
                           <button
                             onClick={() => setViewingPayment(payment)}
                             className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
-                            title="View Details"
+                            title={t("payments.detailsTitle")}
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -852,7 +851,7 @@ export function PaymentsPage() {
                               <button
                                 onClick={() => handleOpenVoid(payment)}
                                 className="p-2 text-surface-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                title="Void Payment"
+                                title={t("payments.voidTitle")}
                               >
                                 <XCircle className="h-4 w-4" />
                               </button>
@@ -873,7 +872,7 @@ export function PaymentsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <Card className="w-full max-w-lg my-8">
             <CardHeader>
-              <CardTitle>Record Payment</CardTitle>
+              <CardTitle>{t("payments.recordTitle")}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleRecordPayment} className="space-y-4">
@@ -885,8 +884,8 @@ export function PaymentsPage() {
 
                 {/* Client Selection */}
                 <SearchableSelect
-                  label="Client *"
-                  placeholder="Search clients..."
+                  label={t("payments.clientLabel")}
+                  placeholder={t("payments.selectClientPlaceholder")}
                   value={recordClientId}
                   onChange={(val) => handleRecordClientChange(val)}
                   options={clients.map((client) => ({
@@ -895,7 +894,7 @@ export function PaymentsPage() {
                     description:
                       client.currentDebt &&
                       parseFloat(String(client.currentDebt)) > 0
-                        ? `Debt: ${formatPrice(client.currentDebt)}`
+                        ? `${t("payments.debtLabel")} ${formatPrice(client.currentDebt)}`
                         : undefined,
                   }))}
                 />
@@ -906,7 +905,7 @@ export function PaymentsPage() {
                     0 && (
                     <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                       <p className="text-sm text-amber-400">
-                        Current debt:{" "}
+                        {t("payments.debtLabel")}{" "}
                         <span className="font-bold">
                           {formatPrice(selectedRecordClient.currentDebt)}
                         </span>
@@ -918,7 +917,7 @@ export function PaymentsPage() {
                 {recordClientId && (
                   <div>
                     <label className="block text-sm font-medium text-surface-300 mb-1">
-                      Order (Optional)
+                      {t("payments.orderOptionalLabel")}
                     </label>
                     <select
                       value={recordOrderId}
@@ -927,7 +926,7 @@ export function PaymentsPage() {
                       aria-label="Select order for payment"
                     >
                       <option value="">
-                        General payment (no specific order)
+                        {t("payments.generalPayment")}
                       </option>
                       {clientOrders.map((order) => {
                         const total =
@@ -941,15 +940,14 @@ export function PaymentsPage() {
                         const remaining = total - paid;
                         return (
                           <option key={order.id} value={order.id}>
-                            {order.orderNumber} - Remaining:{" "}
-                            {formatPrice(remaining)}
+                            {order.orderNumber} - {t("payments.orderRemaining", { amount: formatPrice(remaining) })}
                           </option>
                         );
                       })}
                     </select>
                     {clientOrders.length === 0 && (
                       <p className="text-xs text-surface-500 mt-1">
-                        No unpaid orders for this client
+                        {t("payments.noUnpaidOrders")}
                       </p>
                     )}
                   </div>
@@ -957,19 +955,19 @@ export function PaymentsPage() {
 
                 {/* Amount */}
                 <Input
-                  label="Amount (UZS) *"
+                  label={t("payments.amountLabel")}
                   type="number"
                   value={recordAmount}
                   onChange={(e) => setRecordAmount(e.target.value)}
                   min="0"
                   step="100"
-                  placeholder="Enter payment amount"
+                  placeholder={t("payments.amountPlaceholder")}
                 />
 
                 {/* Payment Method */}
                 <div>
                   <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Payment Method *
+                    {t("payments.methodLabel")}
                   </label>
                   <div className="grid grid-cols-5 gap-2">
                     {Object.entries(methodConfig).map(([method, config]) => {
@@ -995,23 +993,23 @@ export function PaymentsPage() {
 
                 {/* Reference */}
                 <Input
-                  label="Reference"
+                  label={t("payments.referenceLabel")}
                   type="text"
                   value={recordReference}
                   onChange={(e) => setRecordReference(e.target.value)}
-                  placeholder="Transaction ID, receipt number, etc."
+                  placeholder={t("payments.referencePlaceholder")}
                 />
 
                 {/* Notes */}
                 <div>
                   <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Notes
+                    {t("payments.notesLabel")}
                   </label>
                   <textarea
                     value={recordNotes}
                     onChange={(e) => setRecordNotes(e.target.value)}
                     rows={2}
-                    placeholder="Optional notes..."
+                    placeholder={t("payments.notesPlaceholder")}
                     className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
                   />
                 </div>
@@ -1025,7 +1023,7 @@ export function PaymentsPage() {
                     onClick={() => setIsRecordModalOpen(false)}
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -1035,7 +1033,7 @@ export function PaymentsPage() {
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Record Payment"
+                      t("payments.recordButton")
                     )}
                   </Button>
                 </div>
@@ -1050,39 +1048,39 @@ export function PaymentsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Payment Details</CardTitle>
+              <CardTitle>{t("payments.detailsTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Date</span>
+                  <span className="text-surface-400">{t("payments.detailDate")}</span>
                   <span className="text-surface-100">
                     {formatDate(viewingPayment.createdAt)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Client</span>
+                  <span className="text-surface-400">{t("payments.detailClient")}</span>
                   <span className="text-surface-100">
                     {viewingPayment.client.name}
                   </span>
                 </div>
                 {viewingPayment.order && (
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Order</span>
+                    <span className="text-surface-400">{t("payments.detailOrder")}</span>
                     <span className="text-surface-100">
                       {viewingPayment.order.orderNumber}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-surface-400">Method</span>
+                  <span className="text-surface-400">{t("payments.detailMethod")}</span>
                   <span className="text-surface-100">
                     {methodConfig[viewingPayment.method]?.label ||
                       viewingPayment.method}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-surface-200 dark:border-surface-700 pt-3">
-                  <span className="text-surface-400">Amount</span>
+                  <span className="text-surface-400">{t("payments.detailAmount")}</span>
                   <span
                     className={`text-xl font-bold ${
                       parseFloat(String(viewingPayment.amount)) < 0
@@ -1096,7 +1094,7 @@ export function PaymentsPage() {
                 </div>
                 {viewingPayment.reference && (
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Reference</span>
+                    <span className="text-surface-400">{t("payments.detailReference")}</span>
                     <span className="text-surface-100">
                       {viewingPayment.reference}
                     </span>
@@ -1104,7 +1102,7 @@ export function PaymentsPage() {
                 )}
                 {viewingPayment.notes && (
                   <div>
-                    <span className="text-surface-400 block mb-1">Notes</span>
+                    <span className="text-surface-400 block mb-1">{t("payments.detailNotes")}</span>
                     <p className="text-surface-200 bg-surface-800 p-2 rounded-lg text-sm">
                       {viewingPayment.notes}
                     </p>
@@ -1112,7 +1110,7 @@ export function PaymentsPage() {
                 )}
                 {viewingPayment.receivedBy && (
                   <div className="flex justify-between">
-                    <span className="text-surface-400">Received By</span>
+                    <span className="text-surface-400">{t("payments.detailReceivedBy")}</span>
                     <span className="text-surface-100 text-sm">
                       {viewingPayment.receivedBy.email}
                     </span>
@@ -1126,7 +1124,7 @@ export function PaymentsPage() {
                   className="flex-1"
                   onClick={() => setViewingPayment(null)}
                 >
-                  Close
+                  {t("common.close")}
                 </Button>
                 {parseFloat(String(viewingPayment.amount)) > 0 &&
                   !viewingPayment.reference?.startsWith("VOID:") && (
@@ -1136,7 +1134,7 @@ export function PaymentsPage() {
                       onClick={() => handleOpenVoid(viewingPayment)}
                     >
                       <XCircle className="h-4 w-4 mr-2" />
-                      Void
+                      {t("payments.voidButton")}
                     </Button>
                   )}
               </div>
@@ -1150,7 +1148,7 @@ export function PaymentsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle className="text-red-400">Void Payment</CardTitle>
+              <CardTitle className="text-red-400">{t("payments.voidTitle")}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleVoidPayment} className="space-y-4">
@@ -1162,7 +1160,7 @@ export function PaymentsPage() {
 
                 <div className="p-4 bg-surface-100 dark:bg-surface-800/50 rounded-lg">
                   <p className="text-surface-400 text-sm mb-2">
-                    You are about to void this payment:
+                    {t("payments.voidAbout")}
                   </p>
                   <div className="flex justify-between">
                     <span className="text-surface-300">
@@ -1173,20 +1171,19 @@ export function PaymentsPage() {
                     </span>
                   </div>
                   <p className="text-xs text-surface-500 mt-2">
-                    This will reverse the payment and restore the client&apos;s
-                    debt.
+                    {t("payments.voidReversal")}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Reason for voiding *
+                    {t("payments.voidReasonLabel")}
                   </label>
                   <textarea
                     value={voidReason}
                     onChange={(e) => setVoidReason(e.target.value)}
                     rows={3}
-                    placeholder="Explain why this payment is being voided..."
+                    placeholder={t("payments.voidReasonPlaceholder")}
                     className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-red-500 resize-none"
                     autoFocus
                   />
@@ -1203,7 +1200,7 @@ export function PaymentsPage() {
                     }}
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -1213,7 +1210,7 @@ export function PaymentsPage() {
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Void Payment"
+                      t("payments.voidSubmit")
                     )}
                   </Button>
                 </div>

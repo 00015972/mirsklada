@@ -3,6 +3,7 @@
  * Manage tenant settings, user profile, and team members
  */
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Building2,
   User,
@@ -55,6 +56,7 @@ interface TenantDetails {
 }
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const { user, tenants, currentTenantId, logout, updateTenantName } =
     useAuthStore();
   const currentTenant = tenants.find((t) => t.id === currentTenantId);
@@ -119,7 +121,7 @@ export function SettingsPage() {
       const response = await api.get(`/tenants/${currentTenantId}/members`);
       setMembers(response.data.members || []);
     } catch (err) {
-      setMembersError("Failed to load team members");
+      setMembersError(t("settings.errorLoadMembers"));
       console.error(err);
     } finally {
       setIsLoadingMembers(false);
@@ -153,7 +155,7 @@ export function SettingsPage() {
       });
       // Update the sidebar tenant name
       updateTenantName(currentTenantId, businessName.trim());
-      toast.success("Business settings saved");
+      toast.success(t("settings.businessSaved"));
       // Refresh tenant data
       fetchTenantDetails();
     } catch (err: unknown) {
@@ -162,10 +164,10 @@ export function SettingsPage() {
           response?: { data?: { message?: string } };
         };
         setBusinessError(
-          axiosError.response?.data?.message || "Failed to save settings",
+          axiosError.response?.data?.message || t("settings.errorBusiness"),
         );
       } else {
-        setBusinessError("Failed to save settings");
+        setBusinessError(t("settings.errorBusiness"));
       }
     } finally {
       setIsSavingBusiness(false);
@@ -182,17 +184,17 @@ export function SettingsPage() {
       await api.patch("/auth/profile", {
         name: profileName.trim() || null,
       });
-      toast.success("Profile updated");
+      toast.success(t("settings.profileUpdated"));
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { message?: string } };
         };
         setProfileError(
-          axiosError.response?.data?.message || "Failed to save profile",
+          axiosError.response?.data?.message || t("settings.errorProfile"),
         );
       } else {
-        setProfileError("Failed to save profile");
+        setProfileError(t("settings.errorProfile"));
       }
     } finally {
       setIsSavingProfile(false);
@@ -215,7 +217,7 @@ export function SettingsPage() {
       setIsInviteModalOpen(false);
       setInviteEmail("");
       setInviteRole("staff");
-      toast.success("Member invited successfully");
+      toast.success(t("settings.memberInvited"));
       fetchMembers();
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -223,10 +225,10 @@ export function SettingsPage() {
           response?: { data?: { message?: string } };
         };
         setInviteError(
-          axiosError.response?.data?.message || "Failed to invite member",
+          axiosError.response?.data?.message || t("settings.errorInvite"),
         );
       } else {
-        setInviteError("Failed to invite member");
+        setInviteError(t("settings.errorInvite"));
       }
     } finally {
       setIsInviting(false);
@@ -244,10 +246,10 @@ export function SettingsPage() {
       await api.patch(`/tenants/${currentTenantId}/members/${memberId}`, {
         role: newRole,
       });
-      toast.success("Role updated");
+      toast.success(t("settings.roleUpdated"));
       fetchMembers();
     } catch (err) {
-      toast.error("Failed to update role");
+      toast.error(t("settings.errorRole"));
       console.error("Failed to update role:", err);
     }
   };
@@ -262,10 +264,10 @@ export function SettingsPage() {
         `/tenants/${currentTenantId}/members/${removingMember.id}`,
       );
       setRemovingMember(null);
-      toast.success("Member removed");
+      toast.success(t("settings.memberRemoved"));
       fetchMembers();
     } catch (err) {
-      toast.error("Failed to remove member");
+      toast.error(t("settings.errorRemove"));
       console.error("Failed to remove member:", err);
     } finally {
       setIsRemoving(false);
@@ -276,9 +278,9 @@ export function SettingsPage() {
   const isAdmin = currentTenant?.role === "admin";
 
   const tabs: { id: TabType; label: string; icon: typeof Building2 }[] = [
-    { id: "business", label: "Business", icon: Building2 },
-    { id: "profile", label: "Profile", icon: User },
-    { id: "team", label: "Team", icon: Users },
+    { id: "business", label: t("settings.tabBusiness"), icon: Building2 },
+    { id: "profile", label: t("settings.tabProfile"), icon: User },
+    { id: "team", label: t("settings.tabTeam"), icon: Users },
   ];
 
   return (
@@ -286,10 +288,10 @@ export function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
-          Settings
+          {t("settings.title")}
         </h1>
         <p className="text-surface-500 dark:text-surface-400 mt-1">
-          Manage your business and account settings
+          {t("settings.subtitle")}
         </p>
       </div>
 
@@ -320,7 +322,7 @@ export function SettingsPage() {
           {/* Business Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Business Information</CardTitle>
+              <CardTitle>{t("settings.businessInfo")}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingTenant ? (
@@ -335,16 +337,16 @@ export function SettingsPage() {
                     </div>
                   )}
                   <Input
-                    label="Business Name"
+                    label={t("settings.businessNameLabel")}
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="Your business name"
+                    placeholder={t("settings.businessNamePlaceholder")}
                     disabled={!isAdmin}
                   />
 
                   <div>
                     <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
-                      Workspace URL
+                      {t("settings.workspaceUrlLabel")}
                     </label>
                     <div className="px-4 py-2 bg-surface-100 dark:bg-surface-700/50 border border-surface-300 dark:border-surface-600 rounded-lg text-surface-500 dark:text-surface-400">
                       mirsklada.com/{tenantDetails?.slug || "..."}
@@ -358,13 +360,13 @@ export function SettingsPage() {
                       ) : (
                         <Save className="h-4 w-4 mr-2" />
                       )}
-                      Save Changes
+                      {t("settings.saveChanges")}
                     </Button>
                   )}
 
                   {!isAdmin && (
                     <p className="text-sm text-surface-400 dark:text-surface-500">
-                      Only admins can edit business settings
+                      {t("settings.adminOnly")}
                     </p>
                   )}
                 </form>
@@ -375,16 +377,16 @@ export function SettingsPage() {
           {/* Subscription Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Subscription</CardTitle>
+              <CardTitle>{t("settings.subscription")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-surface-50 dark:bg-surface-800/50 rounded-lg">
                 <div>
                   <p className="text-surface-900 dark:text-surface-100 font-medium">
-                    Current Plan
+                    {t("settings.currentPlan")}
                   </p>
                   <p className="text-sm text-surface-500 dark:text-surface-400 capitalize">
-                    {tenantDetails?.subscriptionTier || "Basic"} Plan
+                    {tenantDetails?.subscriptionTier || t("settings.planBasic")} {t("settings.planLabel")}
                   </p>
                 </div>
                 <div
@@ -394,43 +396,43 @@ export function SettingsPage() {
                       : "bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-300"
                   }`}
                 >
-                  {tenantDetails?.subscriptionTier === "pro" ? "Pro" : "Basic"}
+                  {tenantDetails?.subscriptionTier === "pro" ? t("settings.planPro") : t("settings.planBasic")}
                 </div>
               </div>
 
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2 text-surface-700 dark:text-surface-300">
                   <Check className="h-4 w-4 text-green-500 dark:text-green-400" />
-                  Unlimited products
+                  {t("settings.featureProducts")}
                 </div>
                 <div className="flex items-center gap-2 text-surface-700 dark:text-surface-300">
                   <Check className="h-4 w-4 text-green-500 dark:text-green-400" />
-                  Unlimited clients
+                  {t("settings.featureClients")}
                 </div>
                 <div className="flex items-center gap-2 text-surface-700 dark:text-surface-300">
                   <Check className="h-4 w-4 text-green-500 dark:text-green-400" />
-                  Stock management
+                  {t("settings.featureStock")}
                 </div>
                 {tenantDetails?.subscriptionTier === "pro" ? (
                   <>
                     <div className="flex items-center gap-2 text-surface-300">
                       <Check className="h-4 w-4 text-green-400" />
-                      Telegram bot integration
+                      {t("settings.featureTelegram")}
                     </div>
                     <div className="flex items-center gap-2 text-surface-300">
                       <Check className="h-4 w-4 text-green-400" />
-                      Advanced reports
+                      {t("settings.featureReports")}
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="flex items-center gap-2 text-surface-400 dark:text-surface-500">
                       <X className="h-4 w-4" />
-                      Telegram bot integration
+                      {t("settings.featureTelegram")}
                     </div>
                     <div className="flex items-center gap-2 text-surface-400 dark:text-surface-500">
                       <X className="h-4 w-4" />
-                      Advanced reports
+                      {t("settings.featureReports")}
                     </div>
                   </>
                 )}
@@ -438,7 +440,7 @@ export function SettingsPage() {
 
               {tenantDetails?.subscriptionTier !== "pro" && (
                 <Button variant="secondary" className="w-full" disabled>
-                  Upgrade to Pro (Coming Soon)
+                  {t("settings.upgrade")}
                 </Button>
               )}
             </CardContent>
@@ -452,7 +454,7 @@ export function SettingsPage() {
           {/* Profile Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Your Profile</CardTitle>
+              <CardTitle>{t("settings.yourProfile")}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSaveProfile} className="space-y-4">
@@ -462,22 +464,22 @@ export function SettingsPage() {
                   </div>
                 )}
                 <Input
-                  label="Display Name"
+                  label={t("settings.displayNameLabel")}
                   value={profileName}
                   onChange={(e) => setProfileName(e.target.value)}
-                  placeholder="Your name"
+                  placeholder={t("settings.displayNamePlaceholder")}
                 />
 
                 <div>
                   <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
-                    Email Address
+                    {t("settings.emailAddress")}
                   </label>
                   <div className="flex items-center gap-2 px-4 py-2 bg-surface-100 dark:bg-surface-700/50 border border-surface-300 dark:border-surface-600 rounded-lg text-surface-500 dark:text-surface-400">
                     <Mail className="h-4 w-4" />
                     {user?.email || "..."}
                   </div>
                   <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
-                    Email cannot be changed
+                    {t("settings.emailCannotChange")}
                   </p>
                 </div>
 
@@ -487,7 +489,7 @@ export function SettingsPage() {
                   ) : (
                     <Save className="h-4 w-4 mr-2" />
                   )}
-                  Save Profile
+                  {t("settings.saveProfile")}
                 </Button>
               </form>
             </CardContent>
@@ -496,16 +498,16 @@ export function SettingsPage() {
           {/* Account Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Account</CardTitle>
+              <CardTitle>{t("settings.account")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-surface-50 dark:bg-surface-800/50 rounded-lg">
                 <div>
                   <p className="text-surface-900 dark:text-surface-100 font-medium">
-                    Your Role
+                    {t("settings.yourRole")}
                   </p>
                   <p className="text-sm text-surface-500 dark:text-surface-400">
-                    in {currentTenant?.name}
+                    {t("settings.inWorkspace", { workspace: currentTenant?.name })}
                   </p>
                 </div>
                 <div
@@ -520,7 +522,7 @@ export function SettingsPage() {
                   ) : (
                     <Shield className="h-3.5 w-3.5" />
                   )}
-                  {isAdmin ? "Admin" : "Staff"}
+                  {isAdmin ? t("settings.roleAdmin") : t("settings.roleStaff")}
                 </div>
               </div>
 
@@ -530,7 +532,7 @@ export function SettingsPage() {
                 onClick={() => logout()}
               >
                 <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
+                {t("settings.signOut")}
               </Button>
             </CardContent>
           </Card>
@@ -544,16 +546,16 @@ export function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">
-                Team Members
+                {t("settings.teamMembers")}
               </h2>
               <p className="text-sm text-surface-500 dark:text-surface-400">
-                Manage who has access to this workspace
+                {t("settings.teamSubtitle")}
               </p>
             </div>
             {isAdmin && (
               <Button onClick={() => setIsInviteModalOpen(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Invite Member
+                {t("settings.inviteMember")}
               </Button>
             )}
           </div>
@@ -575,15 +577,15 @@ export function SettingsPage() {
               <CardContent className="py-12 text-center">
                 <Users className="h-12 w-12 text-surface-400 dark:text-surface-500 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-surface-600 dark:text-surface-300 mb-2">
-                  No team members yet
+                  {t("settings.noMembers")}
                 </h3>
                 <p className="text-surface-500 dark:text-surface-500 mb-4">
-                  Invite team members to collaborate
+                  {t("settings.noMembersDesc")}
                 </p>
                 {isAdmin && (
                   <Button onClick={() => setIsInviteModalOpen(true)}>
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Invite Member
+                    {t("settings.inviteMember")}
                   </Button>
                 )}
               </CardContent>
@@ -613,7 +615,7 @@ export function SettingsPage() {
                             {member.name || member.email}
                             {isCurrentUser && (
                               <span className="text-xs text-surface-400 dark:text-surface-500 ml-2">
-                                (you)
+                                {t("settings.you")}
                               </span>
                             )}
                           </p>
@@ -621,15 +623,7 @@ export function SettingsPage() {
                             {member.email}
                           </p>
                           <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">
-                            Joined{" "}
-                            {new Date(member.joinedAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              },
-                            )}
+                            {t("settings.joined", { date: new Date(member.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })}
                           </p>
                         </div>
                       </div>
@@ -648,8 +642,8 @@ export function SettingsPage() {
                             className="select-field py-1.5 text-sm"
                             aria-label="Team member role"
                           >
-                            <option value="admin">Admin</option>
-                            <option value="staff">Staff</option>
+                            <option value="admin">{t("settings.roleAdmin")}</option>
+                            <option value="staff">{t("settings.roleStaff")}</option>
                           </select>
                         ) : (
                           <div
@@ -664,7 +658,7 @@ export function SettingsPage() {
                             ) : (
                               <Shield className="h-3.5 w-3.5" />
                             )}
-                            {member.role === "admin" ? "Admin" : "Staff"}
+                            {member.role === "admin" ? t("settings.roleAdmin") : t("settings.roleStaff")}
                           </div>
                         )}
 
@@ -673,7 +667,7 @@ export function SettingsPage() {
                           <button
                             onClick={() => setRemovingMember(member)}
                             className="p-2 text-surface-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                            title="Remove member"
+                            title={t("settings.removeMember")}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -688,7 +682,7 @@ export function SettingsPage() {
 
           {!isAdmin && (
             <p className="text-sm text-surface-400 dark:text-surface-500 text-center">
-              Only admins can invite or remove team members
+              {t("settings.adminOnlyTeam")}
             </p>
           )}
         </div>
@@ -699,7 +693,7 @@ export function SettingsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Invite Team Member</CardTitle>
+              <CardTitle>{t("settings.inviteTitle")}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleInviteMember} className="space-y-4">
@@ -710,17 +704,17 @@ export function SettingsPage() {
                 )}
 
                 <Input
-                  label="Email Address"
+                  label={t("settings.inviteEmailLabel")}
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="colleague@example.com"
+                  placeholder={t("settings.inviteEmailPlaceholder")}
                   autoFocus
                 />
 
                 <div>
                   <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
-                    Role
+                    {t("settings.inviteRoleLabel")}
                   </label>
                   <select
                     value={inviteRole}
@@ -731,10 +725,10 @@ export function SettingsPage() {
                     aria-label="Invite role"
                   >
                     <option value="staff">
-                      Staff - Can view and edit data
+                      {t("settings.inviteRoleStaff")}
                     </option>
                     <option value="admin">
-                      Admin - Full access including settings
+                      {t("settings.inviteRoleAdmin")}
                     </option>
                   </select>
                 </div>
@@ -751,7 +745,7 @@ export function SettingsPage() {
                     }}
                     disabled={isInviting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -761,7 +755,7 @@ export function SettingsPage() {
                     {isInviting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Send Invite"
+                      t("settings.sendInvite")
                     )}
                   </Button>
                 </div>
@@ -776,7 +770,7 @@ export function SettingsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle className="text-red-400">Remove Team Member</CardTitle>
+              <CardTitle className="text-red-400">{t("settings.removeMemberTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 p-4 bg-surface-50 dark:bg-surface-800/50 rounded-lg">
@@ -800,7 +794,7 @@ export function SettingsPage() {
               <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-amber-300">
-                  This member will lose access to this workspace immediately.
+                  {t("settings.removeMemberWarning")}
                 </p>
               </div>
 
@@ -811,7 +805,7 @@ export function SettingsPage() {
                   onClick={() => setRemovingMember(null)}
                   disabled={isRemoving}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   className="flex-1 bg-red-500 hover:bg-red-600"
@@ -821,7 +815,7 @@ export function SettingsPage() {
                   {isRemoving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Remove Member"
+                    t("settings.removeButton")
                   )}
                 </Button>
               </div>

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 interface Category {
   id: string;
@@ -77,6 +78,7 @@ function toNumber(value: number | string): number {
 }
 
 export function ProductsPage() {
+  const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -191,7 +193,7 @@ export function ProductsPage() {
       setProducts(response.data.data || []);
       setError(null);
     } catch (err) {
-      setError("Failed to load products");
+      setError(t("products.errorLoad"));
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -268,12 +270,12 @@ export function ProductsPage() {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      setFormError("Product name is required");
+      setFormError(t("products.nameRequired"));
       return;
     }
 
     if (!formData.basePricePerKg || parseFloat(formData.basePricePerKg) <= 0) {
-      setFormError("Valid price is required");
+      setFormError(t("products.priceRequired"));
       return;
     }
 
@@ -329,7 +331,7 @@ export function ProductsPage() {
       setEditingProduct(null);
       resetForm();
       setIsModalOpen(false);
-      toast.success(editingProduct ? "Product updated" : "Product created");
+      toast.success(editingProduct ? t("products.updated") : t("products.created"));
     } catch (err: unknown) {
       setProducts(previousProducts);
 
@@ -338,12 +340,12 @@ export function ProductsPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to save product";
+          axiosError.response?.data?.message || t("products.errorSave");
         setFormError(message);
         toast.error(message);
       } else {
-        setFormError("Failed to save product");
-        toast.error("Failed to save product");
+        setFormError(t("products.errorSave"));
+        toast.error(t("products.errorSave"));
       }
     } finally {
       setIsSubmitting(false);
@@ -365,7 +367,7 @@ export function ProductsPage() {
 
     try {
       await api.delete(`/products/${productToDelete.id}`);
-      toast.success("Product deleted");
+      toast.success(t("products.deleted"));
     } catch (err: unknown) {
       setProducts(previousProducts);
 
@@ -374,12 +376,12 @@ export function ProductsPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to delete product";
+          axiosError.response?.data?.message || t("products.errorDelete");
         setError(message);
         toast.error(message);
       } else {
-        setError("Failed to delete product");
-        toast.error("Failed to delete product");
+        setError(t("products.errorDelete"));
+        toast.error(t("products.errorDelete"));
       }
     } finally {
       setIsSubmitting(false);
@@ -399,14 +401,14 @@ export function ProductsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Products</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">{t("products.title")}</h1>
           <p className="text-surface-500 dark:text-surface-400 mt-1">
-            Manage your inventory products with weight-based pricing
+            {t("products.subtitle")}
           </p>
         </div>
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Product
+          {t("products.addProduct")}
         </Button>
       </div>
 
@@ -416,7 +418,7 @@ export function ProductsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500" />
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder={t("products.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500"
@@ -429,7 +431,7 @@ export function ProductsPage() {
             className="select-field"
             aria-label="Filter by category"
           >
-            <option value="">All Categories</option>
+            <option value="">{t("products.allCategories")}</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
@@ -441,7 +443,7 @@ export function ProductsPage() {
             onClick={() => setShowLowStock(!showLowStock)}
           >
             <Filter className="h-4 w-4 mr-2" />
-            Low Stock
+            {t("products.lowStockFilter")}
           </Button>
         </div>
       </div>
@@ -460,14 +462,14 @@ export function ProductsPage() {
             <div className="text-center">
               <Package className="h-12 w-12 text-surface-400 dark:text-surface-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-surface-700 dark:text-surface-200 mb-2">
-                No products yet
+                {t("products.noProducts")}
               </h3>
               <p className="text-surface-500 dark:text-surface-400 mb-4">
-                Add your first product to start managing inventory
+                {t("products.noProductsDesc")}
               </p>
               <Button onClick={handleCreate}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Product
+                {t("products.addProduct")}
               </Button>
             </div>
           </CardContent>
@@ -476,7 +478,7 @@ export function ProductsPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              All Products ({products.length})
+              {t("products.allProducts", { count: products.length })}
               {isLoading && (
                 <Loader2 className="inline ml-2 h-4 w-4 animate-spin" />
               )}
@@ -486,11 +488,11 @@ export function ProductsPage() {
             <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="border-b border-surface-200 dark:border-surface-800">
-                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Product</th>
-                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Category</th>
-                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Price</th>
-                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Stock</th>
-                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">Actions</th>
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">{t("products.productColumn")}</th>
+                  <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">{t("products.categoryColumn")}</th>
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">{t("products.priceColumn")}</th>
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">{t("products.stockColumn")}</th>
+                  <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">{t("products.actionsColumn")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
@@ -557,7 +559,7 @@ export function ProductsPage() {
                         </div>
                         {minStock > 0 && (
                           <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
-                            Min: {formatStock(product.minStockKg, product.unit)}
+                            {t("products.minLabel", { value: formatStock(product.minStockKg, product.unit) })}
                           </p>
                         )}
                       </td>
@@ -567,7 +569,7 @@ export function ProductsPage() {
                             type="button"
                             onClick={() => handleEdit(product)}
                             className="p-2 text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
-                            title="Edit product"
+                            title={t("products.editProduct")}
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
@@ -575,7 +577,7 @@ export function ProductsPage() {
                             type="button"
                             onClick={() => setDeletingProduct(product)}
                             className="p-2 text-surface-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                            title="Delete product"
+                            title={t("products.deleteTitle")}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -596,7 +598,7 @@ export function ProductsPage() {
           <Card className="w-full max-w-lg my-8">
             <CardHeader>
               <CardTitle>
-                {editingProduct ? "Edit Product" : "Add Product"}
+                {editingProduct ? t("products.editProduct") : t("products.addProduct")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -608,7 +610,7 @@ export function ProductsPage() {
                 )}
 
                 <Input
-                  label="Product Name *"
+                  label={t("products.nameLabel")}
                   name="name"
                   placeholder="e.g., Atlantic Salmon"
                   value={formData.name}
@@ -618,11 +620,11 @@ export function ProductsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
-                    Description
+                    {t("products.descriptionLabel")}
                   </label>
                   <textarea
                     name="description"
-                    placeholder="Optional description"
+                    placeholder={t("products.descriptionPlaceholder")}
                     value={formData.description}
                     onChange={handleInputChange}
                     rows={2}
@@ -631,14 +633,14 @@ export function ProductsPage() {
                 </div>
 
                 <SearchableSelect
-                  label="Category"
-                  placeholder="Select category..."
+                  label={t("products.categoryLabel")}
+                  placeholder={t("products.selectCategoryPlaceholder")}
                   value={formData.categoryId}
                   onChange={(val) =>
                     setFormData((prev) => ({ ...prev, categoryId: val }))
                   }
                   options={[
-                    { value: "", label: "No category" },
+                    { value: "", label: t("products.noCategoryOption") },
                     ...categories.map((cat) => ({
                       value: cat.id,
                       label: cat.name,
@@ -649,7 +651,7 @@ export function ProductsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
-                      Unit
+                      {t("products.unitLabel")}
                     </label>
                     <select
                       name="unit"
@@ -658,14 +660,14 @@ export function ProductsPage() {
                       className="select-field w-full"
                       aria-label="Product unit"
                     >
-                      <option value="kg">Kilograms (kg)</option>
-                      <option value="g">Grams (g)</option>
-                      <option value="pcs">Pieces (pcs)</option>
+                      <option value="kg">{t("products.unitKg")}</option>
+                      <option value="g">{t("products.unitG")}</option>
+                      <option value="pcs">{t("products.unitPcs")}</option>
                     </select>
                   </div>
 
                   <Input
-                    label={`Price per ${formData.unit === "pcs" ? "piece" : formData.unit} (UZS) *`}
+                    label={formData.unit === "kg" ? t("products.priceKgLabel") : formData.unit === "g" ? t("products.priceGLabel") : t("products.pricePcsLabel")}
                     name="basePricePerKg"
                     type="number"
                     placeholder="e.g., 85000"
@@ -680,18 +682,18 @@ export function ProductsPage() {
                   {editingProduct ? (
                     <div>
                       <label className="block text-sm font-medium text-surface-600 dark:text-surface-300 mb-1">
-                        Current Stock ({formData.unit})
+                        {t("products.currentStockLabel", { unit: formData.unit })}
                       </label>
                       <div className="px-3 py-2 bg-surface-100 dark:bg-surface-700/50 border border-surface-300 dark:border-surface-600 rounded-lg text-surface-500 dark:text-surface-400">
                         {formData.currentStockKg || "0"} {formData.unit}
                       </div>
                       <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
-                        Use Stock Management to adjust stock
+                        {t("products.stockManagementNote")}
                       </p>
                     </div>
                   ) : (
                     <Input
-                      label={`Current Stock (${formData.unit})`}
+                      label={t("products.currentStockLabel", { unit: formData.unit })}
                       name="currentStockKg"
                       type="number"
                       placeholder="0.00"
@@ -703,7 +705,7 @@ export function ProductsPage() {
                   )}
 
                   <Input
-                    label={`Minimum Stock (${formData.unit})`}
+                    label={t("products.minStockLabel", { unit: formData.unit })}
                     name="minStockKg"
                     type="number"
                     placeholder="0.00"
@@ -715,8 +717,7 @@ export function ProductsPage() {
                 </div>
 
                 <p className="text-xs text-surface-400 dark:text-surface-500">
-                  Low stock warning will be shown when current stock falls below
-                  minimum stock level.
+                  {t("products.lowStockNote")}
                 </p>
 
                 <div className="flex gap-3 pt-2">
@@ -727,7 +728,7 @@ export function ProductsPage() {
                     onClick={() => setIsModalOpen(false)}
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -737,9 +738,9 @@ export function ProductsPage() {
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : editingProduct ? (
-                      "Save Changes"
+                      t("products.saveChanges")
                     ) : (
-                      "Add Product"
+                      t("products.addProduct")
                     )}
                   </Button>
                 </div>
@@ -754,27 +755,22 @@ export function ProductsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Delete Product</CardTitle>
+              <CardTitle>{t("products.deleteTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-surface-600 dark:text-surface-300">
-                Are you sure you want to delete{" "}
+                {t("products.deleteConfirmText")}{" "}
                 <span className="font-medium text-surface-900 dark:text-surface-100">
                   {deletingProduct.name}
                 </span>
-                ? This action cannot be undone.
+                ? {t("products.deleteCannotUndo")}
               </p>
 
               {parseFloat(String(deletingProduct.currentStockKg)) > 0 && (
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <span>
-                    This product still has{" "}
-                    {formatStock(
-                      deletingProduct.currentStockKg,
-                      deletingProduct.unit,
-                    )}{" "}
-                    in stock.
+                    {t("products.stockWarning", { stock: formatStock(deletingProduct.currentStockKg, deletingProduct.unit) })}
                   </span>
                 </div>
               )}
@@ -786,7 +782,7 @@ export function ProductsPage() {
                   onClick={() => setDeletingProduct(null)}
                   disabled={isSubmitting}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   variant="danger"
@@ -797,7 +793,7 @@ export function ProductsPage() {
                   {isSubmitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Delete"
+                    t("common.delete")
                   )}
                 </Button>
               </div>

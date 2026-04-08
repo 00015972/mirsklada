@@ -1,8 +1,35 @@
 /**
- * Main App Layout with Sidebar
+ * @file Application Layout Component
+ * @description Main layout wrapper for authenticated pages with sidebar navigation,
+ * workspace selector, user menu, and theme/language controls.
+ *
+ * @module apps/web/src/layouts/AppLayout
+ *
+ * @connections
+ * - Exported via: ./index.ts
+ * - Uses: @/stores (useAuthStore, useThemeStore)
+ * - Uses: @/components/ui (LanguageSwitcher)
+ * - Uses: react-router-dom (Outlet, NavLink, useNavigate)
+ * - Uses: react-i18next (translations)
+ * - Uses: @headlessui/react (Listbox for workspace selector)
+ * - Used by: @/router.tsx (wraps all /dashboard routes)
+ *
+ * @features
+ * - Responsive sidebar (drawer on mobile, fixed on desktop)
+ * - Workspace/tenant selector for multi-tenant support
+ * - Navigation links with active state highlighting
+ * - User profile display with logout
+ * - Language switcher and dark/light theme toggle
+ * - New workspace invitation notifications
+ *
+ * @layout
+ * - Sidebar: 256px wide, fixed on desktop, drawer on mobile
+ * - Header: Sticky top bar with workspace info and controls
+ * - Main: Scrollable content area with <Outlet /> for child routes
  */
 import { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
   Package,
@@ -31,30 +58,51 @@ import {
   ListboxOptions,
   ListboxOption,
 } from "@headlessui/react";
+import { LanguageSwitcher } from "@/components/ui";
 
+/**
+ * Navigation Items Configuration
+ * @description Defines sidebar navigation links with translation keys, routes, and icons.
+ * Each item maps to a protected route under /dashboard.
+ */
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Categories", href: "/dashboard/categories", icon: FolderTree },
-  { name: "Products", href: "/dashboard/products", icon: Package },
-  { name: "Stock", href: "/dashboard/stock", icon: Warehouse },
-  { name: "Clients", href: "/dashboard/clients", icon: Users },
-  { name: "Orders", href: "/dashboard/orders", icon: ShoppingCart },
-  { name: "Payments", href: "/dashboard/payments", icon: CreditCard },
-  { name: "Reports", href: "/dashboard/reports", icon: BarChart3 },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
-];
+  { key: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { key: "categories", href: "/dashboard/categories", icon: FolderTree },
+  { key: "products", href: "/dashboard/products", icon: Package },
+  { key: "stock", href: "/dashboard/stock", icon: Warehouse },
+  { key: "clients", href: "/dashboard/clients", icon: Users },
+  { key: "orders", href: "/dashboard/orders", icon: ShoppingCart },
+  { key: "payments", href: "/dashboard/payments", icon: CreditCard },
+  { key: "reports", href: "/dashboard/reports", icon: BarChart3 },
+  { key: "settings", href: "/dashboard/settings", icon: Settings },
+] as const;
 
+/**
+ * AppLayout Component
+ * @description Main application shell for authenticated users.
+ * Provides navigation, workspace selection, and user controls.
+ */
 export function AppLayout() {
+  const { t } = useTranslation();
+  // Mobile sidebar open/close state
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Notification for new workspace invitations
   const [newWorkspaceNotification, setNewWorkspaceNotification] = useState<
     string | null
   >(null);
+  // Auth state
   const { user, tenants, currentTenantId, setTenant, logout } = useAuthStore();
+  // Theme state
   const { theme, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
-  const currentTenant = tenants.find((t) => t.id === currentTenantId);
+  // Find current tenant object from ID
+  const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
 
-  // Check for new workspace invitations
+  /**
+   * Workspace Invitation Detection Effect
+   * @description Checks for new workspaces the user was invited to.
+   * Compares current tenants against localStorage record to detect new invitations.
+   */
   useEffect(() => {
     if (!user?.id || tenants.length === 0) return;
 
@@ -63,25 +111,34 @@ export function AppLayout() {
       localStorage.getItem(storageKey) || "[]",
     ) as string[];
 
-    // Find new workspaces
+    // Find workspaces not previously known
     const newWorkspaces = tenants.filter(
       (t) => !knownWorkspaces.includes(t.id),
     );
 
     if (newWorkspaces.length > 0 && knownWorkspaces.length > 0) {
-      // User has been invited to new workspace(s)
+      // User has been invited to new workspace(s) - show notification
       const newest = newWorkspaces[newWorkspaces.length - 1];
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setNewWorkspaceNotification(`You've been invited to "${newest.name}"`);
+      setNewWorkspaceNotification(
+        t("nav.newWorkspaceInvite", { name: newest.name }),
+      );
 
-      // Auto-dismiss after 10 seconds
+      // Auto-dismiss notification after 10 seconds
       setTimeout(() => setNewWorkspaceNotification(null), 10000);
     }
 
-    // Update known workspaces
-    localStorage.setItem(storageKey, JSON.stringify(tenants.map((t) => t.id)));
-  }, [user?.id, tenants]);
+    // Update known workspaces list in localStorage
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify(tenants.map((tenant) => tenant.id)),
+    );
+  }, [user?.id, tenants, t]);
 
+  /**
+   * Handle Logout
+   * @description Clears auth state and redirects to login page.
+   */
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -89,7 +146,8 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-surface-50 dark:bg-surface-950">
-      {/* Mobile sidebar overlay */}
+      {/* ========== MOBILE SIDEBAR OVERLAY ========== */}
+      {/* Dark overlay behind sidebar on mobile, closes sidebar on click */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -97,24 +155,27 @@ export function AppLayout() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* ========== SIDEBAR ========== */}
       <aside
         className={clsx(
           "fixed top-0 left-0 z-50 h-full w-64 bg-white dark:bg-surface-900 border-r border-surface-200 dark:border-surface-800 transition-transform lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        {/* Logo */}
+        {/* Logo and brand */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-surface-200 dark:border-surface-800">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
               <span className="text-lg font-bold text-white">M</span>
             </div>
-            <span className="font-semibold text-surface-900 dark:text-surface-100">Mirsklada</span>
+            <span className="font-semibold text-surface-900 dark:text-surface-100">
+              Mirsklada
+            </span>
           </div>
+          {/* Mobile close button */}
           <button
             type="button"
-            title="Close sidebar"
+            title={t("nav.closeSidebar")}
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden p-1 text-surface-400 hover:text-surface-200"
           >
@@ -122,14 +183,15 @@ export function AppLayout() {
           </button>
         </div>
 
-        {/* Tenant Selector */}
+        {/* ========== WORKSPACE SELECTOR ========== */}
+        {/* HeadlessUI Listbox for switching between workspaces/tenants */}
         {tenants.length > 0 && (
           <div className="p-4 border-b border-surface-200 dark:border-surface-800">
             <label className="text-xs text-surface-500 mb-1 block">
-              Workspace{" "}
+              {t("nav.workspace")}{" "}
               {tenants.length > 1 && (
                 <span className="text-primary-500 dark:text-primary-400">
-                  ({tenants.length} workspaces)
+                  ({t("nav.workspaces", { count: tenants.length })})
                 </span>
               )}
             </label>
@@ -140,7 +202,7 @@ export function AppLayout() {
               <div className="relative">
                 <ListboxButton className="w-full flex items-center justify-between bg-surface-100 dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg px-3 py-2 text-sm text-surface-900 dark:text-surface-100 focus:outline-none focus:border-primary-500">
                   <span className="truncate">
-                    {currentTenant?.name || "Select workspace"}
+                    {currentTenant?.name || t("nav.selectWorkspace")}
                   </span>
                   <ChevronDown className="h-4 w-4 text-surface-500 flex-shrink-0" />
                 </ListboxButton>
@@ -163,7 +225,8 @@ export function AppLayout() {
                           <span
                             className={clsx(
                               "truncate",
-                              selected && "font-medium text-primary-600 dark:text-primary-400",
+                              selected &&
+                                "font-medium text-primary-600 dark:text-primary-400",
                             )}
                           >
                             {tenant.name}
@@ -181,11 +244,11 @@ export function AppLayout() {
           </div>
         )}
 
-        {/* Navigation */}
+        {/* ========== NAVIGATION LINKS ========== */}
         <nav className="flex-1 p-4 space-y-1">
           {navigation.map((item) => (
             <NavLink
-              key={item.name}
+              key={item.key}
               to={item.href}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
@@ -198,13 +261,14 @@ export function AppLayout() {
               }
             >
               <item.icon className="h-5 w-5" />
-              {item.name}
+              {t(`nav.${item.key}`)}
             </NavLink>
           ))}
         </nav>
 
-        {/* User Menu */}
+        {/* ========== USER MENU ========== */}
         <div className="p-4 border-t border-surface-200 dark:border-surface-800">
+          {/* User avatar and info */}
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center">
               <span className="text-sm font-medium text-surface-600 dark:text-surface-300">
@@ -213,52 +277,39 @@ export function AppLayout() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
-                {user?.name || "User"}
+                {user?.name || t("nav.user")}
               </p>
               <p className="text-xs text-surface-500 truncate">{user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="flex items-center gap-2 flex-1 px-3 py-2 rounded-lg text-sm text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 transition-colors"
-              title="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-              {theme === "dark" ? "Light" : "Dark"}
-            </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex items-center gap-2 flex-1 px-3 py-2 rounded-lg text-sm text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
-          </div>
+          {/* Logout button */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            {t("nav.signOut")}
+          </button>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* ========== MAIN CONTENT AREA ========== */}
       <div className="lg:pl-64">
-        {/* Top Header */}
+        {/* ========== TOP HEADER ========== */}
         <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-surface-950/80 backdrop-blur-sm border-b border-surface-200 dark:border-surface-800">
           <div className="flex items-center justify-between h-full px-4">
+            {/* Mobile menu button */}
             <button
               type="button"
-              title="Open sidebar"
+              title={t("nav.openSidebar")}
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 text-surface-500 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100"
             >
               <Menu className="h-6 w-6" />
             </button>
 
-            {/* Current Workspace Indicator */}
+            {/* Current workspace indicator (desktop only) */}
             {currentTenant && (
               <div className="hidden lg:flex items-center gap-2 text-surface-500 dark:text-surface-400">
                 <Building2 className="h-4 w-4" />
@@ -271,6 +322,23 @@ export function AppLayout() {
 
             <div className="flex-1" />
 
+            {/* Language & Theme Controls */}
+            <div className="flex items-center gap-2 mr-2">
+              <LanguageSwitcher variant="compact" />
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-500 hover:text-surface-900 dark:hover:text-surface-100 transition-colors"
+                title={t("common.theme")}
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+
             {/* Notification for new workspace invitation */}
             {newWorkspaceNotification && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-primary-500/20 border border-primary-500/30 rounded-lg mr-4 animate-pulse">
@@ -280,7 +348,7 @@ export function AppLayout() {
                 </span>
                 <button
                   type="button"
-                  title="Dismiss notification"
+                  title={t("nav.dismiss")}
                   onClick={() => setNewWorkspaceNotification(null)}
                   className="ml-2 p-0.5 hover:bg-primary-500/20 rounded"
                 >
@@ -291,7 +359,8 @@ export function AppLayout() {
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* ========== PAGE CONTENT ========== */}
+        {/* React Router Outlet renders child route components here */}
         <main className="p-4 lg:p-6 min-h-screen bg-surface-50 dark:bg-surface-950">
           <Outlet />
         </main>

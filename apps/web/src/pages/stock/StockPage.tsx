@@ -28,6 +28,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 interface Product {
   id: string;
@@ -89,28 +90,30 @@ function formatDate(dateStr: string): string {
   });
 }
 
-const movementTypeConfig = {
-  IN: {
-    label: "Stock In",
-    icon: ArrowUpCircle,
-    className: "text-green-400 bg-green-500/10",
-    sign: "+",
-  },
-  OUT: {
-    label: "Stock Out",
-    icon: ArrowDownCircle,
-    className: "text-red-400 bg-red-500/10",
-    sign: "-",
-  },
-  ADJUST: {
-    label: "Adjustment",
-    icon: RefreshCw,
-    className: "text-blue-400 bg-blue-500/10",
-    sign: "±",
-  },
-};
-
 export function StockPage() {
+  const { t } = useTranslation();
+
+  const movementTypeConfig = {
+    IN: {
+      label: t("stock.typeIn"),
+      icon: ArrowUpCircle,
+      className: "text-green-400 bg-green-500/10",
+      sign: "+",
+    },
+    OUT: {
+      label: t("stock.typeOut"),
+      icon: ArrowDownCircle,
+      className: "text-red-400 bg-red-500/10",
+      sign: "-",
+    },
+    ADJUST: {
+      label: t("stock.typeAdjust"),
+      icon: RefreshCw,
+      className: "text-blue-400 bg-blue-500/10",
+      sign: "±",
+    },
+  };
+
   // Tab state
   const [activeTab, setActiveTab] = useState<"levels" | "movements">("levels");
 
@@ -151,7 +154,7 @@ export function StockPage() {
       setProducts(response.data.data || []);
       setError(null);
     } catch (err) {
-      setError("Failed to load stock levels");
+      setError(t("stock.errorLoad"));
       console.error(err);
     } finally {
       setIsLoadingProducts(false);
@@ -220,13 +223,13 @@ export function StockPage() {
     e.preventDefault();
 
     if (!selectedProductId) {
-      setFormError("Please select a product");
+      setFormError(t("stock.selectProduct"));
       return;
     }
 
     const qty = parseFloat(quantity);
     if (!qty || qty <= 0) {
-      setFormError("Please enter a valid quantity");
+      setFormError(t("stock.invalidQuantity"));
       return;
     }
 
@@ -235,7 +238,7 @@ export function StockPage() {
     );
 
     if (!productToUpdate) {
-      setFormError("Selected product not found");
+      setFormError(t("stock.productNotFound"));
       return;
     }
 
@@ -249,7 +252,7 @@ export function StockPage() {
     } else if (movementType === "OUT") {
       if (qty > currentStock) {
         setFormError(
-          `Insufficient stock. Available: ${formatWeight(currentStock)}`,
+          t("stock.insufficientStock", { available: formatWeight(currentStock) }),
         );
         return;
       }
@@ -334,7 +337,7 @@ export function StockPage() {
       }
 
       setIsModalOpen(false);
-      toast.success(`Stock ${movementType.toLowerCase()} recorded`);
+      toast.success(t("stock.movementRecorded"));
     } catch (err: unknown) {
       setProducts(previousProducts);
       setMovements(previousMovements);
@@ -344,12 +347,12 @@ export function StockPage() {
           response?: { data?: { message?: string } };
         };
         const message =
-          axiosError.response?.data?.message || "Failed to record movement";
+          axiosError.response?.data?.message || t("stock.errorRecord");
         setFormError(message);
         toast.error(message);
       } else {
-        setFormError("Failed to record movement");
-        toast.error("Failed to record movement");
+        setFormError(t("stock.errorRecord"));
+        toast.error(t("stock.errorRecord"));
       }
     } finally {
       setIsSubmitting(false);
@@ -394,20 +397,20 @@ export function StockPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
-            Stock Management
+            {t("stock.title")}
           </h1>
           <p className="text-surface-400 mt-1">
-            Track inventory levels and record stock movements
+            {t("stock.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => openModal("OUT")}>
             <Minus className="h-4 w-4 mr-2" />
-            Stock Out
+            {t("stock.stockOut")}
           </Button>
           <Button onClick={() => openModal("IN")}>
             <Plus className="h-4 w-4 mr-2" />
-            Stock In
+            {t("stock.stockIn")}
           </Button>
         </div>
       </div>
@@ -425,7 +428,7 @@ export function StockPage() {
                   {totalProducts}
                 </p>
                 <p className="text-sm text-surface-500 dark:text-surface-400">
-                  Total Products
+                  {t("stock.totalProducts")}
                 </p>
               </div>
             </div>
@@ -442,7 +445,7 @@ export function StockPage() {
                   {lowStockCount}
                 </p>
                 <p className="text-sm text-surface-500 dark:text-surface-400">
-                  Low Stock
+                  {t("stock.lowStock")}
                 </p>
               </div>
             </div>
@@ -459,7 +462,7 @@ export function StockPage() {
                   {outOfStockCount}
                 </p>
                 <p className="text-sm text-surface-500 dark:text-surface-400">
-                  Out of Stock
+                  {t("stock.outOfStock")}
                 </p>
               </div>
             </div>
@@ -478,7 +481,7 @@ export function StockPage() {
           }`}
         >
           <Package className="h-4 w-4 inline mr-2" />
-          Stock Levels
+          {t("stock.tabLevels")}
         </button>
         <button
           onClick={() => setActiveTab("movements")}
@@ -489,7 +492,7 @@ export function StockPage() {
           }`}
         >
           <History className="h-4 w-4 inline mr-2" />
-          Movement History
+          {t("stock.tabMovements")}
         </button>
       </div>
 
@@ -509,7 +512,7 @@ export function StockPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500" />
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder={t("stock.searchPlaceholder")}
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500"
@@ -520,7 +523,7 @@ export function StockPage() {
               onClick={() => setShowLowStock(!showLowStock)}
             >
               <Filter className="h-4 w-4 mr-2" />
-              Low Stock Only
+              {t("stock.lowStockOnly")}
             </Button>
           </div>
 
@@ -531,12 +534,12 @@ export function StockPage() {
                 <div className="text-center">
                   <Package className="h-12 w-12 text-surface-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-surface-200 mb-2">
-                    {showLowStock ? "No low stock items" : "No products found"}
+                    {showLowStock ? t("stock.noLowStock") : t("stock.noProducts")}
                   </h3>
                   <p className="text-surface-400">
                     {showLowStock
-                      ? "All products have sufficient stock levels"
-                      : "Add products to start tracking inventory"}
+                      ? t("stock.noLowStockDesc")
+                      : t("stock.noProductsDesc")}
                   </p>
                 </div>
               </CardContent>
@@ -545,7 +548,7 @@ export function StockPage() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  Stock Levels ({filteredProducts.length})
+                  {t("stock.stockLevels", { count: filteredProducts.length })}
                   {isLoadingProducts && (
                     <Loader2 className="inline ml-2 h-4 w-4 animate-spin" />
                   )}
@@ -556,19 +559,19 @@ export function StockPage() {
                   <thead>
                     <tr className="border-b border-surface-200 dark:border-surface-800">
                       <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                        Product
+                        {t("stock.productColumn")}
                       </th>
                       <th className="text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                        Category
+                        {t("stock.categoryColumn")}
                       </th>
                       <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                        Current Stock
+                        {t("stock.currentStockColumn")}
                       </th>
                       <th className="text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                        Min. Level
+                        {t("stock.minLevelColumn")}
                       </th>
                       <th className="text-center text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider px-6 py-3">
-                        Actions
+                        {t("stock.actionsColumn")}
                       </th>
                     </tr>
                   </thead>
@@ -654,14 +657,14 @@ export function StockPage() {
                               <button
                                 onClick={() => openModal("IN", product.id)}
                                 className="p-2 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
-                                title="Stock In"
+                                title={t("stock.stockIn")}
                               >
                                 <Plus className="h-4 w-4" />
                               </button>
                               <button
                                 onClick={() => openModal("OUT", product.id)}
                                 className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                title="Stock Out"
+                                title={t("stock.stockOut")}
                                 disabled={isOut}
                               >
                                 <Minus className="h-4 w-4" />
@@ -669,7 +672,7 @@ export function StockPage() {
                               <button
                                 onClick={() => openModal("ADJUST", product.id)}
                                 className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
-                                title="Adjust Stock"
+                                title={t("stock.typeAdjust")}
                               >
                                 <RefreshCw className="h-4 w-4" />
                               </button>
@@ -697,16 +700,16 @@ export function StockPage() {
               className="select-field"
               aria-label="Filter stock movements by type"
             >
-              <option value="">All Types</option>
-              <option value="IN">Stock In</option>
-              <option value="OUT">Stock Out</option>
-              <option value="ADJUST">Adjustments</option>
+              <option value="">{t("stock.allTypes")}</option>
+              <option value="IN">{t("stock.typeIn")}</option>
+              <option value="OUT">{t("stock.typeOut")}</option>
+              <option value="ADJUST">{t("stock.typeAdjust")}</option>
             </select>
             <Button variant="secondary" onClick={fetchMovements}>
               <RefreshCw
                 className={`h-4 w-4 mr-2 ${isLoadingMovements ? "animate-spin" : ""}`}
               />
-              Refresh
+              {t("stock.refresh")}
             </Button>
           </div>
 
@@ -717,10 +720,10 @@ export function StockPage() {
                 <div className="text-center">
                   <History className="h-12 w-12 text-surface-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-surface-200 mb-2">
-                    No movements recorded
+                    {t("stock.noMovements")}
                   </h3>
                   <p className="text-surface-400">
-                    Stock movements will appear here when you record them
+                    {t("stock.noMovementsDesc")}
                   </p>
                 </div>
               </CardContent>
@@ -729,7 +732,7 @@ export function StockPage() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  Recent Movements ({movements.length})
+                  {t("stock.recentMovements", { count: movements.length })}
                   {isLoadingMovements && (
                     <Loader2 className="inline ml-2 h-4 w-4 animate-spin" />
                   )}
@@ -783,7 +786,7 @@ export function StockPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-surface-300">
-                            Balance: {formatWeight(movement.balanceAfterKg)}
+                            {t("stock.balance", { value: formatWeight(movement.balanceAfterKg) })}
                           </p>
                           <p className="text-xs text-surface-500">
                             {formatDate(movement.createdAt)}
@@ -808,19 +811,19 @@ export function StockPage() {
                 {movementType === "IN" && (
                   <>
                     <ArrowUpCircle className="h-5 w-5 text-green-400" />
-                    Record Stock In
+                    {t("stock.recordStockIn")}
                   </>
                 )}
                 {movementType === "OUT" && (
                   <>
                     <ArrowDownCircle className="h-5 w-5 text-red-400" />
-                    Record Stock Out
+                    {t("stock.recordStockOut")}
                   </>
                 )}
                 {movementType === "ADJUST" && (
                   <>
                     <RefreshCw className="h-5 w-5 text-blue-400" />
-                    Adjust Stock Level
+                    {t("stock.adjustStockLevel")}
                   </>
                 )}
               </CardTitle>
@@ -835,14 +838,14 @@ export function StockPage() {
 
                 {/* Product Selection */}
                 <SearchableSelect
-                  label="Product *"
-                  placeholder="Search products..."
+                  label={t("stock.productLabel")}
+                  placeholder={t("stock.searchPlaceholder")}
                   value={selectedProductId}
                   onChange={(val) => setSelectedProductId(val)}
                   options={products.map((product) => ({
                     value: product.id,
                     label: product.name,
-                    description: `Current: ${formatWeight(product.currentStockKg)}`,
+                    description: `${t("stock.currentStockColumn")}: ${formatWeight(product.currentStockKg)}`,
                   }))}
                 />
 
@@ -850,7 +853,7 @@ export function StockPage() {
                 {selectedProduct && (
                   <div className="p-3 rounded-lg bg-surface-800 border border-surface-700">
                     <p className="text-sm text-surface-500 dark:text-surface-400">
-                      Current Stock
+                      {t("stock.currentStockColumn")}
                     </p>
                     <p className="text-lg font-semibold text-surface-900 dark:text-surface-100">
                       {formatWeight(selectedProduct.currentStockKg)}
@@ -862,8 +865,8 @@ export function StockPage() {
                 <Input
                   label={
                     movementType === "ADJUST"
-                      ? "New Stock Level (kg) *"
-                      : "Quantity (kg) *"
+                      ? t("stock.newStockLevelLabel", { unit: "kg" })
+                      : t("stock.quantityLabel", { unit: "kg" })
                   }
                   type="number"
                   placeholder="0.00"
@@ -876,17 +879,17 @@ export function StockPage() {
                 {/* Reason */}
                 <div>
                   <label className="block text-sm font-medium text-surface-300 mb-1">
-                    Reason / Notes
+                    {t("stock.reasonLabel")}
                   </label>
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder={
                       movementType === "IN"
-                        ? "e.g., Purchase from supplier"
+                        ? t("stock.reasonInPlaceholder")
                         : movementType === "OUT"
-                          ? "e.g., Sale, Damaged, Expired"
-                          : "e.g., Physical count correction"
+                          ? t("stock.reasonOutPlaceholder")
+                          : t("stock.reasonAdjustPlaceholder")
                     }
                     rows={2}
                     className="w-full px-4 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 focus:outline-none focus:border-primary-500 resize-none"
@@ -897,7 +900,7 @@ export function StockPage() {
                 {selectedProduct && quantity && parseFloat(quantity) > 0 && (
                   <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/20">
                     <p className="text-sm text-surface-500 dark:text-surface-400 mb-1">
-                      After this movement:
+                      {t("stock.afterMovement")}
                     </p>
                     <p className="text-lg font-semibold text-primary-400">
                       {(() => {
@@ -927,7 +930,7 @@ export function StockPage() {
                     onClick={() => setIsModalOpen(false)}
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -937,7 +940,7 @@ export function StockPage() {
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Record Movement"
+                      t("stock.recordMovement")
                     )}
                   </Button>
                 </div>

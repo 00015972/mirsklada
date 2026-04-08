@@ -42,6 +42,7 @@ import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useThemeStore } from "@/stores";
+import { useTranslation } from "react-i18next";
 
 // Register Chart.js components
 ChartJS.register(
@@ -183,12 +184,7 @@ function formatDate(dateStr: string): string {
   });
 }
 
-const periodLabels: Record<Period, string> = {
-  today: "Today",
-  week: "This Week",
-  month: "This Month",
-  year: "This Year",
-};
+// periodLabels built dynamically in component using t()
 
 const statusColors: Record<string, string> = {
   DRAFT: "#6b7280",
@@ -201,8 +197,16 @@ const statusColors: Record<string, string> = {
 };
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const { theme } = useThemeStore();
   const isDark = theme === "dark";
+
+  const periodLabels: Record<Period, string> = {
+    today: t("dashboard.today"),
+    week: t("dashboard.week"),
+    month: t("dashboard.month"),
+    year: t("dashboard.year"),
+  };
 
   // Update Chart.js defaults based on theme
   ChartJS.defaults.color = isDark ? "#9ca3af" : "#6b7280";
@@ -267,7 +271,7 @@ export function DashboardPage() {
         setLastUpdated(new Date());
       } catch (error) {
         console.error("Failed to load dashboard:", error);
-        toast.error("Failed to load dashboard data");
+        toast.error(t("dashboard.errorLoading"));
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -412,13 +416,13 @@ export function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
-            Dashboard
+            {t("dashboard.title")}
           </h1>
           <p className="text-surface-500 dark:text-surface-400 mt-1">
-            Overview of your business performance
+            {t("dashboard.subtitle")}
             {lastUpdated && (
               <span className="ml-2 text-xs">
-                • Updated {formatDate(lastUpdated.toISOString())}
+                {t("dashboard.updatedAt", { date: formatDate(lastUpdated.toISOString()) })}
               </span>
             )}
           </p>
@@ -492,7 +496,7 @@ export function DashboardPage() {
             </div>
             <div className="mt-4">
               <p className="text-sm text-surface-500 dark:text-surface-400">
-                Revenue
+                {t("dashboard.revenue")}
               </p>
               <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
                 {showUSD
@@ -519,7 +523,7 @@ export function DashboardPage() {
             </div>
             <div className="mt-4">
               <p className="text-sm text-surface-500 dark:text-surface-400">
-                Outstanding Debt
+                {t("dashboard.outstandingDebt")}
               </p>
               <p className="text-2xl font-bold text-amber-400">
                 {showUSD
@@ -527,7 +531,7 @@ export function DashboardPage() {
                   : formatPrice(metrics?.debt.amount || 0, "UZS")}
               </p>
               <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">
-                Total unpaid
+                {t("dashboard.totalUnpaid")}
               </p>
             </div>
           </CardContent>
@@ -559,7 +563,7 @@ export function DashboardPage() {
             </div>
             <div className="mt-4">
               <p className="text-sm text-surface-500 dark:text-surface-400">
-                Orders
+                {t("dashboard.ordersCount")}
               </p>
               <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
                 {metrics?.orders.count || 0}
@@ -582,15 +586,13 @@ export function DashboardPage() {
                 (metrics?.inventory.outOfStock || 0) >
                 0 && (
                 <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full">
-                  {(metrics?.inventory.lowStock || 0) +
-                    (metrics?.inventory.outOfStock || 0)}{" "}
-                  alerts
+                  {t("dashboard.alerts", { count: (metrics?.inventory.lowStock || 0) + (metrics?.inventory.outOfStock || 0) })}
                 </span>
               )}
             </div>
             <div className="mt-4">
               <p className="text-sm text-surface-500 dark:text-surface-400">
-                Inventory Value
+                {t("dashboard.inventoryValue")}
               </p>
               <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
                 {showUSD
@@ -598,7 +600,7 @@ export function DashboardPage() {
                   : formatPrice(metrics?.inventory.stockValue || 0, "UZS")}
               </p>
               <p className="text-xs text-surface-500 mt-1">
-                {metrics?.inventory.totalProducts} products
+                {t("dashboard.products", { count: metrics?.inventory.totalProducts })}
               </p>
             </div>
           </CardContent>
@@ -614,7 +616,7 @@ export function DashboardPage() {
             </div>
             <div>
               <p className="text-sm text-surface-500 dark:text-surface-400">
-                Active Clients
+                {t("dashboard.activeClients")}
               </p>
               <p className="text-xl font-bold text-surface-900 dark:text-surface-100">
                 {metrics?.clients.active || 0}
@@ -630,7 +632,7 @@ export function DashboardPage() {
             </div>
             <div>
               <p className="text-sm text-surface-500 dark:text-surface-400">
-                Low Stock
+                {t("dashboard.lowStock")}
               </p>
               <p className="text-xl font-bold text-amber-400">
                 {metrics?.inventory.lowStock || 0}
@@ -646,7 +648,7 @@ export function DashboardPage() {
             </div>
             <div>
               <p className="text-sm text-surface-500 dark:text-surface-400">
-                Out of Stock
+                {t("dashboard.outOfStock")}
               </p>
               <p className="text-xl font-bold text-red-400">
                 {metrics?.inventory.outOfStock || 0}
@@ -661,7 +663,7 @@ export function DashboardPage() {
         {/* Revenue Trend Chart */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Revenue Trend</CardTitle>
+            <CardTitle>{t("dashboard.revenueTrend")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -669,7 +671,7 @@ export function DashboardPage() {
                 <Line data={revenueChartData} options={revenueChartOptions} />
               ) : (
                 <div className="h-full flex items-center justify-center text-surface-500">
-                  No revenue data for this period
+                  {t("dashboard.noRevenueData")}
                 </div>
               )}
             </div>
@@ -679,7 +681,7 @@ export function DashboardPage() {
         {/* Orders by Status */}
         <Card>
           <CardHeader>
-            <CardTitle>Orders by Status</CardTitle>
+            <CardTitle>{t("dashboard.ordersByStatus")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -687,7 +689,7 @@ export function DashboardPage() {
                 <Doughnut data={ordersChartData} options={doughnutOptions} />
               ) : (
                 <div className="h-full flex items-center justify-center text-surface-500">
-                  No orders for this period
+                  {t("dashboard.noOrdersData")}
                 </div>
               )}
             </div>
@@ -700,7 +702,7 @@ export function DashboardPage() {
         {/* Top Products */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Products</CardTitle>
+            <CardTitle>{t("dashboard.topProducts")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[250px]">
@@ -708,7 +710,7 @@ export function DashboardPage() {
                 <Bar data={topProductsChartData} options={barChartOptions} />
               ) : (
                 <div className="h-full flex items-center justify-center text-surface-500">
-                  No sales data yet
+                  {t("dashboard.noSalesData")}
                 </div>
               )}
             </div>
@@ -718,7 +720,7 @@ export function DashboardPage() {
         {/* Payment Status */}
         <Card>
           <CardHeader>
-            <CardTitle>Payment Status</CardTitle>
+            <CardTitle>{t("dashboard.paymentStatus")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[250px]">
@@ -726,7 +728,7 @@ export function DashboardPage() {
                 <Doughnut data={paymentChartData} options={doughnutOptions} />
               ) : (
                 <div className="h-full flex items-center justify-center text-surface-500">
-                  No payment data
+                  {t("dashboard.noPaymentData")}
                 </div>
               )}
             </div>
@@ -736,12 +738,12 @@ export function DashboardPage() {
         {/* Top Debtors */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Top Debtors</CardTitle>
+            <CardTitle>{t("dashboard.topDebtors")}</CardTitle>
             <Link
               to="/dashboard/clients"
               className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
             >
-              View all <ArrowRight className="h-3 w-3" />
+              {t("dashboard.viewAll")} <ArrowRight className="h-3 w-3" />
             </Link>
           </CardHeader>
           <CardContent>
@@ -774,7 +776,7 @@ export function DashboardPage() {
               </div>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-surface-500">
-                No outstanding debts
+                {t("dashboard.noDebts")}
               </div>
             )}
           </CardContent>
@@ -786,12 +788,12 @@ export function DashboardPage() {
         {/* Recent Orders */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Orders</CardTitle>
+            <CardTitle>{t("dashboard.recentOrders")}</CardTitle>
             <Link
               to="/dashboard/orders"
               className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
             >
-              View all <ArrowRight className="h-3 w-3" />
+              {t("dashboard.viewAll")} <ArrowRight className="h-3 w-3" />
             </Link>
           </CardHeader>
           <CardContent>
@@ -841,7 +843,7 @@ export function DashboardPage() {
               </div>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-surface-500">
-                No orders yet
+                {t("dashboard.noOrdersYet")}
               </div>
             )}
           </CardContent>
@@ -850,12 +852,12 @@ export function DashboardPage() {
         {/* Recent Payments */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Payments</CardTitle>
+            <CardTitle>{t("dashboard.recentPayments")}</CardTitle>
             <Link
               to="/dashboard/orders"
               className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
             >
-              View all <ArrowRight className="h-3 w-3" />
+              {t("dashboard.viewAll")} <ArrowRight className="h-3 w-3" />
             </Link>
           </CardHeader>
           <CardContent>
@@ -893,7 +895,7 @@ export function DashboardPage() {
               </div>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-surface-500">
-                No payments yet
+                {t("dashboard.noPaymentsYet")}
               </div>
             )}
           </CardContent>
@@ -906,13 +908,13 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-400" />
-              <CardTitle>Low Stock Alerts</CardTitle>
+              <CardTitle>{t("dashboard.lowStockAlerts")}</CardTitle>
             </div>
             <Link
               to="/dashboard/stock"
               className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
             >
-              Manage stock <ArrowRight className="h-3 w-3" />
+              {t("dashboard.manageStock")} <ArrowRight className="h-3 w-3" />
             </Link>
           </CardHeader>
           <CardContent>
@@ -930,7 +932,7 @@ export function DashboardPage() {
                       {product.currentStock.toFixed(2)} kg
                     </span>
                     <span className="text-xs text-surface-400 dark:text-surface-500">
-                      min: {product.minStock} kg
+                      {t("dashboard.minStock", { value: product.minStock })}
                     </span>
                   </div>
                 </div>
@@ -942,8 +944,7 @@ export function DashboardPage() {
 
       {/* Exchange Rate Footer */}
       <div className="text-center text-xs text-surface-400 dark:text-surface-500">
-        Exchange rate: 1 USD ={" "}
-        {metrics?.exchangeRate?.toLocaleString() || "12,500"} UZS
+        {t("dashboard.exchangeRate", { rate: metrics?.exchangeRate?.toLocaleString() || "12,500" })}
       </div>
     </div>
   );

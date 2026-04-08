@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { Building2, ArrowRight, Loader2 } from "lucide-react";
 import {
   Button,
@@ -15,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
+  LanguageSwitcher,
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores";
@@ -22,13 +24,14 @@ import { useAuthStore } from "@/stores";
 const createWorkspaceSchema = z.object({
   name: z
     .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(255, "Name must be less than 255 characters"),
+    .min(2, "onboarding.errorNameLength")
+    .max(255, "onboarding.errorNameTooLong"),
 });
 
 type CreateWorkspaceForm = z.infer<typeof createWorkspaceSchema>;
 
 export function OnboardingPage() {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -67,10 +70,10 @@ export function OnboardingPage() {
           response?: { data?: { message?: string } };
         };
         setError(
-          axiosError.response?.data?.message || "Failed to create workspace",
+          axiosError.response?.data?.message || t("onboarding.errorGeneric"),
         );
       } else {
-        setError("Failed to create workspace");
+        setError(t("onboarding.errorGeneric"));
       }
     } finally {
       setIsLoading(false);
@@ -79,26 +82,26 @@ export function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-surface-950 flex items-center justify-center p-4">
+      <div className="fixed top-4 right-4">
+        <LanguageSwitcher variant="compact" />
+      </div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 mb-4">
             <Building2 className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-900 dark:text-surface-100">
-            Welcome to Mirsklada
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+            {t("onboarding.welcome")}
           </h1>
-          <p className="text-surface-400 mt-2">
-            Let&apos;s set up your first workspace to get started
-          </p>
+          <p className="text-surface-400 mt-2">{t("onboarding.subtitle")}</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Create Your Workspace</CardTitle>
+            <CardTitle>{t("onboarding.createTitle")}</CardTitle>
             <p className="text-sm text-surface-400 mt-1">
-              A workspace is where you&apos;ll manage your inventory, clients, and
-              orders. You can invite team members later.
+              {t("onboarding.createSubtitle")}
             </p>
           </CardHeader>
 
@@ -111,27 +114,28 @@ export function OnboardingPage() {
               )}
 
               <Input
-                label="Workspace Name"
-                placeholder="e.g., My Fish Market"
-                error={errors.name?.message}
+                label={t("onboarding.nameLabel")}
+                placeholder={t("onboarding.namePlaceholder")}
+                error={
+                  errors.name?.message ? t(errors.name.message) : undefined
+                }
                 {...register("name")}
                 autoFocus
               />
 
               <p className="text-xs text-surface-500">
-                This will be the name of your business or organization. You can
-                change it later in settings.
+                {t("onboarding.nameHelp")}
               </p>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Creating...
+                    {t("onboarding.creating")}
                   </>
                 ) : (
                   <>
-                    Create Workspace
+                    {t("onboarding.createButton")}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 )}
@@ -141,7 +145,7 @@ export function OnboardingPage() {
         </Card>
 
         <p className="text-center text-xs text-surface-500 mt-6">
-          You can create additional workspaces later from the settings menu
+          {t("onboarding.footer")}
         </p>
       </div>
     </div>

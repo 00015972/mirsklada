@@ -1,15 +1,45 @@
 /**
- * Auth Store - Zustand
- * Manages authentication state
+ * @file Authentication State Store
+ * @description Zustand store for managing authentication state including user data,
+ * session tokens, workspace/tenant information, and loading states.
+ * Persists to localStorage for session continuity across page refreshes.
+ *
+ * @module apps/web/src/stores/auth.store
+ *
+ * @connections
+ * - Uses: @/lib/supabase (Supabase client for auth operations)
+ * - Exported via: ./index.ts
+ * - Used by: ./main.tsx (AuthInitializer), @/components/ProtectedRoute
+ * - Used by: @/lib/api.ts (Authorization headers)
+ * - Used by: All protected pages and components
+ *
+ * @persistence
+ * - Persisted to localStorage under key "mirsklada-auth"
+ * - Partial state: user, session, tenants, currentTenantId, isAuthenticated
+ * - isLoading is NOT persisted (always starts true, set false after hydration)
+ *
+ * @security
+ * - Tokens are stored in localStorage (standard Supabase pattern)
+ * - Inactivity timeout handled via AUTH_INACTIVITY_STORAGE_KEY
+ * - Session refresh via Supabase auth.refreshSession()
  */
 import { useState, useEffect } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { supabase } from "@/lib/supabase";
 
-export const AUTH_INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+/**
+ * Inactivity Timeout Configuration
+ * @description After 30 minutes of no user activity, the session is logged out.
+ * Activity is tracked in localStorage for cross-tab synchronization.
+ */
+export const AUTH_INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 export const AUTH_INACTIVITY_STORAGE_KEY = "mirsklada-last-activity-at";
 
+/**
+ * User Interface
+ * @description Represents the authenticated user's basic information
+ */
 interface User {
   id: string;
   email: string;
@@ -17,21 +47,35 @@ interface User {
   avatarUrl?: string | null;
 }
 
+/**
+ * Session Interface
+ * @description Contains JWT tokens for API authentication
+ */
 interface Session {
   accessToken: string;
   refreshToken: string;
   expiresAt?: number;
 }
 
+/**
+ * Tenant/Workspace Interface
+ * @description Represents a workspace the user has access to.
+ * Users can belong to multiple tenants with different roles.
+ */
 interface Tenant {
   id: string;
   name: string;
   slug: string;
-  role: string;
-  subscriptionTier: string;
+  role: string; // "OWNER", "ADMIN", "MEMBER"
+  subscriptionTier: string; // "FREE", "PRO", "ENTERPRISE"
 }
 
+/**
+ * Auth State Interface
+ * @description Complete authentication state shape including all actions
+ */
 interface AuthState {
+  // State
   user: User | null;
   session: Session | null;
   tenants: Tenant[];
@@ -56,6 +100,11 @@ interface AuthState {
   initialize: () => Promise<void>;
 }
 
+/**
+ * Auth Store
+ * @description Zustand store with localStorage persistence.
+ * Manages all authentication-related state and actions.
+ */
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
