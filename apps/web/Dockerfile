@@ -24,4 +24,4 @@ COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
 # At runtime: wire listen port and API upstream endpoint, then start nginx
-CMD ["/bin/sh", "-c", "API_UPSTREAM=${API_UPSTREAM:-mirskladaapi.railway.internal:3000}; sed -i \"s/listen 80/listen ${PORT:-80}/\" /etc/nginx/conf.d/default.conf; sed -i \"s|__API_UPSTREAM__|${API_UPSTREAM}|\" /etc/nginx/conf.d/default.conf; exec nginx -g 'daemon off;'" ]
+CMD ["/bin/sh", "-c", "API_UPSTREAM=${API_UPSTREAM:-mirskladaapi.railway.internal:${API_PORT:-8080}}; sed -i \"s/listen 80/listen ${PORT:-80}/\" /etc/nginx/conf.d/default.conf; sed -i \"s|__API_UPSTREAM__|${API_UPSTREAM}|\" /etc/nginx/conf.d/default.conf; exec nginx -g 'daemon off;'" ]
