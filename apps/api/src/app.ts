@@ -195,10 +195,7 @@ export function createApp(): Express {
    * @route PATCH /api/v1/tenants/:id - Update tenant
    * @route POST /api/v1/tenants/:id/invite - Invite user to tenant
    */
-  const tenantRouter = express.Router();
-  tenantRouter.use(authenticate);
-  tenantRouter.use("/tenants", tenantRoutes);
-  apiV1.use(tenantRouter);
+  apiV1.use("/tenants", authenticate, tenantRoutes);
 
   /**
    * Protected Business Routes (Auth + Tenant Required)

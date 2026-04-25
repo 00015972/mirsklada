@@ -1,11 +1,11 @@
-import { Router, Request, Response } from "express";
+  import { Router, type Router as RouterType, Request, Response } from "express";
 import { prisma } from "@mirsklada/database";
 import { env } from "../../config/env";
 import { AppError } from "../../utils/app-error";
 import { asyncHandler } from "../../utils/async-handler";
 import { logger } from "../../utils/logger";
 
-const router = Router();
+const router: RouterType = Router();
 
 type SubscriptionTier = "basic" | "pro";
 type BillingStatus =
