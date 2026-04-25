@@ -62,7 +62,6 @@ router.delete('/products/:id', requireRole('admin'), deleteProduct);
 
 ### Defense in Depth Strategy
 
-```
 ┌─────────────────────────────────────────────────────────┐
 │                    Layer 1: API                          │
 │         Tenant middleware validates X-Tenant-ID          │
@@ -76,7 +75,6 @@ router.delete('/products/:id', requireRole('admin'), deleteProduct);
 │         Row-Level Security (RLS) as safety net           │
 │         Even direct DB access is tenant-scoped           │
 └─────────────────────────────────────────────────────────┘
-```
 
 ### Tenant Middleware
 ```typescript
@@ -152,7 +150,6 @@ OAuth tokens (access + refresh) allow full access to user's Google Drive. If lea
 
 ### Encryption Strategy
 
-```
 ┌─────────────────────────────────────────────────────────┐
 │                 Token Encryption Flow                    │
 └─────────────────────────────────────────────────────────┘
@@ -181,7 +178,6 @@ OAuth tokens (access + refresh) allow full access to user's Google Drive. If lea
    - encrypted_token (base64)
    - iv (base64)
    - provider: 'google_drive'
-```
 
 ### Implementation
 

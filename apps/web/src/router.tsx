@@ -245,23 +245,3 @@ const routes: RouteObject[] = [
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const router: any = createBrowserRouter(routes);
-
-/**
- * Placeholder Page Component
- * @description Temporary component for routes that are not yet implemented.
- * Displays a "coming soon" message.
- *
- * @param {string} title - Page title to display
- */
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100 mb-2">
-        {title}
-      </h1>
-      <p className="text-surface-500 dark:text-surface-400">
-        This page is coming soon
-      </p>
-    </div>
-  );
-}

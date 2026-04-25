@@ -4,10 +4,10 @@
 // TENANCY & AUTH
 // ═══════════════════════════════════════════════════════════════
 
-export type SubscriptionTier = 'basic' | 'pro';
-export type UserRole = 'superadmin' | 'admin' | 'staff';
-export type TenantStatus = 'active' | 'suspended' | 'cancelled';
-export type MemberStatus = 'active' | 'invited' | 'disabled';
+export type SubscriptionTier = "basic" | "pro";
+export type UserRole = "superadmin" | "admin" | "staff";
+export type TenantStatus = "active" | "suspended" | "cancelled";
+export type MemberStatus = "active" | "invited" | "disabled";
 
 export interface Tenant {
   id: string;
@@ -62,7 +62,7 @@ export interface Product {
   updatedAt: Date;
 }
 
-export type StockMovementType = 'IN' | 'OUT' | 'ADJUST';
+export type StockMovementType = "IN" | "OUT" | "ADJUST";
 
 export interface StockMovement {
   id: string;
@@ -87,7 +87,6 @@ export interface Client {
   name: string;
   contactPerson: string | null;
   phone: string | null;
-  telegramId: number | null;
   address: string | null;
   priceMatrixId: string | null;
   debtBalance: number;
@@ -117,12 +116,12 @@ export interface PriceMatrixItem {
 // ORDERS
 // ═══════════════════════════════════════════════════════════════
 
-export type OrderStatus = 
-  | 'pending' 
-  | 'confirmed' 
-  | 'preparing' 
-  | 'delivered' 
-  | 'cancelled';
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "delivered"
+  | "cancelled";
 
 export interface Order {
   id: string;
@@ -155,8 +154,8 @@ export interface OrderItem {
 // PAYMENTS & DEBT
 // ═══════════════════════════════════════════════════════════════
 
-export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'click' | 'payme';
-export type DebtLedgerType = 'DEBIT' | 'CREDIT';
+export type PaymentMethod = "cash" | "card" | "transfer" | "click" | "payme";
+export type DebtLedgerType = "DEBIT" | "CREDIT";
 
 export interface Payment {
   id: string;

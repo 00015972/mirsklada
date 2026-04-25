@@ -41,7 +41,7 @@ import {
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
-import { useThemeStore } from "@/stores";
+import { useAuthStore, useThemeStore } from "@/stores";
 import { useTranslation } from "react-i18next";
 
 // Register Chart.js components
@@ -199,6 +199,9 @@ const statusColors: Record<string, string> = {
 export function DashboardPage() {
   const { t } = useTranslation();
   const { theme } = useThemeStore();
+  const { tenants, currentTenantId } = useAuthStore();
+  const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
+  const isPro = currentTenant?.subscriptionTier === "pro";
   const isDark = theme === "dark";
 
   const periodLabels: Record<Period, string> = {
@@ -237,37 +240,47 @@ export function DashboardPage() {
       else setIsLoading(true);
 
       try {
-        const [
-          metricsRes,
-          revenueRes,
-          ordersStatusRes,
-          paymentStatusRes,
-          topProductsRes,
-          topDebtorsRes,
-          recentOrdersRes,
-          recentPaymentsRes,
-          lowStockRes,
-        ] = await Promise.all([
+        const [metricsRes, recentOrdersRes, recentPaymentsRes, lowStockRes] =
+          await Promise.all([
           api.get(`/dashboard/metrics?period=${period}`),
-          api.get(`/dashboard/revenue-chart?period=${period}`),
-          api.get(`/dashboard/orders-by-status?period=${period}`),
-          api.get(`/dashboard/payment-status?period=${period}`),
-          api.get(`/dashboard/top-products?period=${period}&limit=5`),
-          api.get(`/dashboard/top-clients?sortBy=debt&limit=5`),
           api.get("/dashboard/recent-orders?limit=5"),
           api.get("/dashboard/recent-payments?limit=5"),
           api.get("/dashboard/low-stock?limit=5"),
         ]);
 
         setMetrics(metricsRes.data.data);
-        setRevenueChart(revenueRes.data.data || []);
-        setOrdersByStatus(ordersStatusRes.data.data || []);
-        setPaymentStatus(paymentStatusRes.data.data || []);
-        setTopProducts(topProductsRes.data.data || []);
-        setTopDebtors(topDebtorsRes.data.data || []);
         setRecentOrders(recentOrdersRes.data.data || []);
         setRecentPayments(recentPaymentsRes.data.data || []);
         setLowStockProducts(lowStockRes.data.data || []);
+
+        if (isPro) {
+          const [
+            revenueRes,
+            ordersStatusRes,
+            paymentStatusRes,
+            topProductsRes,
+            topDebtorsRes,
+          ] = await Promise.all([
+            api.get(`/dashboard/revenue-chart?period=${period}`),
+            api.get(`/dashboard/orders-by-status?period=${period}`),
+            api.get(`/dashboard/payment-status?period=${period}`),
+            api.get(`/dashboard/top-products?period=${period}&limit=5`),
+            api.get(`/dashboard/top-clients?sortBy=debt&limit=5`),
+          ]);
+
+          setRevenueChart(revenueRes.data.data || []);
+          setOrdersByStatus(ordersStatusRes.data.data || []);
+          setPaymentStatus(paymentStatusRes.data.data || []);
+          setTopProducts(topProductsRes.data.data || []);
+          setTopDebtors(topDebtorsRes.data.data || []);
+        } else {
+          setRevenueChart([]);
+          setOrdersByStatus([]);
+          setPaymentStatus([]);
+          setTopProducts([]);
+          setTopDebtors([]);
+        }
+
         setLastUpdated(new Date());
       } catch (error) {
         console.error("Failed to load dashboard:", error);
@@ -277,7 +290,7 @@ export function DashboardPage() {
         setIsRefreshing(false);
       }
     },
-    [period],
+    [isPro, period, t],
   );
 
   useEffect(() => {
@@ -422,7 +435,9 @@ export function DashboardPage() {
             {t("dashboard.subtitle")}
             {lastUpdated && (
               <span className="ml-2 text-xs">
-                {t("dashboard.updatedAt", { date: formatDate(lastUpdated.toISOString()) })}
+                {t("dashboard.updatedAt", {
+                  date: formatDate(lastUpdated.toISOString()),
+                })}
               </span>
             )}
           </p>
@@ -586,7 +601,11 @@ export function DashboardPage() {
                 (metrics?.inventory.outOfStock || 0) >
                 0 && (
                 <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full">
-                  {t("dashboard.alerts", { count: (metrics?.inventory.lowStock || 0) + (metrics?.inventory.outOfStock || 0) })}
+                  {t("dashboard.alerts", {
+                    count:
+                      (metrics?.inventory.lowStock || 0) +
+                      (metrics?.inventory.outOfStock || 0),
+                  })}
                 </span>
               )}
             </div>
@@ -600,7 +619,9 @@ export function DashboardPage() {
                   : formatPrice(metrics?.inventory.stockValue || 0, "UZS")}
               </p>
               <p className="text-xs text-surface-500 mt-1">
-                {t("dashboard.products", { count: metrics?.inventory.totalProducts })}
+                {t("dashboard.products", {
+                  count: metrics?.inventory.totalProducts,
+                })}
               </p>
             </div>
           </CardContent>
@@ -658,130 +679,134 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue Trend Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>{t("dashboard.revenueTrend")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              {revenueChart.length > 0 ? (
-                <Line data={revenueChartData} options={revenueChartOptions} />
-              ) : (
-                <div className="h-full flex items-center justify-center text-surface-500">
-                  {t("dashboard.noRevenueData")}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Orders by Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("dashboard.ordersByStatus")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              {ordersByStatus.length > 0 ? (
-                <Doughnut data={ordersChartData} options={doughnutOptions} />
-              ) : (
-                <div className="h-full flex items-center justify-center text-surface-500">
-                  {t("dashboard.noOrdersData")}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Top Products */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("dashboard.topProducts")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[250px]">
-              {topProducts.length > 0 ? (
-                <Bar data={topProductsChartData} options={barChartOptions} />
-              ) : (
-                <div className="h-full flex items-center justify-center text-surface-500">
-                  {t("dashboard.noSalesData")}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Payment Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("dashboard.paymentStatus")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[250px]">
-              {paymentStatus.length > 0 ? (
-                <Doughnut data={paymentChartData} options={doughnutOptions} />
-              ) : (
-                <div className="h-full flex items-center justify-center text-surface-500">
-                  {t("dashboard.noPaymentData")}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Debtors */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>{t("dashboard.topDebtors")}</CardTitle>
-            <Link
-              to="/dashboard/clients"
-              className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
-            >
-              {t("dashboard.viewAll")} <ArrowRight className="h-3 w-3" />
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {topDebtors.length > 0 ? (
-              <div className="space-y-3">
-                {topDebtors.map((client, index) => (
-                  <div
-                    key={client.clientId}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center text-xs text-surface-500 dark:text-surface-400">
-                        {index + 1}
-                      </span>
-                      <span className="text-surface-700 dark:text-surface-200">
-                        {client.clientName}
-                      </span>
+      {isPro && (
+        <>
+          {/* Charts Row 1 */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Revenue Trend Chart */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>{t("dashboard.revenueTrend")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  {revenueChart.length > 0 ? (
+                    <Line data={revenueChartData} options={revenueChartOptions} />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-surface-500">
+                      {t("dashboard.noRevenueData")}
                     </div>
-                    <span className="text-red-400 font-medium">
-                      {showUSD
-                        ? formatPrice(
-                            (client.debt || 0) /
-                              (metrics?.exchangeRate || 12500),
-                            "USD",
-                          )
-                        : formatPrice(client.debt || 0, "UZS")}
-                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Orders by Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("dashboard.ordersByStatus")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  {ordersByStatus.length > 0 ? (
+                    <Doughnut data={ordersChartData} options={doughnutOptions} />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-surface-500">
+                      {t("dashboard.noOrdersData")}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Charts Row 2 */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Top Products */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("dashboard.topProducts")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[250px]">
+                  {topProducts.length > 0 ? (
+                    <Bar data={topProductsChartData} options={barChartOptions} />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-surface-500">
+                      {t("dashboard.noSalesData")}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("dashboard.paymentStatus")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[250px]">
+                  {paymentStatus.length > 0 ? (
+                    <Doughnut data={paymentChartData} options={doughnutOptions} />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-surface-500">
+                      {t("dashboard.noPaymentData")}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Top Debtors */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>{t("dashboard.topDebtors")}</CardTitle>
+                <Link
+                  to="/dashboard/clients"
+                  className="text-xs text-primary-500 dark:text-primary-400 hover:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
+                >
+                  {t("dashboard.viewAll")} <ArrowRight className="h-3 w-3" />
+                </Link>
+              </CardHeader>
+              <CardContent>
+                {topDebtors.length > 0 ? (
+                  <div className="space-y-3">
+                    {topDebtors.map((client, index) => (
+                      <div
+                        key={client.clientId}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-6 h-6 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center text-xs text-surface-500 dark:text-surface-400">
+                            {index + 1}
+                          </span>
+                          <span className="text-surface-700 dark:text-surface-200">
+                            {client.clientName}
+                          </span>
+                        </div>
+                        <span className="text-red-400 font-medium">
+                          {showUSD
+                            ? formatPrice(
+                                (client.debt || 0) /
+                                  (metrics?.exchangeRate || 12500),
+                                "USD",
+                              )
+                            : formatPrice(client.debt || 0, "UZS")}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="h-[200px] flex items-center justify-center text-surface-500">
-                {t("dashboard.noDebts")}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                ) : (
+                  <div className="h-[200px] flex items-center justify-center text-surface-500">
+                    {t("dashboard.noDebts")}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
 
       {/* Tables Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -944,7 +969,9 @@ export function DashboardPage() {
 
       {/* Exchange Rate Footer */}
       <div className="text-center text-xs text-surface-400 dark:text-surface-500">
-        {t("dashboard.exchangeRate", { rate: metrics?.exchangeRate?.toLocaleString() || "12,500" })}
+        {t("dashboard.exchangeRate", {
+          rate: metrics?.exchangeRate?.toLocaleString() || "12,500",
+        })}
       </div>
     </div>
   );

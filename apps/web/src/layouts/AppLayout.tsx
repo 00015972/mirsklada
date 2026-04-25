@@ -97,6 +97,10 @@ export function AppLayout() {
   const navigate = useNavigate();
   // Find current tenant object from ID
   const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
+  const navigationItems = navigation.filter(
+    (item) =>
+      item.key !== "reports" || currentTenant?.subscriptionTier === "pro",
+  );
 
   /**
    * Workspace Invitation Detection Effect
@@ -246,7 +250,7 @@ export function AppLayout() {
 
         {/* ========== NAVIGATION LINKS ========== */}
         <nav className="flex-1 p-4 space-y-1">
-          {navigation.map((item) => (
+          {navigationItems.map((item) => (
             <NavLink
               key={item.key}
               to={item.href}

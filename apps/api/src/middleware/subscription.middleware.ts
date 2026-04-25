@@ -3,27 +3,24 @@
  * Restricts access to Pro-only features
  */
 import { Request, Response, NextFunction } from "express";
+import { TIER_LIMITS } from "@mirsklada/shared";
 import { AppError } from "../utils/app-error";
 
 /**
  * Features that require Pro subscription
  */
 export type ProFeature =
-  | "telegram_bots"
   | "google_drive"
   | "yandex_delivery"
-  | "advanced_reports"
+  | "reports_advanced"
+  | "reports_export"
   | "price_matrices"
   | "api_access";
 
-const PRO_FEATURES: ProFeature[] = [
-  "telegram_bots",
-  "google_drive",
-  "yandex_delivery",
-  "advanced_reports",
-  "price_matrices",
-  "api_access",
-];
+const BASIC_FEATURES = new Set<string>(TIER_LIMITS.basic.features);
+const PRO_FEATURES = new Set<string>(
+  TIER_LIMITS.pro.features.filter((feature) => !BASIC_FEATURES.has(feature)),
+);
 
 /**
  * Middleware factory that checks if tenant has access to a feature
@@ -33,7 +30,7 @@ const PRO_FEATURES: ProFeature[] = [
 export const requireFeature = (feature: ProFeature) => {
   return (req: Request, _res: Response, next: NextFunction): void => {
     // If feature is Pro-only and tenant is on Basic plan
-    if (PRO_FEATURES.includes(feature) && req.subscriptionTier !== "pro") {
+    if (PRO_FEATURES.has(feature) && req.subscriptionTier !== "pro") {
       throw AppError.forbidden(
         `The "${feature}" feature requires a Pro subscription. Please upgrade to access this feature.`,
         "FEATURE_REQUIRES_PRO",

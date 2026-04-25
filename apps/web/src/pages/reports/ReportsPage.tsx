@@ -20,6 +20,7 @@ import {
   ChartOptions,
 } from "chart.js";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
+import { Navigate } from "react-router-dom";
 import {
   RefreshCw,
   Download,
@@ -47,7 +48,7 @@ import {
 } from "@/components/ui";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
-import { useThemeStore } from "@/stores";
+import { useAuthStore, useThemeStore } from "@/stores";
 import { useTranslation } from "react-i18next";
 
 // Register Chart.js components
@@ -61,7 +62,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 );
 
 type Period = "today" | "week" | "month" | "quarter" | "year";
@@ -150,7 +151,7 @@ function formatCompact(num: number): string {
  */
 function generateCSV<T extends Record<string, unknown>>(
   data: T[],
-  headers: { key: keyof T; label: string }[]
+  headers: { key: keyof T; label: string }[],
 ): string {
   const headerRow = headers.map((h) => h.label).join(",");
   const rows = data.map((item) =>
@@ -162,7 +163,7 @@ function generateCSV<T extends Record<string, unknown>>(
         }
         return String(value ?? "");
       })
-      .join(",")
+      .join(","),
   );
   return [headerRow, ...rows].join("\n");
 }
@@ -182,6 +183,9 @@ function downloadCSV(content: string, filename: string): void {
 export function ReportsPage() {
   const { t } = useTranslation();
   const { theme } = useThemeStore();
+  const { tenants, currentTenantId } = useAuthStore();
+  const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
+  const isPro = currentTenant?.subscriptionTier === "pro";
   const isDark = theme === "dark";
 
   // Update Chart.js defaults based on theme
@@ -212,7 +216,9 @@ export function ReportsPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   // Data states
-  const [summaryMetrics, setSummaryMetrics] = useState<SummaryMetrics | null>(null);
+  const [summaryMetrics, setSummaryMetrics] = useState<SummaryMetrics | null>(
+    null,
+  );
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [inventoryReport, setInventoryReport] = useState<InventoryReport[]>([]);
   const [clientReport, setClientReport] = useState<ClientReport[]>([]);
@@ -222,6 +228,7 @@ export function ReportsPage() {
 
   const fetchReportsData = useCallback(
     async (showRefresh = false) => {
+      if (!isPro) return;
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
 
@@ -229,13 +236,14 @@ export function ReportsPage() {
         // Fetch summary metrics
         const metricsRes = await api.get(`/dashboard/metrics?period=${period}`);
         const metrics = metricsRes.data.data;
-        
+
         setSummaryMetrics({
           totalRevenue: metrics.revenue?.amount || 0,
           totalOrders: metrics.orders?.count || 0,
-          averageOrderValue: metrics.orders?.count > 0 
-            ? (metrics.revenue?.amount || 0) / metrics.orders.count 
-            : 0,
+          averageOrderValue:
+            metrics.orders?.count > 0
+              ? (metrics.revenue?.amount || 0) / metrics.orders.count
+              : 0,
           totalClients: metrics.clients?.active || 0,
           totalDebt: metrics.debt?.amount || 0,
           revenueChange: metrics.revenue?.change || 0,
@@ -244,15 +252,19 @@ export function ReportsPage() {
         setExchangeRate(metrics.exchangeRate || 12500);
 
         // Fetch revenue chart data
-        const revenueRes = await api.get(`/dashboard/revenue-chart?period=${period}`);
+        const revenueRes = await api.get(
+          `/dashboard/revenue-chart?period=${period}`,
+        );
         setRevenueData(
-          (revenueRes.data.data || []).map((d: { date: string; revenue: number; orders: number }) => ({
-            date: d.date,
-            revenue: d.revenue,
-            cost: d.revenue * 0.7,
-            profit: d.revenue * 0.3,
-            orders: d.orders,
-          }))
+          (revenueRes.data.data || []).map(
+            (d: { date: string; revenue: number; orders: number }) => ({
+              date: d.date,
+              revenue: d.revenue,
+              cost: d.revenue * 0.7,
+              profit: d.revenue * 0.3,
+              orders: d.orders,
+            }),
+          ),
         );
 
         // Fetch category-based inventory report
@@ -265,20 +277,25 @@ export function ReportsPage() {
           const inventoryByCategory: InventoryReport[] = categories.map(
             (cat: { id: string; name: string }) => {
               const categoryProducts = products.filter(
-                (p: { categoryId: string }) => p.categoryId === cat.id
+                (p: { categoryId: string }) => p.categoryId === cat.id,
               );
               const totalStock = categoryProducts.reduce(
-                (sum: number, p: { currentStock: number }) => sum + (Number(p.currentStock) || 0),
-                0
+                (sum: number, p: { currentStock: number }) =>
+                  sum + (Number(p.currentStock) || 0),
+                0,
               );
               const stockValue = categoryProducts.reduce(
-                (sum: number, p: { currentStock: number; pricePerKg: string | number }) =>
-                  sum + (Number(p.currentStock) || 0) * (Number(p.pricePerKg) || 0),
-                0
+                (
+                  sum: number,
+                  p: { currentStock: number; pricePerKg: string | number },
+                ) =>
+                  sum +
+                  (Number(p.currentStock) || 0) * (Number(p.pricePerKg) || 0),
+                0,
               );
               const lowStockCount = categoryProducts.filter(
                 (p: { currentStock: number; minStock: number }) =>
-                  Number(p.currentStock) < Number(p.minStock)
+                  Number(p.currentStock) < Number(p.minStock),
               ).length;
 
               return {
@@ -288,7 +305,7 @@ export function ReportsPage() {
                 stockValue,
                 lowStockCount,
               };
-            }
+            },
           );
           setInventoryReport(inventoryByCategory);
         } catch {
@@ -300,23 +317,25 @@ export function ReportsPage() {
           const clientsRes = await api.get("/clients?limit=100");
           const clients = clientsRes.data.data || [];
           setClientReport(
-            clients.map((c: { 
-              id: string; 
-              name: string; 
-              phone: string; 
-              totalOrders: number; 
-              totalSpent: string | number; 
-              currentDebt: string | number;
-              lastOrderAt: string | null;
-            }) => ({
-              clientId: c.id,
-              clientName: c.name,
-              phone: c.phone || "",
-              totalOrders: c.totalOrders || 0,
-              totalSpent: Number(c.totalSpent) || 0,
-              debt: Number(c.currentDebt) || 0,
-              lastOrderDate: c.lastOrderAt,
-            }))
+            clients.map(
+              (c: {
+                id: string;
+                name: string;
+                phone: string;
+                totalOrders: number;
+                totalSpent: string | number;
+                currentDebt: string | number;
+                lastOrderAt: string | null;
+              }) => ({
+                clientId: c.id,
+                clientName: c.name,
+                phone: c.phone || "",
+                totalOrders: c.totalOrders || 0,
+                totalSpent: Number(c.totalSpent) || 0,
+                debt: Number(c.currentDebt) || 0,
+                lastOrderDate: c.lastOrderAt,
+              }),
+            ),
           );
         } catch {
           setClientReport([]);
@@ -324,19 +343,26 @@ export function ReportsPage() {
 
         // Fetch orders by status
         try {
-          const ordersStatusRes = await api.get(`/dashboard/orders-by-status?period=${period}`);
+          const ordersStatusRes = await api.get(
+            `/dashboard/orders-by-status?period=${period}`,
+          );
           const ordersData = ordersStatusRes.data.data || [];
           const totalOrders = ordersData.reduce(
             (sum: number, d: { count: number }) => sum + d.count,
-            0
+            0,
           );
           setOrderReport(
-            ordersData.map((d: { status: string; count: number; amount?: number }) => ({
-              status: d.status,
-              count: d.count,
-              totalAmount: d.amount || 0,
-              percentage: totalOrders > 0 ? Math.round((d.count / totalOrders) * 100) : 0,
-            }))
+            ordersData.map(
+              (d: { status: string; count: number; amount?: number }) => ({
+                status: d.status,
+                count: d.count,
+                totalAmount: d.amount || 0,
+                percentage:
+                  totalOrders > 0
+                    ? Math.round((d.count / totalOrders) * 100)
+                    : 0,
+              }),
+            ),
           );
         } catch {
           setOrderReport([]);
@@ -344,19 +370,26 @@ export function ReportsPage() {
 
         // Fetch payment methods breakdown
         try {
-          const paymentRes = await api.get(`/dashboard/payment-status?period=${period}`);
+          const paymentRes = await api.get(
+            `/dashboard/payment-status?period=${period}`,
+          );
           const paymentData = paymentRes.data.data || [];
           const totalPayments = paymentData.reduce(
             (sum: number, d: { count: number }) => sum + d.count,
-            0
+            0,
           );
           setPaymentReport(
-            paymentData.map((d: { status: string; count: number; amount?: number }) => ({
-              method: d.status,
-              count: d.count,
-              totalAmount: d.amount || 0,
-              percentage: totalPayments > 0 ? Math.round((d.count / totalPayments) * 100) : 0,
-            }))
+            paymentData.map(
+              (d: { status: string; count: number; amount?: number }) => ({
+                method: d.status,
+                count: d.count,
+                totalAmount: d.amount || 0,
+                percentage:
+                  totalPayments > 0
+                    ? Math.round((d.count / totalPayments) * 100)
+                    : 0,
+              }),
+            ),
           );
         } catch {
           setPaymentReport([]);
@@ -369,7 +402,7 @@ export function ReportsPage() {
         setIsRefreshing(false);
       }
     },
-    [period, t]
+    [isPro, period, t],
   );
 
   useEffect(() => {
@@ -455,7 +488,7 @@ export function ReportsPage() {
       {
         label: t("reports.columns.revenue"),
         data: revenueData.map((d) =>
-          showUSD ? d.revenue / exchangeRate : d.revenue
+          showUSD ? d.revenue / exchangeRate : d.revenue,
         ),
         borderColor: "#3b82f6",
         backgroundColor: "rgba(59, 130, 246, 0.1)",
@@ -465,7 +498,7 @@ export function ReportsPage() {
       {
         label: t("reports.columns.profit"),
         data: revenueData.map((d) =>
-          showUSD ? d.profit / exchangeRate : d.profit
+          showUSD ? d.profit / exchangeRate : d.profit,
         ),
         borderColor: "#22c55e",
         backgroundColor: "rgba(34, 197, 94, 0.1)",
@@ -505,7 +538,7 @@ export function ReportsPage() {
       {
         label: t("reports.columns.stockValue"),
         data: inventoryReport.map((d) =>
-          showUSD ? d.stockValue / exchangeRate : d.stockValue
+          showUSD ? d.stockValue / exchangeRate : d.stockValue,
         ),
         backgroundColor: "#3b82f6",
         borderRadius: 4,
@@ -557,6 +590,10 @@ export function ReportsPage() {
     },
     cutout: "60%",
   };
+
+  if (!isPro) {
+    return <Navigate to="/dashboard/settings" replace />;
+  }
 
   if (isLoading) {
     return (
@@ -706,7 +743,7 @@ export function ReportsPage() {
                       showUSD
                         ? summaryMetrics.totalRevenue / exchangeRate
                         : summaryMetrics.totalRevenue,
-                      showUSD ? "USD" : "UZS"
+                      showUSD ? "USD" : "UZS",
                     )
                   : "-"}
               </p>
@@ -783,7 +820,7 @@ export function ReportsPage() {
                       showUSD
                         ? summaryMetrics.averageOrderValue / exchangeRate
                         : summaryMetrics.averageOrderValue,
-                      showUSD ? "USD" : "UZS"
+                      showUSD ? "USD" : "UZS",
                     )
                   : "-"}
               </p>
@@ -848,14 +885,16 @@ export function ReportsPage() {
                           </td>
                           <td className="py-3 px-4 text-sm text-right text-surface-900 dark:text-surface-100">
                             {formatPrice(
-                              showUSD ? row.revenue / exchangeRate : row.revenue,
-                              showUSD ? "USD" : "UZS"
+                              showUSD
+                                ? row.revenue / exchangeRate
+                                : row.revenue,
+                              showUSD ? "USD" : "UZS",
                             )}
                           </td>
                           <td className="py-3 px-4 text-sm text-right text-green-500">
                             {formatPrice(
                               showUSD ? row.profit / exchangeRate : row.profit,
-                              showUSD ? "USD" : "UZS"
+                              showUSD ? "USD" : "UZS",
                             )}
                           </td>
                           <td className="py-3 px-4 text-sm text-right text-surface-900 dark:text-surface-100">
@@ -941,7 +980,9 @@ export function ReportsPage() {
                           </td>
                           <td className="py-3 px-4 text-sm text-right">
                             {row.lowStockCount > 0 ? (
-                              <span className="text-red-500">{row.lowStockCount}</span>
+                              <span className="text-red-500">
+                                {row.lowStockCount}
+                              </span>
                             ) : (
                               <span className="text-green-500">0</span>
                             )}
@@ -1014,16 +1055,20 @@ export function ReportsPage() {
                         </td>
                         <td className="py-3 px-4 text-sm text-right text-surface-900 dark:text-surface-100">
                           {formatPrice(
-                            showUSD ? client.totalSpent / exchangeRate : client.totalSpent,
-                            showUSD ? "USD" : "UZS"
+                            showUSD
+                              ? client.totalSpent / exchangeRate
+                              : client.totalSpent,
+                            showUSD ? "USD" : "UZS",
                           )}
                         </td>
                         <td className="py-3 px-4 text-sm text-right">
                           {client.debt > 0 ? (
                             <span className="text-red-500">
                               {formatPrice(
-                                showUSD ? client.debt / exchangeRate : client.debt,
-                                showUSD ? "USD" : "UZS"
+                                showUSD
+                                  ? client.debt / exchangeRate
+                                  : client.debt,
+                                showUSD ? "USD" : "UZS",
                               )}
                             </span>
                           ) : (
@@ -1096,7 +1141,10 @@ export function ReportsPage() {
                           className="border-b border-surface-100 dark:border-surface-800"
                         >
                           <td className="py-3 px-4 text-sm text-surface-900 dark:text-surface-100">
-                            {t(`orders.status.${row.status.toLowerCase()}`, row.status)}
+                            {t(
+                              `orders.status.${row.status.toLowerCase()}`,
+                              row.status,
+                            )}
                           </td>
                           <td className="py-3 px-4 text-sm text-right text-surface-900 dark:text-surface-100">
                             {row.count}
@@ -1137,7 +1185,9 @@ export function ReportsPage() {
               <div className="h-80">
                 <Doughnut
                   data={{
-                    labels: paymentReport.map((d) => t(`orders.paymentStatus.${d.method}`, d.method)),
+                    labels: paymentReport.map((d) =>
+                      t(`orders.paymentStatus.${d.method}`, d.method),
+                    ),
                     datasets: [
                       {
                         data: paymentReport.map((d) => d.count),
@@ -1183,7 +1233,10 @@ export function ReportsPage() {
                           className="border-b border-surface-100 dark:border-surface-800"
                         >
                           <td className="py-3 px-4 text-sm text-surface-900 dark:text-surface-100">
-                            {t(`payments.status.${row.method.toLowerCase()}`, row.method)}
+                            {t(
+                              `payments.status.${row.method.toLowerCase()}`,
+                              row.method,
+                            )}
                           </td>
                           <td className="py-3 px-4 text-sm text-right text-surface-900 dark:text-surface-100">
                             {row.count}
@@ -1231,7 +1284,7 @@ export function ReportsPage() {
                       showUSD
                         ? summaryMetrics.totalDebt / exchangeRate
                         : summaryMetrics.totalDebt,
-                      showUSD ? "USD" : "UZS"
+                      showUSD ? "USD" : "UZS",
                     )
                   : "-"}
               </p>

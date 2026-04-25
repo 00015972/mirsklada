@@ -23,5 +23,5 @@ COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 # Copy nginx config directly (not as template to avoid entrypoint corruption)
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
-# At runtime: replace port 80 with Railway's PORT, then start nginx
-CMD ["/bin/sh", "-c", "sed -i \"s/listen 80/listen ${PORT:-80}/\" /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]
+# At runtime: wire listen port and API upstream endpoint, then start nginx
+CMD ["/bin/sh", "-c", "API_UPSTREAM=${API_UPSTREAM:-mirskladaapi.railway.internal:3000}; sed -i \"s/listen 80/listen ${PORT:-80}/\" /etc/nginx/conf.d/default.conf; sed -i \"s|__API_UPSTREAM__|${API_UPSTREAM}|\" /etc/nginx/conf.d/default.conf; exec nginx -g 'daemon off;'" ]

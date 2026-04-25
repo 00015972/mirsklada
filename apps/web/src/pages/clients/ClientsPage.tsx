@@ -12,7 +12,6 @@ import {
   Search,
   Phone,
   MapPin,
-  MessageCircle,
   Eye,
   ShoppingCart,
   X,
@@ -34,7 +33,6 @@ interface Client {
   id: string;
   name: string;
   phone: string | null;
-  telegramId: string | null;
   address: string | null;
   notes: string | null;
   isActive: boolean;
@@ -45,7 +43,6 @@ interface Client {
 interface ClientPayload {
   name: string;
   phone: string | null;
-  telegramId: string | null;
   address: string | null;
   notes: string | null;
 }
@@ -102,7 +99,6 @@ export function ClientsPage() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    telegramId: "",
     address: "",
     notes: "",
   });
@@ -146,7 +142,6 @@ export function ClientsPage() {
       id,
       name: payload.name,
       phone: payload.phone,
-      telegramId: payload.telegramId,
       address: payload.address,
       notes: payload.notes,
       isActive: existingClient?.isActive ?? true,
@@ -183,7 +178,6 @@ export function ClientsPage() {
     setFormData({
       name: "",
       phone: "",
-      telegramId: "",
       address: "",
       notes: "",
     });
@@ -203,7 +197,6 @@ export function ClientsPage() {
     setFormData({
       name: client.name,
       phone: client.phone || "",
-      telegramId: client.telegramId || "",
       address: client.address || "",
       notes: client.notes || "",
     });
@@ -234,7 +227,6 @@ export function ClientsPage() {
     const payload: ClientPayload = {
       name: formData.name.trim(),
       phone: formData.phone.trim() || null,
-      telegramId: formData.telegramId.trim() || null,
       address: formData.address.trim() || null,
       notes: formData.notes.trim() || null,
     };
@@ -309,7 +301,9 @@ export function ClientsPage() {
       setEditingClient(null);
       resetForm();
       setIsModalOpen(false);
-      toast.success(editingClient ? t("clients.updated") : t("clients.created"));
+      toast.success(
+        editingClient ? t("clients.updated") : t("clients.created"),
+      );
     } catch (err: unknown) {
       setClients(previousClients);
 
@@ -400,9 +394,7 @@ export function ClientsPage() {
           <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
             {t("clients.title")}
           </h1>
-          <p className="text-surface-400 mt-1">
-            {t("clients.subtitle")}
-          </p>
+          <p className="text-surface-400 mt-1">{t("clients.subtitle")}</p>
         </div>
         <Button onClick={handleCreate}>
           <Plus className="h-4 w-4 mr-2" />
@@ -502,7 +494,9 @@ export function ClientsPage() {
                     </h3>
                     {parseFloat(String(client.currentDebt)) > 0 && (
                       <p className="text-sm text-amber-400">
-                        {t("clients.debt", { amount: formatPrice(client.currentDebt) })}
+                        {t("clients.debt", {
+                          amount: formatPrice(client.currentDebt),
+                        })}
                       </p>
                     )}
                   </div>
@@ -514,12 +508,6 @@ export function ClientsPage() {
                     <div className="flex items-center gap-2 text-surface-500 dark:text-surface-400">
                       <Phone className="h-4 w-4" />
                       <span>{client.phone}</span>
-                    </div>
-                  )}
-                  {client.telegramId && (
-                    <div className="flex items-center gap-2 text-surface-500 dark:text-surface-400">
-                      <MessageCircle className="h-4 w-4" />
-                      <span>@{client.telegramId}</span>
                     </div>
                   )}
                   {client.address && (
@@ -547,7 +535,9 @@ export function ClientsPage() {
           <Card className="w-full max-w-lg my-8">
             <CardHeader>
               <CardTitle>
-                {editingClient ? t("clients.editClient") : t("clients.addClient")}
+                {editingClient
+                  ? t("clients.editClient")
+                  : t("clients.addClient")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -572,14 +562,6 @@ export function ClientsPage() {
                   name="phone"
                   placeholder={t("clients.phonePlaceholder")}
                   value={formData.phone}
-                  onChange={handleInputChange}
-                />
-
-                <Input
-                  label={t("clients.telegramLabel")}
-                  name="telegramId"
-                  placeholder={t("clients.telegramPlaceholder")}
-                  value={formData.telegramId}
                   onChange={handleInputChange}
                 />
 
@@ -659,7 +641,9 @@ export function ClientsPage() {
 
               {parseFloat(String(deletingClient.currentDebt)) > 0 && (
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
-                  {t("clients.outstandingDebtWarning", { amount: formatPrice(deletingClient.currentDebt) })}
+                  {t("clients.outstandingDebtWarning", {
+                    amount: formatPrice(deletingClient.currentDebt),
+                  })}
                 </div>
               )}
 
@@ -721,12 +705,6 @@ export function ClientsPage() {
                     <span className="text-sm">{viewingClient.phone}</span>
                   </div>
                 )}
-                {viewingClient.telegramId && (
-                  <div className="flex items-center gap-2 text-surface-300">
-                    <MessageCircle className="h-4 w-4 text-surface-500" />
-                    <span className="text-sm">@{viewingClient.telegramId}</span>
-                  </div>
-                )}
                 {viewingClient.address && (
                   <div className="flex items-start gap-2 text-surface-300 col-span-2">
                     <MapPin className="h-4 w-4 text-surface-500 mt-0.5" />
@@ -736,7 +714,15 @@ export function ClientsPage() {
                 <div className="flex items-center gap-2 text-surface-300">
                   <Calendar className="h-4 w-4 text-surface-500" />
                   <span className="text-sm">
-                    {t("clients.clientSince", { date: new Date(viewingClient.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) })}
+                    {t("clients.clientSince", {
+                      date: new Date(
+                        viewingClient.createdAt,
+                      ).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      }),
+                    })}
                   </span>
                 </div>
               </div>
@@ -757,7 +743,9 @@ export function ClientsPage() {
 
               {viewingClient.notes && (
                 <div className="p-3 rounded-lg bg-surface-800 text-surface-400 text-sm">
-                  <span className="font-medium text-surface-300">{t("clients.notes")}</span>{" "}
+                  <span className="font-medium text-surface-300">
+                    {t("clients.notes")}
+                  </span>{" "}
                   {viewingClient.notes}
                 </div>
               )}
@@ -808,7 +796,10 @@ export function ClientsPage() {
                               </span>
                             </div>
                             <p className="text-xs text-surface-500 mt-1">
-                              {t("clients.items", { count: order.items?.length || 0 })} &middot;{" "}
+                              {t("clients.items", {
+                                count: order.items?.length || 0,
+                              })}{" "}
+                              &middot;{" "}
                               {new Date(order.createdAt).toLocaleDateString(
                                 "en-US",
                                 { month: "short", day: "numeric" },
@@ -821,7 +812,9 @@ export function ClientsPage() {
                             </p>
                             {paid < total && (
                               <p className="text-xs text-amber-400">
-                                {t("clients.unpaid", { amount: formatPrice(total - paid) })}
+                                {t("clients.unpaid", {
+                                  amount: formatPrice(total - paid),
+                                })}
                               </p>
                             )}
                           </div>

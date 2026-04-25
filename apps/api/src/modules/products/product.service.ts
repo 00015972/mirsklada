@@ -4,7 +4,7 @@
  */
 import { prisma, Prisma } from "@mirsklada/database";
 import { AppError } from "../../utils/app-error";
-import { roundWeight } from "@mirsklada/shared";
+import { roundWeight, TIER_LIMITS } from "@mirsklada/shared";
 
 export interface CreateProductInput {
   categoryId?: string;
@@ -104,7 +104,24 @@ class ProductService {
   /**
    * Create a new product
    */
-  async create(tenantId: string, data: CreateProductInput) {
+  async create(
+    tenantId: string,
+    data: CreateProductInput,
+    subscriptionTier: "basic" | "pro" = "basic",
+  ) {
+    const limit = TIER_LIMITS[subscriptionTier].maxProducts;
+    if (isFinite(limit)) {
+      const count = await prisma.product.count({
+        where: { tenantId, isActive: true },
+      });
+      if (count >= limit) {
+        throw AppError.forbidden(
+          `Basic plan allows up to ${limit} products. Upgrade to Pro for unlimited products.`,
+          "LIMIT_EXCEEDED",
+        );
+      }
+    }
+
     // Validate category if provided
     if (data.categoryId) {
       const category = await prisma.category.findFirst({

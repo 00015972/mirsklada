@@ -4,18 +4,17 @@
 
 ## Entity Relationship Overview
 
-```
 ┌──────────────┐       ┌──────────────┐       ┌──────────────┐
 │   Tenant     │──────<│    User      │       │ Subscription │
 └──────────────┘       └──────────────┘       └──────────────┘
-       │                      │                      │
-       │                      │                      │
-       ▼                      ▼                      │
+       │                      │                     │
+       │                      │                     │
+       ▼                      ▼                     │
 ┌──────────────┐       ┌──────────────┐             │
 │  Category    │──────<│   Product    │             │
 └──────────────┘       └──────────────┘             │
-                              │                      │
-                              ▼                      │
+                              │                     │
+                              ▼                     │
                        ┌──────────────┐             │
                        │StockMovement │             │
                        └──────────────┘             │
@@ -38,7 +37,6 @@
                        ┌──────────────┐       ┌──────────────┐
                        │  DebtLedger  │<──────│   Payment    │
                        └──────────────┘       └──────────────┘
-```
 
 ## Core Tables
 
@@ -129,7 +127,6 @@ clients (
   name            VARCHAR(255) NOT NULL,
   contact_person  VARCHAR(255),
   phone           VARCHAR(50),
-  telegram_id     BIGINT, -- For client bot
   address         TEXT,
   price_matrix_id UUID REFERENCES price_matrices(id),
   debt_balance    DECIMAL(14,2) DEFAULT 0, -- Cached balance
@@ -168,7 +165,7 @@ orders (
   tenant_id       UUID REFERENCES tenants(id) NOT NULL,
   client_id       UUID REFERENCES clients(id) NOT NULL,
   order_number    VARCHAR(50), -- Human-readable number
-  status          VARCHAR(20) DEFAULT 'pending', 
+  status          VARCHAR(20) DEFAULT 'pending',
                   -- 'pending' | 'confirmed' | 'preparing' | 'delivered' | 'cancelled'
   total_amount    DECIMAL(14,2) NOT NULL,
   notes           TEXT,
@@ -297,9 +294,9 @@ CREATE POLICY tenant_isolation ON products
 
 ## Weight & Currency Rules
 
-| Field Type | PostgreSQL Type | Example |
-|------------|-----------------|---------|
-| Weight | `DECIMAL(10,2)` | `12.50` kg |
-| Price per kg | `DECIMAL(12,2)` | `45000.00` UZS |
-| Order total | `DECIMAL(14,2)` | `1250000.00` UZS |
+| Field Type   | PostgreSQL Type | Example          |
+| ------------ | --------------- | ---------------- |
+| Weight       | `DECIMAL(10,2)` | `12.50` kg       |
+| Price per kg | `DECIMAL(12,2)` | `45000.00` UZS   |
+| Order total  | `DECIMAL(14,2)` | `1250000.00` UZS |
 | Debt balance | `DECIMAL(14,2)` | `5000000.00` UZS |

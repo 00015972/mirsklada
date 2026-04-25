@@ -1,0 +1,69 @@
+import { useState, useEffect, useCallback } from "react";
+import type { Offerings, CustomerInfo } from "@revenuecat/purchases-js";
+import { Purchases } from "@revenuecat/purchases-js";
+import { useAuthStore } from "@/stores";
+import { configureRevenueCat } from "@/lib/revenueCat";
+
+export interface UseSubscriptionReturn {
+  offerings: Offerings | null;
+  customerInfo: CustomerInfo | null;
+  isPro: boolean;
+  isLoading: boolean;
+  error: string | null;
+  purchasePro: () => Promise<void>;
+  reload: () => Promise<void>;
+}
+
+export function useSubscription(): UseSubscriptionReturn {
+  const { user, currentTenantId, tenants } = useAuthStore();
+  const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
+  const scopedUserId =
+    user?.id && currentTenantId ? `${user.id}:${currentTenantId}` : null;
+  const [offerings, setOfferings] = useState<Offerings | null>(null);
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!scopedUserId) return;
+    try {
+      setIsLoading(true);
+      setError(null);
+      configureRevenueCat(scopedUserId);
+      const [offeringsResult, info] = await Promise.all([
+        Purchases.getSharedInstance().getOfferings(),
+        Purchases.getSharedInstance().getCustomerInfo(),
+      ]);
+      setOfferings(offeringsResult);
+      setCustomerInfo(info);
+    } catch {
+      setError("Failed to load subscription info");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [scopedUserId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const purchasePro = async () => {
+    const pkg = offerings?.current?.availablePackages[0];
+    if (!pkg) throw new Error("No package available");
+    const { customerInfo: updated } =
+      await Purchases.getSharedInstance().purchasePackage(pkg);
+    setCustomerInfo(updated);
+  };
+
+  const isPro = currentTenant?.subscriptionTier === "pro";
+
+  return {
+    offerings,
+    customerInfo,
+    isPro,
+    isLoading,
+    error,
+    purchasePro,
+    reload: load,
+  };
+}

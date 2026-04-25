@@ -21,6 +21,7 @@
  * - orderRouter: Sales order workflow
  * - paymentRouter: Payment recording and debt management
  * - dashboardRouter: Analytics and reporting
+ * - billingRouter: Subscription and billing webhooks
  *
  * @connections
  * - Used by: ./app.ts (route mounting)
@@ -35,6 +36,7 @@ export { healthRouter } from "./health";
 // Authentication Module
 // ═══════════════════════════════════════════════════════════════════
 export { authRouter } from "./auth";
+export { billingRouter } from "./billing";
 
 // ═══════════════════════════════════════════════════════════════════
 // Multi-Tenancy Module

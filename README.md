@@ -13,7 +13,6 @@
 
 - 🏢 **Multi-tenancy** with strict data isolation (Row-Level Security)
 - ⚖️ **Weight-based calculations** (2 decimal precision)
-- 🤖 **Dual Telegram bots** (Admin & Client)
 - 💳 **Local payment gateways** (Click, Payme)
 - ☁️ **Google Drive integration** (BYOD storage)
 - 🌍 **Multi-language** (English, Russian, Uzbek)
@@ -28,24 +27,21 @@
 | **Frontend** | React 18 + Vite + Tailwind CSS |
 | **Database** | PostgreSQL 15+ with RLS        |
 | **ORM**      | Prisma                         |
-| **Bots**     | grammY                         |
 | **Monorepo** | Turborepo + pnpm               |
 
 ## 📁 Project Structure
 
 mirsklada/
 ├── apps/
-│   ├── api/              # Express REST API
-│   ├── web/              # React frontend
-│   ├── bot-admin/        # Admin Telegram bot
-│   └── bot-client/       # Client Telegram bot
+│ ├── api/ # Express REST API
+│ ├── web/ # React frontend
 ├── packages/
-│   ├── shared/           # Types, schemas, utilities
-│   └── database/         # Prisma client
-├── docs/                 # Documentation
+│ ├── shared/ # Types, schemas, utilities
+│ └── database/ # Prisma client
+├── docs/ # Documentation
 └── .github/
-    ├── prompts/          # Reusable Copilot prompts
-    └── skills/           # Copilot coding patterns
+├── prompts/ # Reusable Copilot prompts
+└── skills/ # Copilot coding patterns
 
 ## 🚀 Quick Start
 
@@ -107,4 +103,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-***Author:*** Mirsodiq Akramov  
+**_Author:_** Mirsodiq Akramov

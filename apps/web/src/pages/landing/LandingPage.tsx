@@ -409,12 +409,12 @@ function FeaturesSection() {
 /* ─── Plans Section ─── */
 const planConfig = [
   {
-    key: "starter" as const,
+    key: "basic" as const,
     featureKeys: ["products", "workspace", "reports", "support", "users"],
     popular: false,
   },
   {
-    key: "professional" as const,
+    key: "pro" as const,
     featureKeys: [
       "products",
       "workspaces",
@@ -425,19 +425,6 @@ const planConfig = [
       "api",
     ],
     popular: true,
-  },
-  {
-    key: "enterprise" as const,
-    featureKeys: [
-      "everything",
-      "workspaces",
-      "users",
-      "integrations",
-      "support",
-      "onPremise",
-      "sla",
-    ],
-    popular: false,
   },
 ];
 
@@ -458,7 +445,7 @@ function PlansSection() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
           {planConfig.map((plan) => {
             const period = t(`landing.plans.${plan.key}.period`);
             return (
@@ -500,7 +487,7 @@ function PlansSection() {
                   ))}
                 </ul>
                 <Link
-                  to="/signup"
+                  to={plan.key === "pro" ? "/signup?plan=pro" : "/signup"}
                   className={`mt-8 inline-flex items-center justify-center py-3 rounded-xl text-sm font-semibold transition-colors ${
                     plan.popular
                       ? "bg-primary-600 text-white hover:bg-primary-700"
@@ -711,7 +698,12 @@ function ContactSection() {
 }
 
 /* ─── Footer ─── */
-const productLinks = ["features", "pricing", "integrations", "changelog"] as const;
+const productLinks = [
+  "features",
+  "pricing",
+  "integrations",
+  "changelog",
+] as const;
 const companyLinks = ["about", "contact", "blog", "careers"] as const;
 const legalLinks = ["privacy", "terms", "cookies"] as const;
 
@@ -799,12 +791,6 @@ function Footer() {
             {t("landing.footer.rights")}
           </p>
           <div className="flex items-center gap-4">
-            <a
-              href="#"
-              className="text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors"
-            >
-              Telegram
-            </a>
             <a
               href="#"
               className="text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors"

@@ -46,6 +46,7 @@ import {
 import {
   healthRouter,
   authRouter,
+  billingRouter,
   tenantRoutes,
   categoryRouter,
   productRouter,
@@ -175,6 +176,14 @@ export function createApp(): Express {
    * @route GET /api/v1/auth/me
    */
   apiV1.use("/auth", authRouter);
+
+  /**
+   * Billing Webhook Routes (Public, Signature-Protected)
+   * @description Receives subscription lifecycle events from billing providers.
+   * Authentication is handled by provider webhook signatures/secrets.
+   * @route POST /api/v1/billing/revenuecat/webhook
+   */
+  apiV1.use("/billing", billingRouter);
 
   /**
    * Tenant Management Routes (Auth Required, No Tenant Context)

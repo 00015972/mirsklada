@@ -141,8 +141,8 @@
       "titleHighlight": "narxlash",
       "subtitle": "Biznesingizga mos rejani tanlang. Bepul boshlang, tayyor bo'lganingizda yangilang.",
       "mostPopular": "Eng mashhur",
-      "starter": {
-        "name": "Boshlang'ich",
+      "basic": {
+        "name": "Asosiy",
         "price": "Bepul",
         "period": "",
         "description": "Asosiy ombor boshqaruvi bilan boshlash uchun mukammal.",
@@ -155,8 +155,8 @@
         },
         "cta": "Bepul boshlash"
       },
-      "professional": {
-        "name": "Professional",
+      "pro": {
+        "name": "Pro",
         "price": "99 000",
         "period": "so'm / oy",
         "description": "Ko'proq kuch va moslashuvchanlikni talab qiluvchi o'sayotgan biznes uchun.",
@@ -169,23 +169,7 @@
           "export": "Hisobotlarni eksport qilish",
           "api": "API ga kirish"
         },
-        "cta": "Bepul sinov"
-      },
-      "enterprise": {
-        "name": "Korporativ",
-        "price": "249 000",
-        "period": "so'm / oy",
-        "description": "Kengaytirilgan ehtiyojlar va bir nechta joylarga ega yirik bizneslar uchun.",
-        "features": {
-          "everything": "Professional rejadagi hammasi",
-          "workspaces": "Cheksiz ish maydonlari",
-          "users": "Cheksiz foydalanuvchilar",
-          "integrations": "Maxsus integratsiyalar",
-          "support": "Maxsus qo'llab-quvvatlash",
-          "onPremise": "Mahalliy joylashtirish",
-          "sla": "SLA kafolati"
-        },
-        "cta": "Sotuvlar bilan bog'lanish"
+        "cta": "Pro olish"
       }
     },
     "about": {
@@ -486,7 +470,7 @@
     "addClient": "Mijoz qo'shish",
     "editClient": "Mijozni tahrirlash",
     "viewDetails": "Mijoz tafsilotlarini ko'rish",
-    "searchPlaceholder": "Ism, telefon yoki Telegram bo'yicha qidirish...",
+    "searchPlaceholder": "Ism, telefon yoki manzil bo'yicha qidirish...",
     "withDebt": "Qarzli",
     "noClients": "Mijozlar hali yo'q",
     "noClientsDesc": "Buyurtmalarni kuzatish uchun birinchi mijozni qo'shing",
@@ -502,8 +486,6 @@
     "namePlaceholder": "Masalan, Jonning restorani",
     "phoneLabel": "Telefon raqami",
     "phonePlaceholder": "+998 90 123 4567",
-    "telegramLabel": "Telegram foydalanuvchi nomi",
-    "telegramPlaceholder": "foydalanuvchi nomi (@ siz)",
     "addressLabel": "Manzil",
     "addressPlaceholder": "Yetkazib berish manzili",
     "notesLabel": "Izohlar",
@@ -698,11 +680,16 @@
     "planBasic": "Asosiy",
     "planPro": "Pro",
     "planLabel": "Reja",
-    "upgrade": "Pro rejaga o'tish (Tez kunda)",
+    "upgrade": "Pro rejaga o'tish",
+    "upgradeNow": "Hozir yangilash",
+    "upgrading": "Ishlanmoqda...",
+    "upgradeSuccess": "Siz endi Pro rejada!",
+    "purchaseError": "To'lov amalga oshmadi. Qayta urinib ko'ring.",
+    "noOfferings": "To'lov sozlamasi davom etmoqda. Keyinroq urinib ko'ring.",
+    "tabSubscription": "Obuna",
     "featureProducts": "Cheksiz mahsulotlar",
     "featureClients": "Cheksiz mijozlar",
     "featureStock": "Ombor boshqaruvi",
-    "featureTelegram": "Telegram bot integratsiyasi",
     "featureReports": "Kengaytirilgan hisobotlar",
     "yourProfile": "Sizning profilingiz",
     "displayNameLabel": "Ko'rsatma nomi",

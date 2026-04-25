@@ -19,7 +19,10 @@ import {
   Check,
   X,
   LogOut,
+  CreditCard,
+  Zap,
 } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   Button,
   Card,
@@ -32,7 +35,7 @@ import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores";
 
-type TabType = "business" | "profile" | "team";
+type TabType = "business" | "profile" | "team" | "subscription";
 
 interface TenantMember {
   id: string;
@@ -95,6 +98,17 @@ export function SettingsPage() {
     null,
   );
   const [isRemoving, setIsRemoving] = useState(false);
+
+  // Subscription
+  const {
+    offerings,
+    isPro,
+    isLoading: isLoadingSub,
+    purchasePro,
+  } = useSubscription();
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   // Fetch tenant details
   const fetchTenantDetails = useCallback(async () => {
@@ -277,10 +291,27 @@ export function SettingsPage() {
   // Check if current user is admin
   const isAdmin = currentTenant?.role === "admin";
 
+  const handleUpgrade = async () => {
+    setPurchaseError(null);
+    setIsPurchasing(true);
+    try {
+      await purchasePro();
+      setIsUpgradeModalOpen(false);
+      toast.success(t("settings.upgradeSuccess"));
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : t("settings.purchaseError");
+      setPurchaseError(msg);
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
   const tabs: { id: TabType; label: string; icon: typeof Building2 }[] = [
     { id: "business", label: t("settings.tabBusiness"), icon: Building2 },
     { id: "profile", label: t("settings.tabProfile"), icon: User },
     { id: "team", label: t("settings.tabTeam"), icon: Users },
+    { id: "subscription", label: t("settings.tabSubscription"), icon: CreditCard },
   ];
 
   return (
@@ -386,7 +417,8 @@ export function SettingsPage() {
                     {t("settings.currentPlan")}
                   </p>
                   <p className="text-sm text-surface-500 dark:text-surface-400 capitalize">
-                    {tenantDetails?.subscriptionTier || t("settings.planBasic")} {t("settings.planLabel")}
+                    {tenantDetails?.subscriptionTier || t("settings.planBasic")}{" "}
+                    {t("settings.planLabel")}
                   </p>
                 </div>
                 <div
@@ -396,7 +428,9 @@ export function SettingsPage() {
                       : "bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-300"
                   }`}
                 >
-                  {tenantDetails?.subscriptionTier === "pro" ? t("settings.planPro") : t("settings.planBasic")}
+                  {tenantDetails?.subscriptionTier === "pro"
+                    ? t("settings.planPro")
+                    : t("settings.planBasic")}
                 </div>
               </div>
 
@@ -414,27 +448,15 @@ export function SettingsPage() {
                   {t("settings.featureStock")}
                 </div>
                 {tenantDetails?.subscriptionTier === "pro" ? (
-                  <>
-                    <div className="flex items-center gap-2 text-surface-300">
-                      <Check className="h-4 w-4 text-green-400" />
-                      {t("settings.featureTelegram")}
-                    </div>
-                    <div className="flex items-center gap-2 text-surface-300">
-                      <Check className="h-4 w-4 text-green-400" />
-                      {t("settings.featureReports")}
-                    </div>
-                  </>
+                  <div className="flex items-center gap-2 text-surface-300">
+                    <Check className="h-4 w-4 text-green-400" />
+                    {t("settings.featureReports")}
+                  </div>
                 ) : (
-                  <>
-                    <div className="flex items-center gap-2 text-surface-400 dark:text-surface-500">
-                      <X className="h-4 w-4" />
-                      {t("settings.featureTelegram")}
-                    </div>
-                    <div className="flex items-center gap-2 text-surface-400 dark:text-surface-500">
-                      <X className="h-4 w-4" />
-                      {t("settings.featureReports")}
-                    </div>
-                  </>
+                  <div className="flex items-center gap-2 text-surface-400 dark:text-surface-500">
+                    <X className="h-4 w-4" />
+                    {t("settings.featureReports")}
+                  </div>
                 )}
               </div>
 
@@ -507,7 +529,9 @@ export function SettingsPage() {
                     {t("settings.yourRole")}
                   </p>
                   <p className="text-sm text-surface-500 dark:text-surface-400">
-                    {t("settings.inWorkspace", { workspace: currentTenant?.name })}
+                    {t("settings.inWorkspace", {
+                      workspace: currentTenant?.name,
+                    })}
                   </p>
                 </div>
                 <div
@@ -623,7 +647,15 @@ export function SettingsPage() {
                             {member.email}
                           </p>
                           <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">
-                            {t("settings.joined", { date: new Date(member.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) })}
+                            {t("settings.joined", {
+                              date: new Date(
+                                member.joinedAt,
+                              ).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }),
+                            })}
                           </p>
                         </div>
                       </div>
@@ -642,8 +674,12 @@ export function SettingsPage() {
                             className="select-field py-1.5 text-sm"
                             aria-label="Team member role"
                           >
-                            <option value="admin">{t("settings.roleAdmin")}</option>
-                            <option value="staff">{t("settings.roleStaff")}</option>
+                            <option value="admin">
+                              {t("settings.roleAdmin")}
+                            </option>
+                            <option value="staff">
+                              {t("settings.roleStaff")}
+                            </option>
                           </select>
                         ) : (
                           <div
@@ -658,7 +694,9 @@ export function SettingsPage() {
                             ) : (
                               <Shield className="h-3.5 w-3.5" />
                             )}
-                            {member.role === "admin" ? t("settings.roleAdmin") : t("settings.roleStaff")}
+                            {member.role === "admin"
+                              ? t("settings.roleAdmin")
+                              : t("settings.roleStaff")}
                           </div>
                         )}
 
@@ -685,6 +723,156 @@ export function SettingsPage() {
               {t("settings.adminOnlyTeam")}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Subscription Tab */}
+      {activeTab === "subscription" && (
+        <div className="max-w-2xl space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("settings.subscription")}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {isLoadingSub ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 text-primary-500 animate-spin" />
+                </div>
+              ) : (
+                <>
+                  {/* Current Plan Badge */}
+                  <div className="flex items-center justify-between p-4 bg-surface-50 dark:bg-surface-800/50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isPro ? "bg-primary-500/20" : "bg-surface-200 dark:bg-surface-700"}`}>
+                        {isPro ? (
+                          <Zap className="h-5 w-5 text-primary-500" />
+                        ) : (
+                          <CreditCard className="h-5 w-5 text-surface-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-surface-900 dark:text-surface-100">
+                          {isPro ? t("settings.planPro") : t("settings.planBasic")} {t("settings.planLabel")}
+                        </p>
+                        <p className="text-sm text-surface-500 dark:text-surface-400">
+                          {isPro ? "99,000 UZS / mo" : t("settings.currentPlan")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${isPro ? "bg-primary-500/20 text-primary-600 dark:text-primary-400" : "bg-surface-200 dark:bg-surface-700 text-surface-600 dark:text-surface-300"}`}>
+                      {isPro ? "Pro" : "Basic"}
+                    </div>
+                  </div>
+
+                  {/* Feature list */}
+                  <div className="space-y-2">
+                    {[
+                      { key: "featureProducts", pro: false },
+                      { key: "featureClients", pro: false },
+                      { key: "featureStock", pro: false },
+                      { key: "featureReports", pro: true },
+                    ].map(({ key, pro }) => (
+                      <div key={key} className="flex items-center gap-3 text-sm">
+                        {!pro || isPro ? (
+                          <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        ) : (
+                          <X className="h-4 w-4 text-surface-400 flex-shrink-0" />
+                        )}
+                        <span className={!pro || isPro ? "text-surface-700 dark:text-surface-300" : "text-surface-400 dark:text-surface-500"}>
+                          {t(`settings.${key}`)}
+                        </span>
+                        {pro && !isPro && (
+                          <span className="ml-auto text-xs bg-primary-500/10 text-primary-600 dark:text-primary-400 px-2 py-0.5 rounded-full">Pro</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Upgrade button */}
+                  {!isPro && (
+                    <div className="pt-2">
+                      {offerings?.current ? (
+                        <Button
+                          className="w-full"
+                          onClick={() => {
+                            setPurchaseError(null);
+                            setIsUpgradeModalOpen(true);
+                          }}
+                        >
+                          <Zap className="h-4 w-4 mr-2" />
+                          {t("settings.upgrade")}
+                        </Button>
+                      ) : (
+                        <div className="text-sm text-surface-400 dark:text-surface-500 text-center py-2">
+                          {t("settings.noOfferings")}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Upgrade Confirmation Modal */}
+      {isUpgradeModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary-500" />
+                {t("settings.upgrade")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-primary-50 dark:bg-primary-500/10 rounded-xl">
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-50">
+                  99,000 UZS
+                  <span className="text-sm font-normal text-surface-500 ml-1">/ mo</span>
+                </p>
+                <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
+                  {t("settings.planPro")} — unlimited products, advanced reports, API access
+                </p>
+              </div>
+
+              {purchaseError && (
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  {purchaseError}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => setIsUpgradeModalOpen(false)}
+                  disabled={isPurchasing}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleUpgrade}
+                  disabled={isPurchasing}
+                >
+                  {isPurchasing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      {t("settings.upgrading")}
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-2" />
+                      {t("settings.upgradeNow")}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -770,7 +958,9 @@ export function SettingsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle className="text-red-400">{t("settings.removeMemberTitle")}</CardTitle>
+              <CardTitle className="text-red-400">
+                {t("settings.removeMemberTitle")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 p-4 bg-surface-50 dark:bg-surface-800/50 rounded-lg">

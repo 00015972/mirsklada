@@ -141,8 +141,8 @@
       "titleHighlight": "pricing",
       "subtitle": "Choose the plan that fits your business. Start free, upgrade when you're ready.",
       "mostPopular": "Most Popular",
-      "starter": {
-        "name": "Starter",
+      "basic": {
+        "name": "Basic",
         "price": "Free",
         "period": "",
         "description": "Perfect for getting started with basic inventory management.",
@@ -155,8 +155,8 @@
         },
         "cta": "Start Free"
       },
-      "professional": {
-        "name": "Professional",
+      "pro": {
+        "name": "Pro",
         "price": "99,000",
         "period": "UZS / mo",
         "description": "For growing businesses that need more power and flexibility.",
@@ -169,23 +169,7 @@
           "export": "Export reports",
           "api": "API access"
         },
-        "cta": "Start Free Trial"
-      },
-      "enterprise": {
-        "name": "Enterprise",
-        "price": "249,000",
-        "period": "UZS / mo",
-        "description": "For larger businesses with advanced needs and multiple locations.",
-        "features": {
-          "everything": "Everything in Professional",
-          "workspaces": "Unlimited workspaces",
-          "users": "Unlimited users",
-          "integrations": "Custom integrations",
-          "support": "Dedicated support",
-          "onPremise": "On-premise option",
-          "sla": "SLA guarantee"
-        },
-        "cta": "Contact Sales"
+        "cta": "Get Pro"
       }
     },
     "about": {
@@ -486,7 +470,7 @@
     "addClient": "Add Client",
     "editClient": "Edit Client",
     "viewDetails": "View client details",
-    "searchPlaceholder": "Search by name, phone, or Telegram...",
+    "searchPlaceholder": "Search by name, phone, or address...",
     "withDebt": "With Debt",
     "noClients": "No clients yet",
     "noClientsDesc": "Add your first client to start tracking orders",
@@ -502,8 +486,6 @@
     "namePlaceholder": "e.g., John's Restaurant",
     "phoneLabel": "Phone Number",
     "phonePlaceholder": "+998 90 123 4567",
-    "telegramLabel": "Telegram Username",
-    "telegramPlaceholder": "username (without @)",
     "addressLabel": "Address",
     "addressPlaceholder": "Delivery address",
     "notesLabel": "Notes",
@@ -698,11 +680,16 @@
     "planBasic": "Basic",
     "planPro": "Pro",
     "planLabel": "Plan",
-    "upgrade": "Upgrade to Pro (Coming Soon)",
+    "upgrade": "Upgrade to Pro",
+    "upgradeNow": "Upgrade Now",
+    "upgrading": "Processing...",
+    "upgradeSuccess": "You're now on the Pro plan!",
+    "purchaseError": "Purchase failed. Please try again.",
+    "noOfferings": "Payment setup in progress. Please try again later.",
+    "tabSubscription": "Subscription",
     "featureProducts": "Unlimited products",
     "featureClients": "Unlimited clients",
     "featureStock": "Stock management",
-    "featureTelegram": "Telegram bot integration",
     "featureReports": "Advanced reports",
     "yourProfile": "Your Profile",
     "displayNameLabel": "Display Name",

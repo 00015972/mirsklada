@@ -4,6 +4,7 @@
  */
 import { Router, Request, Response } from "express";
 import { prisma, Prisma } from "@mirsklada/database";
+import { requireFeature } from "../../middleware/subscription.middleware";
 
 const router = Router();
 
@@ -215,6 +216,7 @@ router.get("/metrics", async (req: Request, res: Response): Promise<void> => {
  */
 router.get(
   "/revenue-chart",
+  requireFeature("reports_advanced"),
   async (req: Request, res: Response): Promise<void> => {
     const tenantId = req.tenantId!;
     const period = (req.query.period as string) || "month";
@@ -267,6 +269,7 @@ router.get(
  */
 router.get(
   "/orders-by-status",
+  requireFeature("reports_advanced"),
   async (req: Request, res: Response): Promise<void> => {
     const tenantId = req.tenantId!;
     const period = (req.query.period as string) || "month";
@@ -301,6 +304,7 @@ router.get(
  */
 router.get(
   "/payment-status",
+  requireFeature("reports_advanced"),
   async (req: Request, res: Response): Promise<void> => {
     const tenantId = req.tenantId!;
     const period = (req.query.period as string) || "month";
@@ -338,6 +342,7 @@ router.get(
  */
 router.get(
   "/top-products",
+  requireFeature("reports_advanced"),
   async (req: Request, res: Response): Promise<void> => {
     const tenantId = req.tenantId!;
     const period = (req.query.period as string) || "month";
@@ -391,6 +396,7 @@ router.get(
  */
 router.get(
   "/top-clients",
+  requireFeature("reports_advanced"),
   async (req: Request, res: Response): Promise<void> => {
     const tenantId = req.tenantId!;
     const period = (req.query.period as string) || "month";

@@ -4,6 +4,7 @@
  */
 import { prisma } from "@mirsklada/database";
 import { AppError } from "../../utils/app-error";
+import { TIER_LIMITS } from "@mirsklada/shared";
 import type {
   CreateTenantInput,
   UpdateTenantInput,
@@ -98,6 +99,27 @@ class TenantService {
    * Create a new tenant and assign the creator as admin
    */
   async create(userId: string, input: CreateTenantInput) {
+    // Enforce workspace limit
+    const adminMemberships = await prisma.tenantMember.findMany({
+      where: { userId, role: "admin", status: "active" },
+      include: { tenant: { select: { subscriptionTier: true, status: true } } },
+    });
+    const activeAdminTenants = adminMemberships.filter(
+      (m) => m.tenant.status === "active",
+    );
+    const hasProTenant = activeAdminTenants.some(
+      (m) => m.tenant.subscriptionTier === "pro",
+    );
+    const maxWorkspaces = hasProTenant
+      ? TIER_LIMITS.pro.maxWorkspaces
+      : TIER_LIMITS.basic.maxWorkspaces;
+    if (activeAdminTenants.length >= maxWorkspaces) {
+      throw AppError.forbidden(
+        `You have reached the maximum number of workspaces (${maxWorkspaces}). Upgrade to Pro to create more.`,
+        "LIMIT_EXCEEDED",
+      );
+    }
+
     // Generate slug from name if not provided
     const baseSlug = input.slug || generateSlug(input.name);
     const slug = await ensureUniqueSlug(baseSlug);
@@ -258,6 +280,23 @@ class TenantService {
 
     if (!adminMembership) {
       throw new AppError("Admin access required", 403, "FORBIDDEN");
+    }
+
+    // Enforce member limit based on tenant's subscription tier
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { subscriptionTier: true },
+    });
+    const tier = (tenant?.subscriptionTier ?? "basic") as "basic" | "pro";
+    const maxMembers = TIER_LIMITS[tier].maxMembers;
+    const memberCount = await prisma.tenantMember.count({
+      where: { tenantId, status: "active" },
+    });
+    if (memberCount >= maxMembers) {
+      throw AppError.forbidden(
+        `${tier === "basic" ? "Basic" : "Pro"} plan allows up to ${maxMembers} user(s). Upgrade to ${tier === "basic" ? "Pro" : "a higher plan"} to invite more members.`,
+        "LIMIT_EXCEEDED",
+      );
     }
 
     // Find or validate the user by email

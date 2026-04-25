@@ -94,26 +94,7 @@
 
 ## Phase 2: Integrations (March 2026)
 
-### 2.1 Telegram Admin Bot
-
-- [ ] Bot setup with grammY
-- [ ] `/start` - Welcome & registration link
-- [ ] `/stock` - View current stock levels
-- [ ] `/add` - Quick stock entry conversation
-- [ ] `/upload` - Photo upload flow
-- [ ] Low stock notifications
-- [ ] Bot-to-API authentication
-
-### 2.2 Telegram Client Bot
-
-- [ ] Bot setup with grammY
-- [ ] Client registration via phone
-- [ ] `/menu` - View products & prices
-- [ ] `/orders` - View order history
-- [ ] `/debt` - Check debt balance
-- [ ] Order status notifications
-
-### 2.3 Google Drive Integration
+### 2.1 Google Drive Integration
 
 - [ ] OAuth consent screen setup
 - [ ] Token encryption (AES-256-GCM)
@@ -122,7 +103,7 @@
 - [ ] Drive file reference storage
 - [ ] Connection status UI
 
-### 2.4 Subscription System
+### 2.2 Subscription System
 
 - [ ] Tier configuration (Basic/Pro)
 - [ ] Feature gating middleware
@@ -132,7 +113,7 @@
 
 ### 🎯 Milestone: Integrations Complete (End of March)
 
-> Demonstrate: Both Telegram bots, Google Drive photo backup
+> Demonstrate: Google Drive photo backup
 
 ---
 

@@ -17,7 +17,6 @@
  * - PORT: HTTP server port (default: 3000)
  * - DATABASE_URL: PostgreSQL connection string
  * - SUPABASE_*: Supabase authentication configuration
- * - TELEGRAM_*: Telegram bot tokens
  * - RATE_LIMIT_*: Rate limiting configuration
  * - CORS_ORIGIN: Allowed CORS origins (comma-separated)
  */
@@ -100,25 +99,6 @@ const envSchema = z.object({
   ENCRYPTION_KEY: z.string().min(32).optional(),
 
   // ═══════════════════════════════════════════════════════════════════
-  // Telegram Bot Configuration
-  // ═══════════════════════════════════════════════════════════════════
-
-  /**
-   * Admin bot token from BotFather
-   */
-  TELEGRAM_ADMIN_BOT_TOKEN: z.string().optional(),
-
-  /**
-   * Client bot token from BotFather
-   */
-  TELEGRAM_CLIENT_BOT_TOKEN: z.string().optional(),
-
-  /**
-   * Shared secret for bot-to-API authentication
-   */
-  BOT_API_SECRET: z.string().optional(),
-
-  // ═══════════════════════════════════════════════════════════════════
   // Google Drive Integration
   // ═══════════════════════════════════════════════════════════════════
 
@@ -131,6 +111,15 @@ const envSchema = z.object({
    * Google OAuth client secret
    */
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  // ═══════════════════════════════════════════════════════════════════
+  // RevenueCat Billing Webhooks
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Shared secret used to authenticate RevenueCat webhook requests.
+   */
+  REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
 
   // ═══════════════════════════════════════════════════════════════════
   // Rate Limiting

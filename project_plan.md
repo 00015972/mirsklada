@@ -1,12 +1,13 @@
 # 🏗️ MIRSKLADA - Project Master Plan
 
 > **Multi-tenant SaaS Inventory Management System for Uzbekistan's Wholesale Food Market**
-> 
+>
 > Student: Mirsodiq Akramov | Supervisor: Dr Pooja | WIUT Level 6 FYP
 
 ---
 
 ## 📋 Table of Contents
+
 - [Project Decisions Log](#-project-decisions-log)
 - [Architecture Overview](#-architecture-overview)
 - [Tech Stack](#-tech-stack)
@@ -22,42 +23,39 @@
 ## ✅ Project Decisions Log
 
 ### Authentication & Multi-tenancy
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Tenancy Model | Single-domain with Tenant Switcher (`app.mirsklada.uz`) | Simpler DNS, easier to demo |
-| Auth Provider | Supabase Auth or Clerk | Saves 2-3 weeks, handles OAuth securely |
-| RBAC Roles | SuperAdmin, Admin, Staff | Required complexity for Level 6 |
-| Data Isolation | PostgreSQL Row-Level Security (RLS) | Native, secure, academically impressive |
+
+| Decision       | Choice                                                  | Rationale                               |
+| -------------- | ------------------------------------------------------- | --------------------------------------- |
+| Tenancy Model  | Single-domain with Tenant Switcher (`app.mirsklada.uz`) | Simpler DNS, easier to demo             |
+| Auth Provider  | Supabase Auth or Clerk                                  | Saves 2-3 weeks, handles OAuth securely |
+| RBAC Roles     | SuperAdmin, Admin, Staff                                | Required complexity for Level 6         |
+| Data Isolation | PostgreSQL Row-Level Security (RLS)                     | Native, secure, academically impressive |
 
 ### Subscription & Monetization
-| Tier | Features | Gating Type |
-|------|----------|-------------|
-| **Basic** | Manual accounting, Stock management, Debt tracking | Soft (usage limits) |
-| **Pro** | + Telegram Bots + Yandex Logistics + Google Drive Backup | Hard (feature locked) |
 
-### Telegram Bot Strategy
-| Bot | Purpose | Priority |
-|-----|---------|----------|
-| Admin Bot | Stock updates, photo uploads → Google Drive | MVP |
-| Client Bot | View orders, check debt balance | MVP |
-| Client Bot | Partial payments via bot | Phase 2 |
+| Tier      | Features                                           | Gating Type           |
+| --------- | -------------------------------------------------- | --------------------- |
+| **Basic** | Manual accounting, Stock management, Debt tracking | Soft (usage limits)   |
+| **Pro**   | + Yandex Logistics + Google Drive Backup           | Hard (feature locked) |
 
 ### Infrastructure
-| Area | Decision | Notes |
-|------|----------|-------|
-| Offline Support | Optimistic UI only (no full PWA) | Fast feel on slow 4G |
-| Hosting | Render or Railway (International Cloud) | As per PID |
-| Containerization | Docker | WIUT Technical Sophistication criteria |
-| Monorepo | Turborepo | Clean separation for academic presentation |
+
+| Area             | Decision                                | Notes                                      |
+| ---------------- | --------------------------------------- | ------------------------------------------ |
+| Offline Support  | Optimistic UI only (no full PWA)        | Fast feel on slow 4G                       |
+| Hosting          | Render or Railway (International Cloud) | As per PID                                 |
+| Containerization | Docker                                  | WIUT Technical Sophistication criteria     |
+| Monorepo         | Turborepo                               | Clean separation for academic presentation |
 
 ---
 
 ## 🏛️ Architecture Overview
+
 ┌─────────────────────────────────────────────────────────────────┐
 │ PRESENTATION TIER │
 ├─────────────────┬─────────────────┬─────────────────────────────┤
-│ React Web App │ Admin Telegram │ Client Telegram Bot │
-│ (Tailwind/i18n)│ Bot (grammY) │ (grammY) │
+│ React Web App │ Admin Dashboard │ Client Browser │
+│ (Tailwind/i18n)│ (Web) │ (Responsive) │
 └────────┬────────┴────────┬────────┴─────────────┬───────────────┘
 │ │ │
 ▼ ▼ ▼
@@ -78,12 +76,12 @@
 │ (RLS Enabled) │ (Sessions/Cache)│ (Google Drive, Yandex) │
 └──────────────────┴──────────────────┴───────────────────────────┘
 
-
 ---
 
 ## 🛠️ Tech Stack
 
 ### Core
+
 - [ ] **Runtime**: Node.js v20 LTS
 - [ ] **Backend Framework**: Express.js
 - [ ] **Frontend Framework**: React 18 + Vite
@@ -93,6 +91,7 @@
 - [ ] **Auth**: Supabase Auth OR Clerk (TBD after POC)
 
 ### Tooling
+
 - [ ] **Monorepo**: Turborepo
 - [ ] **Language**: TypeScript (strict mode)
 - [ ] **Validation**: Zod (shared schemas between FE/BE)
@@ -101,7 +100,7 @@
 - [ ] **Containerization**: Docker + Docker Compose
 
 ### Integrations
-- [ ] **Telegram Bots**: grammY framework
+
 - [ ] **i18n**: i18next (EN, RU, UZ)
 - [ ] **Payments (Global)**: Dodo Payments
 - [ ] **Payments (Local)**: Click / Payme APIs
@@ -111,6 +110,7 @@
 ---
 
 ## 📁 Folder Structure
+
 mirsklada/
 ├── apps/
 │ ├── api/ # Express Backend
@@ -128,7 +128,6 @@ mirsklada/
 │ │ │ │ └── reports/
 │ │ │ ├── services/ # External API integrations
 │ │ │ │ ├── google-drive/
-│ │ │ │ ├── telegram/
 │ │ │ │ ├── yandex/
 │ │ │ │ └── payments/
 │ │ │ ├── utils/ # Helpers, weight calculations
@@ -161,24 +160,6 @@ mirsklada/
 │ │ ├── Dockerfile
 │ │ └── package.json
 │ │
-│ ├── bot-admin/ # Admin Telegram Bot
-│ │ ├── src/
-│ │ │ ├── commands/
-│ │ │ ├── conversations/
-│ │ │ ├── middleware/
-│ │ │ └── bot.ts
-│ │ ├── Dockerfile
-│ │ └── package.json
-│ │
-│ └── bot-client/ # Client Telegram Bot
-│ ├── src/
-│ │ ├── commands/
-│ │ ├── conversations/
-│ │ ├── middleware/
-│ │ └── bot.ts
-│ ├── Dockerfile
-│ └── package.json
-│
 ├── packages/
 │ ├── shared/ # Shared TypeScript types & Zod schemas
 │ │ ├── src/
@@ -215,12 +196,12 @@ mirsklada/
 ├── LICENSE
 └── README.md
 
-
 ---
 
 ## 🗄️ Database Schema (Conceptual)
 
 ### Core Entities
+
 ┌─────────────────────────────────────────────────────────────────┐
 │ MULTI-TENANCY │
 ├─────────────────────────────────────────────────────────────────┤
@@ -242,7 +223,7 @@ mirsklada/
 ┌─────────────────────────────────────────────────────────────────┐
 │ CLIENTS & PRICING │
 ├─────────────────────────────────────────────────────────────────┤
-│ clients │ id, tenant_id, name, phone, telegram_id, │
+│ clients │ id, tenant_id, name, phone, │
 │ │ address, debt_balance, price_matrix_id │
 │ price_matrices │ id, tenant_id, name, description │
 │ price_matrix_items│ id, matrix_id, product_id, custom_price_kg │
@@ -277,8 +258,8 @@ mirsklada/
 │ │ status, current_period_end │
 └─────────────────────────────────────────────────────────────────┘
 
-
 ### Row-Level Security Policy Example
+
 ```sql
 -- Enable RLS on products table
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -322,3 +303,4 @@ Google Drive OAuth Token Handling
                     │
                     ▼
 8. Refresh token if expired, re-encrypt, update DB
+```

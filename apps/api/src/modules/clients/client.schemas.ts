@@ -14,7 +14,6 @@ export const CreateClientSchema = z.object({
     .max(20)
     .regex(/^[\d\s+()-]+$/, "Invalid phone number format")
     .optional(),
-  telegramId: z.string().max(50).optional(),
   address: z.string().max(500).optional(),
   notes: z.string().max(1000).optional(),
 });
@@ -27,7 +26,6 @@ export const UpdateClientSchema = z.object({
     .regex(/^[\d\s+()-]+$/, "Invalid phone number format")
     .nullable()
     .optional(),
-  telegramId: z.string().max(50).nullable().optional(),
   address: z.string().max(500).nullable().optional(),
   notes: z.string().max(1000).nullable().optional(),
   isActive: z.boolean().optional(),

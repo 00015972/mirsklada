@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(pnpm --filter @mirsklada/api test)",
+      "Bash(pnpm --filter @mirsklada/web exec tsc --noEmit)"
     ]
   }
 }

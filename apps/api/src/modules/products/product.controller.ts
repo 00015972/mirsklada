@@ -58,7 +58,11 @@ class ProductController {
    * POST /products
    */
   async create(req: Request, res: Response) {
-    const product = await productService.create(req.tenantId!, req.body);
+    const product = await productService.create(
+      req.tenantId!,
+      req.body,
+      req.subscriptionTier ?? "basic",
+    );
     res.status(201).json({
       success: true,
       data: product,

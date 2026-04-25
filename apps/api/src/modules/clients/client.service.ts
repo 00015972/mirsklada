@@ -8,7 +8,6 @@ import { AppError } from "../../utils/app-error";
 export interface CreateClientInput {
   name: string;
   phone?: string;
-  telegramId?: string;
   address?: string;
   notes?: string;
 }
@@ -16,7 +15,6 @@ export interface CreateClientInput {
 export interface UpdateClientInput {
   name?: string;
   phone?: string | null;
-  telegramId?: string | null;
   address?: string | null;
   notes?: string | null;
   isActive?: boolean;
@@ -108,24 +106,11 @@ class ClientService {
       }
     }
 
-    if (data.telegramId) {
-      const existingTelegram = await prisma.client.findFirst({
-        where: { tenantId, telegramId: data.telegramId },
-      });
-      if (existingTelegram) {
-        throw AppError.conflict(
-          "Client with this Telegram ID already exists",
-          "TELEGRAM_EXISTS",
-        );
-      }
-    }
-
     return prisma.client.create({
       data: {
         tenantId,
         name: data.name,
         phone: data.phone,
-        telegramId: data.telegramId,
         address: data.address,
         notes: data.notes,
         currentDebt: 0,
@@ -148,24 +133,11 @@ class ClientService {
       }
     }
 
-    if (data.telegramId) {
-      const existingTelegram = await prisma.client.findFirst({
-        where: { tenantId, telegramId: data.telegramId, id: { not: clientId } },
-      });
-      if (existingTelegram) {
-        throw AppError.conflict(
-          "Client with this Telegram ID already exists",
-          "TELEGRAM_EXISTS",
-        );
-      }
-    }
-
     return prisma.client.update({
       where: { id: clientId },
       data: {
         name: data.name,
         phone: data.phone,
-        telegramId: data.telegramId,
         address: data.address,
         notes: data.notes,
         isActive: data.isActive,
