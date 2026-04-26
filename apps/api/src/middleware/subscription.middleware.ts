@@ -14,8 +14,7 @@ export type ProFeature =
   | "yandex_delivery"
   | "reports_advanced"
   | "reports_export"
-  | "price_matrices"
-  | "api_access";
+  | "price_matrices";
 
 const BASIC_FEATURES = new Set<string>(TIER_LIMITS.basic.features);
 const PRO_FEATURES = new Set<string>(

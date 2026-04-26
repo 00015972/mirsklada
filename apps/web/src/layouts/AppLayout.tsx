@@ -97,10 +97,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   // Find current tenant object from ID
   const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
-  const navigationItems = navigation.filter(
-    (item) =>
-      item.key !== "reports" || currentTenant?.subscriptionTier === "pro",
-  );
+  const navigationItems = navigation;
 
   /**
    * Workspace Invitation Detection Effect

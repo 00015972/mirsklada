@@ -422,7 +422,6 @@ const planConfig = [
       "support",
       "users",
       "export",
-      "api",
     ],
     popular: true,
   },

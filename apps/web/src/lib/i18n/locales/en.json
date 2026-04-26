@@ -147,7 +147,7 @@
         "period": "",
         "description": "Perfect for getting started with basic inventory management.",
         "features": {
-          "products": "Up to 100 products",
+          "products": "Up to 20 products",
           "workspace": "1 workspace",
           "reports": "Basic reports",
           "support": "Email support",
@@ -166,8 +166,7 @@
           "analytics": "Advanced analytics",
           "support": "Priority support",
           "users": "Up to 5 users",
-          "export": "Export reports",
-          "api": "API access"
+          "export": "Export reports"
         },
         "cta": "Get Pro"
       }
@@ -799,6 +798,14 @@
       "totalAmount": "Total Amount",
       "percentage": "Percentage",
       "method": "Method"
+    },
+    "proFeatures": "Unlock Advanced Reports with Pro",
+    "proFeature": {
+      "inventory": "Inventory analytics by category",
+      "clients": "Client spending & debt breakdown",
+      "orders": "Orders by status analysis",
+      "payments": "Payment methods breakdown",
+      "export": "Export all reports to CSV"
     }
   }
 }

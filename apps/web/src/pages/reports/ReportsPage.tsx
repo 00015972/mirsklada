@@ -20,7 +20,7 @@ import {
   ChartOptions,
 } from "chart.js";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
-import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   RefreshCw,
   Download,
@@ -38,6 +38,8 @@ import {
   PieChart,
   ArrowUpRight,
   ArrowDownRight,
+  Lock,
+  Zap,
 } from "lucide-react";
 import {
   Card,
@@ -184,6 +186,7 @@ export function ReportsPage() {
   const { t } = useTranslation();
   const { theme } = useThemeStore();
   const { tenants, currentTenantId } = useAuthStore();
+  const navigate = useNavigate();
   const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
   const isPro = currentTenant?.subscriptionTier === "pro";
   const isDark = theme === "dark";
@@ -228,7 +231,6 @@ export function ReportsPage() {
 
   const fetchReportsData = useCallback(
     async (showRefresh = false) => {
-      if (!isPro) return;
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
 
@@ -266,6 +268,8 @@ export function ReportsPage() {
             }),
           ),
         );
+
+        if (!isPro) return;
 
         // Fetch category-based inventory report
         try {
@@ -591,14 +595,189 @@ export function ReportsPage() {
     cutout: "60%",
   };
 
-  if (!isPro) {
-    return <Navigate to="/dashboard/settings" replace />;
-  }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 text-primary-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isPro) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+              {t("reports.title")}
+            </h1>
+            <p className="text-surface-500 dark:text-surface-400 mt-1">
+              {t("reports.subtitle")}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => fetchReportsData(true)}
+            disabled={isRefreshing}
+          >
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            {t("reports.refresh")}
+          </Button>
+        </div>
+
+        {/* Period filter */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-surface-500" />
+              <span className="text-sm text-surface-600 dark:text-surface-400">
+                {t("reports.period")}:
+              </span>
+              <div className="flex rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden">
+                {periodOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setPeriod(opt.value as Period)}
+                    className={`px-3 py-1.5 text-sm transition-colors ${
+                      period === opt.value
+                        ? "bg-primary-600 text-white"
+                        : "bg-surface-50 dark:bg-surface-800 text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Summary Metrics */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-blue-400" />
+                </div>
+                {summaryMetrics && summaryMetrics.revenueChange !== 0 && (
+                  <div className={`flex items-center text-sm ${summaryMetrics.revenueChange > 0 ? "text-green-400" : "text-red-400"}`}>
+                    {summaryMetrics.revenueChange > 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                    {Math.abs(summaryMetrics.revenueChange)}%
+                  </div>
+                )}
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-surface-500 dark:text-surface-400">{t("reports.metrics.totalRevenue")}</p>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+                  {summaryMetrics ? formatPrice(summaryMetrics.totalRevenue) : "-"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <ShoppingCart className="h-6 w-6 text-green-400" />
+                </div>
+                {summaryMetrics && summaryMetrics.ordersChange !== 0 && (
+                  <div className={`flex items-center text-sm ${summaryMetrics.ordersChange > 0 ? "text-green-400" : "text-red-400"}`}>
+                    {summaryMetrics.ordersChange > 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                    {Math.abs(summaryMetrics.ordersChange)}%
+                  </div>
+                )}
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-surface-500 dark:text-surface-400">{t("reports.metrics.totalOrders")}</p>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+                  {summaryMetrics?.totalOrders ?? "-"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="p-2 bg-purple-500/10 rounded-lg w-fit">
+                <Users className="h-6 w-6 text-purple-400" />
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-surface-500 dark:text-surface-400">{t("reports.metrics.activeClients")}</p>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+                  {summaryMetrics?.totalClients ?? "-"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="p-2 bg-amber-500/10 rounded-lg w-fit">
+                <TrendingUp className="h-6 w-6 text-amber-400" />
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-surface-500 dark:text-surface-400">{t("reports.metrics.avgOrderValue")}</p>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+                  {summaryMetrics ? formatPrice(summaryMetrics.averageOrderValue) : "-"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Revenue chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary-500" />
+              {t("reports.charts.revenueTrend")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <Line data={revenueChartData} options={lineChartOptions} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pro upgrade teaser */}
+        <Card className="border border-primary-500/30 bg-primary-500/5">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="h-5 w-5 text-primary-500" />
+                  <h3 className="font-semibold text-surface-900 dark:text-surface-100">
+                    {t("reports.proFeatures")}
+                  </h3>
+                </div>
+                <ul className="space-y-1 text-sm text-surface-600 dark:text-surface-400">
+                  <li>• {t("reports.proFeature.inventory")}</li>
+                  <li>• {t("reports.proFeature.clients")}</li>
+                  <li>• {t("reports.proFeature.orders")}</li>
+                  <li>• {t("reports.proFeature.payments")}</li>
+                  <li>• {t("reports.proFeature.export")}</li>
+                </ul>
+              </div>
+              <Button
+                type="button"
+                className="shrink-0"
+                onClick={() => navigate("/dashboard/settings")}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                {t("settings.upgrade")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

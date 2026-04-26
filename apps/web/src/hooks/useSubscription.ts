@@ -4,6 +4,8 @@ import { Purchases } from "@revenuecat/purchases-js";
 import { useAuthStore } from "@/stores";
 import { configureRevenueCat } from "@/lib/revenueCat";
 
+const TENANT_REFRESH_DELAY_MS = 3000;
+
 export interface UseSubscriptionReturn {
   offerings: Offerings | null;
   customerInfo: CustomerInfo | null;
@@ -15,7 +17,7 @@ export interface UseSubscriptionReturn {
 }
 
 export function useSubscription(): UseSubscriptionReturn {
-  const { user, currentTenantId, tenants } = useAuthStore();
+  const { user, currentTenantId, tenants, refreshTenants } = useAuthStore();
   const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
   const scopedUserId =
     user?.id && currentTenantId ? `${user.id}:${currentTenantId}` : null;
@@ -53,6 +55,10 @@ export function useSubscription(): UseSubscriptionReturn {
     const { customerInfo: updated } =
       await Purchases.getSharedInstance().purchasePackage(pkg);
     setCustomerInfo(updated);
+    // Refresh tenant data after a short delay to allow the webhook to process
+    setTimeout(() => {
+      refreshTenants();
+    }, TENANT_REFRESH_DELAY_MS);
   };
 
   const isPro = currentTenant?.subscriptionTier === "pro";

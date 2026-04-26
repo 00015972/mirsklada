@@ -3,6 +3,7 @@
  * Business logic for clients with debt tracking
  */
 import { prisma, Prisma } from "@mirsklada/database";
+import { TIER_LIMITS } from "@mirsklada/shared";
 import { AppError } from "../../utils/app-error";
 
 export interface CreateClientInput {
@@ -93,7 +94,24 @@ class ClientService {
     return client;
   }
 
-  async create(tenantId: string, data: CreateClientInput) {
+  async create(
+    tenantId: string,
+    data: CreateClientInput,
+    subscriptionTier: "basic" | "pro" = "basic",
+  ) {
+    const limit = TIER_LIMITS[subscriptionTier].maxClients;
+    if (isFinite(limit)) {
+      const count = await prisma.client.count({
+        where: { tenantId, isActive: true },
+      });
+      if (count >= limit) {
+        throw AppError.forbidden(
+          `Basic plan allows up to ${limit} clients. Upgrade to Pro for unlimited clients.`,
+          "LIMIT_EXCEEDED",
+        );
+      }
+    }
+
     if (data.phone) {
       const existingPhone = await prisma.client.findFirst({
         where: { tenantId, phone: data.phone },

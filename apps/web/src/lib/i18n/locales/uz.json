@@ -147,7 +147,7 @@
         "period": "",
         "description": "Asosiy ombor boshqaruvi bilan boshlash uchun mukammal.",
         "features": {
-          "products": "100 tagacha mahsulot",
+          "products": "20 tagacha mahsulot",
           "workspace": "1 ish maydoni",
           "reports": "Asosiy hisobotlar",
           "support": "Pochta orqali qo'llab-quvvatlash",
@@ -166,8 +166,7 @@
           "analytics": "Kengaytirilgan tahlil",
           "support": "Ustuvor qo'llab-quvvatlash",
           "users": "5 tagacha foydalanuvchi",
-          "export": "Hisobotlarni eksport qilish",
-          "api": "API ga kirish"
+          "export": "Hisobotlarni eksport qilish"
         },
         "cta": "Pro olish"
       }
@@ -799,6 +798,14 @@
       "totalAmount": "Umumiy summa",
       "percentage": "Foiz",
       "method": "Usul"
+    },
+    "proFeatures": "Pro bilan kengaytirilgan hisobotlarni oching",
+    "proFeature": {
+      "inventory": "Kategoriyalar bo'yicha inventar tahlili",
+      "clients": "Mijozlar xarajatlari va qarzlari",
+      "orders": "Buyurtmalarni holat bo'yicha tahlil",
+      "payments": "To'lov usullari bo'yicha taqsimot",
+      "export": "Barcha hisobotlarni CSV ga eksport"
     }
   }
 }

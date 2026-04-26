@@ -461,7 +461,16 @@ export function SettingsPage() {
               </div>
 
               {tenantDetails?.subscriptionTier !== "pro" && (
-                <Button variant="secondary" className="w-full" disabled>
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => {
+                    setPurchaseError(null);
+                    setActiveTab("subscription");
+                    setIsUpgradeModalOpen(true);
+                  }}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
                   {t("settings.upgrade")}
                 </Button>
               )}
@@ -833,7 +842,7 @@ export function SettingsPage() {
                   <span className="text-sm font-normal text-surface-500 ml-1">/ mo</span>
                 </p>
                 <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
-                  {t("settings.planPro")} — unlimited products, advanced reports, API access
+                  {t("settings.planPro")} — unlimited products, advanced reports, up to 5 users
                 </p>
               </div>
 

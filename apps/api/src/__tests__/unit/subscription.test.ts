@@ -56,7 +56,6 @@ describe("requireFeature middleware", () => {
       "reports_advanced",
       "reports_export",
       "price_matrices",
-      "api_access",
     ] as const;
 
     for (const feature of proFeatures) {

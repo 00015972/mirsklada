@@ -77,7 +77,11 @@ class ClientController {
    * POST /clients
    */
   async create(req: Request, res: Response) {
-    const client = await clientService.create(req.tenantId!, req.body);
+    const client = await clientService.create(
+      req.tenantId!,
+      req.body,
+      req.subscriptionTier ?? "basic",
+    );
     res.status(201).json({
       success: true,
       data: client,

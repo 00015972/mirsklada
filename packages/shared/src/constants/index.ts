@@ -11,8 +11,8 @@ export const SUBSCRIPTION_TIERS = {
 
 export const TIER_LIMITS = {
   basic: {
-    maxProducts: 100,
-    maxClients: 50,
+    maxProducts: 20,
+    maxClients: 10,
     maxWorkspaces: 1,
     maxMembers: 1,
     features: ["stock", "orders", "debt", "reports_basic"],
@@ -29,7 +29,6 @@ export const TIER_LIMITS = {
       "reports_basic",
       "reports_advanced",
       "reports_export",
-      "api_access",
       "google_drive",
       "yandex_delivery",
       "price_matrices",

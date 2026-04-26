@@ -95,6 +95,8 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   setTenant: (tenantId: string) => void;
   updateTenantName: (tenantId: string, name: string) => void;
+  updateTenantTier: (tenantId: string, tier: string) => void;
+  refreshTenants: () => Promise<void>;
   refreshSession: () => Promise<void>;
   logout: () => void;
   initialize: () => Promise<void>;
@@ -234,6 +236,40 @@ export const useAuthStore = create<AuthState>()(
         set({
           tenants: tenants.map((t) => (t.id === tenantId ? { ...t, name } : t)),
         });
+      },
+
+      updateTenantTier: (tenantId, tier) => {
+        const { tenants } = get();
+        set({
+          tenants: tenants.map((t) =>
+            t.id === tenantId ? { ...t, subscriptionTier: tier } : t,
+          ),
+        });
+      },
+
+      refreshTenants: async () => {
+        const { session, currentTenantId } = get();
+        if (!session?.accessToken) return;
+        try {
+          const response = await fetch("/api/v1/auth/me", {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+              "Cache-Control": "no-cache",
+            },
+          });
+          if (response.ok) {
+            const result = await response.json();
+            const updatedTenants: Tenant[] = result.tenants || [];
+            set({
+              tenants: updatedTenants,
+              currentTenantId: updatedTenants.some((t) => t.id === currentTenantId)
+                ? currentTenantId
+                : updatedTenants[0]?.id || null,
+            });
+          }
+        } catch (error) {
+          console.error("Failed to refresh tenants:", error);
+        }
       },
 
       refreshSession: async () => {
