@@ -109,9 +109,6 @@ export function PaymentsPage() {
   const { t } = useTranslation();
   const { tenants, currentTenantId } = useAuthStore();
   const currentTenant = tenants.find((t) => t.id === currentTenantId);
-  if (currentTenant?.role?.toLowerCase() === "staff") {
-    return <Navigate to="/dashboard" replace />;
-  }
   const methodConfig: Record<
     string,
     { label: string; icon: typeof Banknote; className: string }
@@ -359,6 +356,11 @@ export function PaymentsPage() {
       setRecordOrderId("");
     }
   }, [recordClientId]);
+
+  // Staff cannot access this page
+  if (currentTenant?.role?.toLowerCase() === "staff") {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // Reset record form
   const resetRecordForm = () => {

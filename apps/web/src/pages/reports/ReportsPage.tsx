@@ -192,8 +192,6 @@ export function ReportsPage() {
   const isStaff = currentTenant?.role?.toLowerCase() === "staff";
   const isDark = theme === "dark";
 
-  if (isStaff) return <Navigate to="/dashboard" replace />;
-
   // Update Chart.js defaults based on theme
   ChartJS.defaults.color = isDark ? "#9ca3af" : "#6b7280";
   ChartJS.defaults.borderColor = isDark ? "#374151" : "#e5e7eb";
@@ -394,6 +392,9 @@ export function ReportsPage() {
   useEffect(() => {
     fetchReportsData();
   }, [fetchReportsData]);
+
+  // Staff cannot access this page — placed after all hooks
+  if (isStaff) return <Navigate to="/dashboard" replace />;
 
   const handleExportCSV = async () => {
     setIsExporting(true);
