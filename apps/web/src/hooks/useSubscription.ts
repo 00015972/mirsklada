@@ -36,6 +36,16 @@ export function useSubscription(): UseSubscriptionReturn {
         Purchases.getSharedInstance().getOfferings(),
         Purchases.getSharedInstance().getCustomerInfo(),
       ]);
+      console.log("[RC] offerings:", JSON.stringify({
+        current: offeringsResult.current ? {
+          identifier: offeringsResult.current.identifier,
+          packages: offeringsResult.current.availablePackages.map(p => ({
+            identifier: p.identifier,
+            product: { identifier: p.rcBillingProduct?.identifier, title: p.rcBillingProduct?.title },
+          })),
+        } : null,
+        all: Object.keys(offeringsResult.all),
+      }, null, 2));
       setOfferings(offeringsResult);
       setCustomerInfo(info);
     } catch {
@@ -51,7 +61,11 @@ export function useSubscription(): UseSubscriptionReturn {
 
   const purchasePro = async () => {
     const pkg = offerings?.current?.availablePackages[0];
-    if (!pkg) throw new Error("No package available");
+    if (!pkg) {
+      const pkgCount = offerings?.current?.availablePackages?.length ?? 0;
+      const currentId = offerings?.current?.identifier ?? "none";
+      throw new Error(`No package available (offering: "${currentId}", packages: ${pkgCount})`);
+    }
     const { customerInfo: updated } =
       await Purchases.getSharedInstance().purchasePackage(pkg);
     setCustomerInfo(updated);

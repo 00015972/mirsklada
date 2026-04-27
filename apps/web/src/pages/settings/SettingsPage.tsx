@@ -776,21 +776,21 @@ export function SettingsPage() {
                   {/* Feature list */}
                   <div className="space-y-2">
                     {[
-                      { key: "featureProducts", pro: false },
-                      { key: "featureClients", pro: false },
-                      { key: "featureStock", pro: false },
-                      { key: "featureReports", pro: true },
-                    ].map(({ key, pro }) => (
-                      <div key={key} className="flex items-center gap-3 text-sm">
-                        {!pro || isPro ? (
+                      { basicKey: "featureProductsBasic", proKey: "featureProductsPro", proOnly: false },
+                      { basicKey: "featureClientsBasic", proKey: "featureClientsPro", proOnly: false },
+                      { basicKey: "featureStock", proKey: "featureStock", proOnly: false },
+                      { basicKey: "featureReports", proKey: "featureReports", proOnly: true },
+                    ].map(({ basicKey, proKey, proOnly }) => (
+                      <div key={basicKey} className="flex items-center gap-3 text-sm">
+                        {!proOnly || isPro ? (
                           <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                         ) : (
                           <X className="h-4 w-4 text-surface-400 flex-shrink-0" />
                         )}
-                        <span className={!pro || isPro ? "text-surface-700 dark:text-surface-300" : "text-surface-400 dark:text-surface-500"}>
-                          {t(`settings.${key}`)}
+                        <span className={!proOnly || isPro ? "text-surface-700 dark:text-surface-300" : "text-surface-400 dark:text-surface-500"}>
+                          {t(`settings.${isPro ? proKey : basicKey}`)}
                         </span>
-                        {pro && !isPro && (
+                        {proOnly && !isPro && (
                           <span className="ml-auto text-xs bg-primary-500/10 text-primary-600 dark:text-primary-400 px-2 py-0.5 rounded-full">Pro</span>
                         )}
                       </div>
