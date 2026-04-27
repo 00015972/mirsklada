@@ -7,6 +7,18 @@ RUN corepack enable
 FROM base AS build
 WORKDIR /app
 
+# Declare VITE_ vars as build args so Railway injects them at build time
+ARG VITE_API_URL
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_REVENUECAT_API_KEY
+
+# Expose them as env vars so Vite picks them up during build
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+ENV VITE_REVENUECAT_API_KEY=$VITE_REVENUECAT_API_KEY
+
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm db:generate
