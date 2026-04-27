@@ -171,15 +171,19 @@ export const useAuthStore = create<AuthState>()(
           Date.now().toString(),
         );
 
-        // Keep the user authenticated while profile/tenant data is revalidated.
+        const newSession = {
+          accessToken: supabaseSession.access_token,
+          refreshToken: supabaseSession.refresh_token,
+          expiresAt: supabaseSession.expires_at,
+        };
+
+        // Only show loading screen on first login — skip it on token refreshes
+        // so that tab switches (which trigger TOKEN_REFRESHED) don't flash the UI.
+        const alreadyAuthenticated = get().isAuthenticated;
         set({
-          session: {
-            accessToken: supabaseSession.access_token,
-            refreshToken: supabaseSession.refresh_token,
-            expiresAt: supabaseSession.expires_at,
-          },
+          session: newSession,
           isAuthenticated: true,
-          isLoading: true,
+          isLoading: !alreadyAuthenticated,
         });
 
         // Fetch user data from our API
@@ -193,16 +197,18 @@ export const useAuthStore = create<AuthState>()(
 
           if (response.ok) {
             const result = await response.json();
+            const updatedTenants: Tenant[] = result.tenants || [];
+            const previousTenantId = get().currentTenantId;
+            const resolvedTenantId = updatedTenants.some(
+              (t) => t.id === previousTenantId,
+            )
+              ? previousTenantId
+              : updatedTenants[0]?.id || null;
             set({
               user: result.user,
-              session: {
-                accessToken: supabaseSession.access_token,
-                refreshToken: supabaseSession.refresh_token,
-                expiresAt: supabaseSession.expires_at,
-              },
-              tenants: result.tenants || [],
-              currentTenantId:
-                result.tenants?.[0]?.id || get().currentTenantId || null,
+              session: newSession,
+              tenants: updatedTenants,
+              currentTenantId: resolvedTenantId,
               isAuthenticated: true,
               isLoading: false,
             });
