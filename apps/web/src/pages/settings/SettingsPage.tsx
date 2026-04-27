@@ -435,29 +435,32 @@ export function SettingsPage() {
               </div>
 
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-surface-700 dark:text-surface-300">
-                  <Check className="h-4 w-4 text-green-500 dark:text-green-400" />
-                  {t("settings.featureProducts")}
-                </div>
-                <div className="flex items-center gap-2 text-surface-700 dark:text-surface-300">
-                  <Check className="h-4 w-4 text-green-500 dark:text-green-400" />
-                  {t("settings.featureClients")}
-                </div>
-                <div className="flex items-center gap-2 text-surface-700 dark:text-surface-300">
-                  <Check className="h-4 w-4 text-green-500 dark:text-green-400" />
-                  {t("settings.featureStock")}
-                </div>
-                {tenantDetails?.subscriptionTier === "pro" ? (
-                  <div className="flex items-center gap-2 text-surface-300">
-                    <Check className="h-4 w-4 text-green-400" />
-                    {t("settings.featureReports")}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-surface-400 dark:text-surface-500">
-                    <X className="h-4 w-4" />
-                    {t("settings.featureReports")}
-                  </div>
-                )}
+                {[
+                  { basicKey: "featureProductsBasic", proKey: "featureProductsPro", proOnly: false },
+                  { basicKey: "featureClientsBasic", proKey: "featureClientsPro", proOnly: false },
+                  { basicKey: "featureStock", proKey: "featureStock", proOnly: false },
+                  { basicKey: "featureReports", proKey: "featureReports", proOnly: true },
+                  { basicKey: "featureUsersPro", proKey: "featureUsersPro", proOnly: true },
+                  { basicKey: "featureExport", proKey: "featureExport", proOnly: true },
+                ].map(({ basicKey, proKey, proOnly }) => {
+                  const isCurrentPro = tenantDetails?.subscriptionTier === "pro";
+                  const active = !proOnly || isCurrentPro;
+                  return (
+                    <div key={basicKey} className="flex items-center gap-2">
+                      {active ? (
+                        <Check className="h-4 w-4 text-green-500 dark:text-green-400 flex-shrink-0" />
+                      ) : (
+                        <X className="h-4 w-4 text-surface-400 flex-shrink-0" />
+                      )}
+                      <span className={active ? "text-surface-700 dark:text-surface-300" : "text-surface-400 dark:text-surface-500"}>
+                        {t(`settings.${isCurrentPro ? proKey : basicKey}`)}
+                      </span>
+                      {proOnly && !isCurrentPro && (
+                        <span className="ml-auto text-xs bg-primary-500/10 text-primary-600 dark:text-primary-400 px-2 py-0.5 rounded-full">Pro</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {tenantDetails?.subscriptionTier !== "pro" && (
@@ -780,6 +783,8 @@ export function SettingsPage() {
                       { basicKey: "featureClientsBasic", proKey: "featureClientsPro", proOnly: false },
                       { basicKey: "featureStock", proKey: "featureStock", proOnly: false },
                       { basicKey: "featureReports", proKey: "featureReports", proOnly: true },
+                      { basicKey: "featureUsersPro", proKey: "featureUsersPro", proOnly: true },
+                      { basicKey: "featureExport", proKey: "featureExport", proOnly: true },
                     ].map(({ basicKey, proKey, proOnly }) => (
                       <div key={basicKey} className="flex items-center gap-3 text-sm">
                         {!proOnly || isPro ? (

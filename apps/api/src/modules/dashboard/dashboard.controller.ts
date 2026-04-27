@@ -472,6 +472,60 @@ router.get(
 );
 
 /**
+ * GET /dashboard/clients-report
+ * All clients with all-time order count and total spent (for reports)
+ */
+router.get(
+  "/clients-report",
+  requireFeature("reports_advanced"),
+  async (req: Request, res: Response): Promise<void> => {
+    const tenantId = req.tenantId!;
+    try {
+      const rows = await prisma.$queryRaw<
+        Array<{
+          client_id: string;
+          client_name: string;
+          phone: string | null;
+          total_orders: bigint;
+          total_spent: Prisma.Decimal;
+          current_debt: Prisma.Decimal;
+          last_order_at: Date | null;
+        }>
+      >`
+        SELECT
+          c.id            AS client_id,
+          c.name          AS client_name,
+          c.phone         AS phone,
+          COUNT(DISTINCT o.id)::bigint                    AS total_orders,
+          COALESCE(SUM(CASE WHEN o.status != 'CANCELLED' THEN o.total_amount ELSE 0 END), 0)::decimal AS total_spent,
+          c.current_debt  AS current_debt,
+          MAX(o.created_at) AS last_order_at
+        FROM clients c
+        LEFT JOIN orders o ON o.client_id = c.id AND o.tenant_id = ${tenantId}
+        WHERE c.tenant_id = ${tenantId} AND c.is_active = true
+        GROUP BY c.id, c.name, c.phone, c.current_debt
+        ORDER BY c.name ASC
+      `;
+      res.json({
+        success: true,
+        data: rows.map((r) => ({
+          clientId: r.client_id,
+          clientName: r.client_name,
+          phone: r.phone || "",
+          totalOrders: Number(r.total_orders),
+          totalSpent: Number(r.total_spent),
+          debt: Number(r.current_debt),
+          lastOrderDate: r.last_order_at,
+        })),
+      });
+    } catch (error) {
+      console.error("Clients report error:", error);
+      res.status(500).json({ message: "Failed to load clients report" });
+    }
+  },
+);
+
+/**
  * GET /dashboard/recent-orders
  * Get recent orders
  */

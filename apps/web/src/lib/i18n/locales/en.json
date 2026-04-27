@@ -694,6 +694,8 @@
     "featureClientsPro": "Unlimited clients",
     "featureStock": "Stock management",
     "featureReports": "Advanced reports",
+    "featureUsersPro": "Up to 5 team members",
+    "featureExport": "Export reports to CSV",
     "yourProfile": "Your Profile",
     "displayNameLabel": "Display Name",
     "displayNamePlaceholder": "Your name",

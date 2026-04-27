@@ -31,7 +31,7 @@ export interface UpdateOrderInput {
 export interface OrderFilters {
   clientId?: string;
   status?: OrderStatus;
-  paymentStatus?: PaymentStatus;
+  paymentStatus?: PaymentStatus | PaymentStatus[];
   startDate?: Date;
   endDate?: Date;
 }
@@ -42,7 +42,11 @@ class OrderService {
 
     if (filters.clientId) where.clientId = filters.clientId;
     if (filters.status) where.status = filters.status;
-    if (filters.paymentStatus) where.paymentStatus = filters.paymentStatus;
+    if (filters.paymentStatus) {
+      where.paymentStatus = Array.isArray(filters.paymentStatus)
+        ? { in: filters.paymentStatus }
+        : filters.paymentStatus;
+    }
 
     if (filters.startDate || filters.endDate) {
       where.createdAt = {};

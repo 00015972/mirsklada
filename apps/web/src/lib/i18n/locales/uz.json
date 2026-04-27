@@ -694,6 +694,8 @@
     "featureClientsPro": "Cheksiz mijozlar",
     "featureStock": "Ombor boshqaruvi",
     "featureReports": "Kengaytirilgan hisobotlar",
+    "featureUsersPro": "5 tagacha jamoa a'zolari",
+    "featureExport": "Hisobotlarni CSV ga eksport qilish",
     "yourProfile": "Sizning profilingiz",
     "displayNameLabel": "Ko'rsatma nomi",
     "displayNamePlaceholder": "Ismingiz",

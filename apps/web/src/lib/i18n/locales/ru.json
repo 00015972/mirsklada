@@ -694,6 +694,8 @@
     "featureClientsPro": "Безлимитные клиенты",
     "featureStock": "Управление складом",
     "featureReports": "Расширенные отчёты",
+    "featureUsersPro": "До 5 участников команды",
+    "featureExport": "Экспорт отчётов в CSV",
     "yourProfile": "Ваш профиль",
     "displayNameLabel": "Отображаемое имя",
     "displayNamePlaceholder": "Ваше имя",

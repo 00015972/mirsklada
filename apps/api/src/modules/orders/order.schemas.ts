@@ -3,6 +3,7 @@
  * Zod validation schemas for order requests
  */
 import { z } from "zod";
+import type { PaymentStatus } from "./order.service";
 
 const OrderItemSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
@@ -33,7 +34,11 @@ export const OrderIdParamSchema = z.object({
 export const OrderQuerySchema = z.object({
   clientId: z.string().optional(),
   status: z.enum(["DRAFT", "CONFIRMED", "COMPLETED", "CANCELLED"]).optional(),
-  paymentStatus: z.enum(["UNPAID", "PARTIAL", "PAID"]).optional(),
+  paymentStatus: z
+    .string()
+    .optional()
+    .transform((val) => (val ? (val.split(",").map((s) => s.trim()) as PaymentStatus[]) : undefined))
+    .pipe(z.array(z.enum(["UNPAID", "PARTIAL", "PAID"])).optional()),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
 });

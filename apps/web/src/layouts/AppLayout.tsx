@@ -251,6 +251,7 @@ export function AppLayout() {
             <NavLink
               key={item.key}
               to={item.href}
+              end={item.href === "/dashboard"}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 clsx(

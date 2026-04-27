@@ -13,7 +13,7 @@ class OrderController {
     const filters = {
       clientId: req.query.clientId as string | undefined,
       status: req.query.status as OrderStatus | undefined,
-      paymentStatus: req.query.paymentStatus as PaymentStatus | undefined,
+      paymentStatus: req.query.paymentStatus as PaymentStatus | PaymentStatus[] | undefined,
       startDate: req.query.startDate
         ? new Date(req.query.startDate as string)
         : undefined,

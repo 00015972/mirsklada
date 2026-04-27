@@ -284,22 +284,22 @@ export function ReportsPage() {
                 (p: { categoryId: string }) => p.categoryId === cat.id,
               );
               const totalStock = categoryProducts.reduce(
-                (sum: number, p: { currentStock: number }) =>
-                  sum + (Number(p.currentStock) || 0),
+                (sum: number, p: { currentStockKg: number }) =>
+                  sum + (Number(p.currentStockKg) || 0),
                 0,
               );
               const stockValue = categoryProducts.reduce(
                 (
                   sum: number,
-                  p: { currentStock: number; pricePerKg: string | number },
+                  p: { currentStockKg: number; pricePerKg: string | number },
                 ) =>
                   sum +
-                  (Number(p.currentStock) || 0) * (Number(p.pricePerKg) || 0),
+                  (Number(p.currentStockKg) || 0) * (Number(p.pricePerKg) || 0),
                 0,
               );
               const lowStockCount = categoryProducts.filter(
-                (p: { currentStock: number; minStock: number }) =>
-                  Number(p.currentStock) < Number(p.minStock),
+                (p: { currentStockKg: number; minStockKg: number }) =>
+                  Number(p.currentStockKg) < Number(p.minStockKg),
               ).length;
 
               return {
@@ -318,29 +318,8 @@ export function ReportsPage() {
 
         // Fetch client report
         try {
-          const clientsRes = await api.get("/clients?limit=100");
-          const clients = clientsRes.data.data || [];
-          setClientReport(
-            clients.map(
-              (c: {
-                id: string;
-                name: string;
-                phone: string;
-                totalOrders: number;
-                totalSpent: string | number;
-                currentDebt: string | number;
-                lastOrderAt: string | null;
-              }) => ({
-                clientId: c.id,
-                clientName: c.name,
-                phone: c.phone || "",
-                totalOrders: c.totalOrders || 0,
-                totalSpent: Number(c.totalSpent) || 0,
-                debt: Number(c.currentDebt) || 0,
-                lastOrderDate: c.lastOrderAt,
-              }),
-            ),
-          );
+          const clientsRes = await api.get("/dashboard/clients-report");
+          setClientReport(clientsRes.data.data || []);
         } catch {
           setClientReport([]);
         }
