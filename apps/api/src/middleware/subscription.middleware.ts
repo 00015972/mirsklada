@@ -40,6 +40,24 @@ export const requireFeature = (feature: ProFeature) => {
 };
 
 /**
+ * Middleware that restricts an endpoint to admin role only.
+ * Staff will receive 403 Forbidden.
+ */
+export const requireAdmin = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void => {
+  if (req.userRole !== "admin") {
+    throw AppError.forbidden(
+      "This action requires admin privileges.",
+      "REQUIRES_ADMIN",
+    );
+  }
+  next();
+};
+
+/**
  * Middleware to check if tenant is on Pro plan
  */
 export const requirePro = (

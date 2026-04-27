@@ -26,6 +26,8 @@ import {
   SearchableSelect,
 } from "@/components/ui";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/stores";
+import { Navigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 interface Client {
@@ -105,6 +107,11 @@ function formatShortDate(dateStr: string): string {
 
 export function PaymentsPage() {
   const { t } = useTranslation();
+  const { tenants, currentTenantId } = useAuthStore();
+  const currentTenant = tenants.find((t) => t.id === currentTenantId);
+  if (currentTenant?.role?.toLowerCase() === "staff") {
+    return <Navigate to="/dashboard" replace />;
+  }
   const methodConfig: Record<
     string,
     { label: string; icon: typeof Banknote; className: string }

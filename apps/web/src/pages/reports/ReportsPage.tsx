@@ -20,7 +20,7 @@ import {
   ChartOptions,
 } from "chart.js";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import {
   RefreshCw,
   Download,
@@ -189,7 +189,10 @@ export function ReportsPage() {
   const navigate = useNavigate();
   const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
   const isPro = currentTenant?.subscriptionTier === "pro";
+  const isStaff = currentTenant?.role?.toLowerCase() === "staff";
   const isDark = theme === "dark";
+
+  if (isStaff) return <Navigate to="/dashboard" replace />;
 
   // Update Chart.js defaults based on theme
   ChartJS.defaults.color = isDark ? "#9ca3af" : "#6b7280";

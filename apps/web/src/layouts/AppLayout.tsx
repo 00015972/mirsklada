@@ -97,7 +97,11 @@ export function AppLayout() {
   const navigate = useNavigate();
   // Find current tenant object from ID
   const currentTenant = tenants.find((tenant) => tenant.id === currentTenantId);
-  const navigationItems = navigation;
+  const isStaff = currentTenant?.role?.toLowerCase() === "staff";
+  // Staff cannot access Payments or Reports
+  const navigationItems = isStaff
+    ? navigation.filter((item) => item.key !== "payments" && item.key !== "reports")
+    : navigation;
 
   /**
    * Workspace Invitation Detection Effect

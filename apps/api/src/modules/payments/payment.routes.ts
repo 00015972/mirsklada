@@ -6,6 +6,7 @@ import { Router } from "express";
 import { paymentController } from "./payment.controller";
 import { asyncHandler } from "../../utils/async-handler";
 import { validate } from "../../middleware/validate.middleware";
+import { requireAdmin } from "../../middleware/subscription.middleware";
 import {
   RecordPaymentSchema,
   VoidPaymentSchema,
@@ -16,6 +17,9 @@ import {
 } from "./payment.schemas";
 
 const router = Router();
+
+// All payment endpoints are admin-only
+router.use(requireAdmin);
 
 // GET /payments - List all payments
 router.get(

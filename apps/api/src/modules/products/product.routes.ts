@@ -6,6 +6,7 @@ import { Router } from "express";
 import { productController } from "./product.controller";
 import { asyncHandler } from "../../utils/async-handler";
 import { validate } from "../../middleware/validate.middleware";
+import { requireAdmin } from "../../middleware/subscription.middleware";
 import {
   CreateProductSchema,
   UpdateProductSchema,
@@ -32,23 +33,26 @@ router.get(
   asyncHandler(productController.findById),
 );
 
-// POST /products - Create product
+// POST /products - Create product (admin only)
 router.post(
   "/",
+  requireAdmin,
   validate({ body: CreateProductSchema }),
   asyncHandler(productController.create),
 );
 
-// PATCH /products/:id - Update product
+// PATCH /products/:id - Update product (admin only)
 router.patch(
   "/:id",
+  requireAdmin,
   validate({ params: ProductIdParamSchema, body: UpdateProductSchema }),
   asyncHandler(productController.update),
 );
 
-// DELETE /products/:id - Soft delete product
+// DELETE /products/:id - Soft delete product (admin only)
 router.delete(
   "/:id",
+  requireAdmin,
   validate({ params: ProductIdParamSchema }),
   asyncHandler(productController.delete),
 );

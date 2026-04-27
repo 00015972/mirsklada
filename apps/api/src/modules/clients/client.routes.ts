@@ -6,6 +6,7 @@ import { Router } from "express";
 import { clientController } from "./client.controller";
 import { asyncHandler } from "../../utils/async-handler";
 import { validate } from "../../middleware/validate.middleware";
+import { requireAdmin } from "../../middleware/subscription.middleware";
 import {
   CreateClientSchema,
   UpdateClientSchema,
@@ -40,23 +41,26 @@ router.get(
   asyncHandler(clientController.findByIdWithOrders),
 );
 
-// POST /clients - Create client
+// POST /clients - Create client (admin only)
 router.post(
   "/",
+  requireAdmin,
   validate({ body: CreateClientSchema }),
   asyncHandler(clientController.create),
 );
 
-// PATCH /clients/:id - Update client
+// PATCH /clients/:id - Update client (admin only)
 router.patch(
   "/:id",
+  requireAdmin,
   validate({ params: ClientIdParamSchema, body: UpdateClientSchema }),
   asyncHandler(clientController.update),
 );
 
-// DELETE /clients/:id - Soft delete client
+// DELETE /clients/:id - Soft delete client (admin only)
 router.delete(
   "/:id",
+  requireAdmin,
   validate({ params: ClientIdParamSchema }),
   asyncHandler(clientController.delete),
 );
