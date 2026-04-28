@@ -15,7 +15,7 @@
  * @connections
  * - Used by: ./router.tsx (route definitions)
  */
-export { LoginPage, SignupPage } from "./auth";
+export { LoginPage, SignupPage, ConfirmPage } from "./auth";
 export { DashboardPage } from "./dashboard";
 export { OnboardingPage } from "./onboarding";
 export { CategoriesPage } from "./categories";

@@ -36,6 +36,7 @@ import { ProtectedRoute } from "@/components";
 import {
   LoginPage,
   SignupPage,
+  ConfirmPage,
   DashboardPage,
   OnboardingPage,
   CategoriesPage,
@@ -90,6 +91,11 @@ const routes: RouteObject[] = [
   {
     path: "/signup",
     element: <SignupPage />,
+  },
+
+  {
+    path: "/auth/confirm",
+    element: <ConfirmPage />,
   },
 
   // ═══════════════════════════════════════════════════════════════════

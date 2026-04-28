@@ -4,3 +4,4 @@
  */
 export { LoginPage } from "./LoginPage";
 export { SignupPage } from "./SignupPage";
+export { ConfirmPage } from "./ConfirmPage";
