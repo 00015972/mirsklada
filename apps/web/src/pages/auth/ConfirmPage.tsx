@@ -15,18 +15,18 @@ export function ConfirmPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const setSession = useAuthStore((state) => state.setSession);
-  const [status, setStatus] = useState<Status>("verifying");
-  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  const tokenHash = searchParams.get("token_hash");
+  const type = searchParams.get("type");
+  const isValidLink = !!tokenHash && type === "email";
+
+  const [status, setStatus] = useState<Status>(isValidLink ? "verifying" : "error");
+  const [errorMessage, setErrorMessage] = useState<string>(
+    isValidLink ? "" : "Invalid or missing confirmation link.",
+  );
 
   useEffect(() => {
-    const tokenHash = searchParams.get("token_hash");
-    const type = searchParams.get("type");
-
-    if (!tokenHash || type !== "email") {
-      setErrorMessage("Invalid or missing confirmation link.");
-      setStatus("error");
-      return;
-    }
+    if (!isValidLink) return;
 
     supabase.auth
       .verifyOtp({ token_hash: tokenHash, type: "email" })
@@ -41,10 +41,9 @@ export function ConfirmPage() {
 
         await setSession(data.session);
         setStatus("success");
-
         setTimeout(() => navigate("/onboarding"), 1500);
       });
-  }, []);
+  }, [isValidLink, tokenHash, navigate, setSession]);
 
   return (
     <div className="min-h-screen bg-surface-50 dark:bg-surface-950 flex items-center justify-center p-4">
